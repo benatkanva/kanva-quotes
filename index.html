@@ -38,55 +38,76 @@
             display: none;
         }
         
-        /* Modal Styles */
+        /* Modal Styles - Full Screen Overlay */
         .modal-overlay {
             display: none;
             position: fixed;
             top: 0;
             left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0, 0, 0, 0.7);
-            z-index: 1000;
+            width: 100vw;
+            height: 100vh;
+            background: rgba(0, 0, 0, 0.8);
+            z-index: 999999;
             overflow-y: auto;
+            /* Break out of iframe */
+            transform: translateZ(0);
         }
         .modal-content {
             background: white;
-            margin: 2% auto;
-            padding: 20px;
-            border-radius: 10px;
-            width: 90%;
-            max-width: 1000px;
+            margin: 2vh auto;
+            padding: 30px;
+            border-radius: 15px;
+            width: 95vw;
+            max-width: 1200px;
             position: relative;
-            max-height: 95vh;
+            max-height: 90vh;
             overflow-y: auto;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.3);
+            animation: modalFadeIn 0.3s ease-out;
+        }
+        @keyframes modalFadeIn {
+            from { opacity: 0; transform: scale(0.9); }
+            to { opacity: 1; transform: scale(1); }
         }
         .modal-close {
             position: absolute;
-            top: 15px;
-            right: 20px;
-            font-size: 28px;
+            top: 20px;
+            right: 25px;
+            font-size: 35px;
             font-weight: bold;
             cursor: pointer;
             color: #999;
+            background: #f5f5f5;
+            width: 45px;
+            height: 45px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: none;
         }
         .modal-close:hover {
+            background: #e0e0e0;
             color: #333;
         }
         .launch-modal-btn {
-            background: #7cb342;
+            background: linear-gradient(135deg, #7cb342 0%, #8bc34a 100%);
             color: white;
             border: none;
-            padding: 12px 20px;
-            border-radius: 5px;
+            padding: 15px 20px;
+            border-radius: 8px;
             cursor: pointer;
             width: 100%;
             font-size: 16px;
             font-weight: bold;
             margin-bottom: 15px;
+            box-shadow: 0 4px 8px rgba(124,179,66,0.3);
+            transition: all 0.3s ease;
         }
         .launch-modal-btn:hover {
-            background: #689f35;
+            background: linear-gradient(135deg, #689f35 0%, #7cb342 100%);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 12px rgba(124,179,66,0.4);
         }
         .header {
             text-align: center;
@@ -187,7 +208,7 @@
         </div>
 
         <!-- Launch Modal Button -->
-        <button class="launch-modal-btn" onclick="openModal()">
+        <button class="launch-modal-btn" onclick="openFullScreenModal()">
             📊 Open Full Calculator
         </button>
 
@@ -212,10 +233,10 @@
         </div>
     </div>
 
-    <!-- Modal Overlay -->
-    <div id="modalOverlay" class="modal-overlay" onclick="closeModal(event)">
-        <div class="modal-content" onclick="event.stopPropagation()">
-            <span class="modal-close" onclick="closeModal()">&times;</span>
+    <!-- Modal Overlay - Full Screen -->
+    <div id="modalOverlay" class="modal-overlay">
+        <div class="modal-content">
+            <button class="modal-close" onclick="closeFullScreenModal()">&times;</button>
             
             <div class="calculator">
                 <div class="header">
@@ -266,10 +287,11 @@
                 </div>
 
                 <!-- Action Buttons -->
-                <div style="display: flex; gap: 10px; margin: 20px 0;">
+                <div style="display: flex; gap: 10px; margin: 20px 0; flex-wrap: wrap;">
                     <button class="copy-btn" onclick="generateEmail()">📧 Generate Quote Email</button>
                     <button class="copy-btn" onclick="saveQuoteToCRM()" style="background: #2196F3;">💾 Save to CRM</button>
                     <button class="copy-btn" onclick="createOpportunity()" style="background: #FF9800;">🎯 Create Opportunity</button>
+                    <button class="copy-btn" onclick="closeFullScreenModal()" style="background: #666;">✖️ Close Calculator</button>
                 </div>
 
                 <!-- Generated Email Template -->
