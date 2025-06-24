@@ -1,4 +1,4 @@
-/* Admin panel styles with Kanva branding */
+/* Admin panel styles with Kanva branding - FIXED READABILITY */
 
 .admin-panel {
     display: none;
@@ -55,7 +55,7 @@
     padding: 25px;
     border: 2px solid rgba(147, 213, 0, 0.2);
     border-radius: 12px;
-    background: linear-gradient(135deg, #f8f9fa 0%, white 100%);
+    background: linear-gradient(135deg, white 0%, #f8f9fa 100%);
     transition: all 0.3s ease;
 }
 
@@ -70,10 +70,8 @@
     border-bottom: 3px solid #93D500;
     padding-bottom: 12px;
     font-size: 20px;
-    background: linear-gradient(135deg, #17351A 0%, #93D500 100%);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
+    font-weight: bold;
+    /* FIXED: Removed gradient text for better readability */
 }
 
 .admin-grid {
@@ -91,7 +89,7 @@
 .admin-field label {
     font-weight: bold;
     margin-bottom: 8px;
-    font-size: 13px;
+    font-size: 14px; /* FIXED: Increased from 13px */
     color: #17351A;
     text-transform: uppercase;
     letter-spacing: 0.5px;
@@ -104,6 +102,7 @@
     font-size: 14px;
     transition: all 0.3s ease;
     background: white;
+    color: #17351A; /* FIXED: Explicit text color */
 }
 
 .admin-field input:focus {
@@ -203,10 +202,8 @@
     text-align: center;
     margin-bottom: 10px;
     font-size: 28px;
-    background: linear-gradient(135deg, #17351A 0%, #93D500 100%);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
+    font-weight: bold;
+    /* FIXED: Removed gradient text for better readability */
 }
 
 .admin-content p {
@@ -312,10 +309,10 @@
 
 /* Additional admin sections styling */
 .admin-product {
-    background: linear-gradient(135deg, white 0%, #f8f9fa 100%);
-    border: 1px solid rgba(147, 213, 0, 0.2);
+    background: white; /* FIXED: Solid background for better readability */
+    border: 2px solid rgba(147, 213, 0, 0.3); /* FIXED: Stronger border */
     border-radius: 8px;
-    padding: 15px;
+    padding: 20px; /* FIXED: More padding */
     margin-bottom: 15px;
     transition: all 0.3s ease;
 }
@@ -328,59 +325,77 @@
 .admin-product h4 {
     color: #17351A;
     margin-top: 0;
-    margin-bottom: 10px;
-    font-size: 16px;
+    margin-bottom: 15px; /* FIXED: More margin */
+    font-size: 18px; /* FIXED: Larger font */
+    font-weight: bold;
     border-bottom: 2px solid #93D500;
-    padding-bottom: 5px;
+    padding-bottom: 8px;
 }
 
 .admin-product label {
     display: block;
-    margin-bottom: 8px;
-    font-size: 13px;
+    margin-bottom: 10px; /* FIXED: More margin */
+    font-size: 14px; /* FIXED: Larger font */
     color: #17351A;
     font-weight: bold;
 }
 
 .admin-product input {
     width: 100%;
-    padding: 8px;
-    border: 1px solid rgba(147, 213, 0, 0.3);
-    border-radius: 4px;
+    padding: 10px; /* FIXED: More padding */
+    border: 2px solid rgba(147, 213, 0, 0.3); /* FIXED: Stronger border */
+    border-radius: 6px;
     font-size: 14px;
-    margin-bottom: 10px;
+    margin-bottom: 15px; /* FIXED: More margin */
+    background: white;
+    color: #17351A;
+}
+
+.admin-product input:focus {
+    border-color: #93D500;
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(147, 213, 0, 0.2);
 }
 
 .tier-config {
-    background: linear-gradient(135deg, #f8f9fa 0%, white 100%);
-    border: 1px solid rgba(147, 213, 0, 0.2);
+    background: white; /* FIXED: Solid background */
+    border: 2px solid rgba(147, 213, 0, 0.3); /* FIXED: Stronger border */
     border-radius: 8px;
-    padding: 15px;
+    padding: 20px; /* FIXED: More padding */
     margin-bottom: 15px;
 }
 
 .tier-config h4 {
     color: #17351A;
     margin-top: 0;
-    margin-bottom: 10px;
-    font-size: 16px;
+    margin-bottom: 15px; /* FIXED: More margin */
+    font-size: 18px; /* FIXED: Larger font */
+    font-weight: bold;
 }
 
 .tier-config label {
     display: block;
-    margin-bottom: 8px;
-    font-size: 13px;
+    margin-bottom: 10px; /* FIXED: More margin */
+    font-size: 14px; /* FIXED: Larger font */
     color: #17351A;
     font-weight: bold;
 }
 
 .tier-config input {
     width: 100%;
-    padding: 8px;
-    border: 1px solid rgba(147, 213, 0, 0.3);
-    border-radius: 4px;
+    padding: 10px; /* FIXED: More padding */
+    border: 2px solid rgba(147, 213, 0, 0.3); /* FIXED: Stronger border */
+    border-radius: 6px;
     font-size: 14px;
-    margin-bottom: 10px;
+    margin-bottom: 15px; /* FIXED: More margin */
+    background: white;
+    color: #17351A;
+}
+
+.tier-config input:focus {
+    border-color: #93D500;
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(147, 213, 0, 0.2);
 }
 
 /* Admin header buttons */
@@ -442,88 +457,23 @@
     background: linear-gradient(135deg, #7ab300 0%, #93D500 100%);
 }
 
-/* Dark mode support for admin panel */
-@media (prefers-color-scheme: dark) {
-    .admin-panel {
-        background: rgba(0, 0, 0, 0.8);
-    }
-    
-    .admin-content {
-        background: linear-gradient(135deg, #2a2a2a 0%, #1e3a1e 100%);
-        color: #e0e0e0;
-    }
-    
-    .admin-section {
-        background: linear-gradient(135deg, #333 0%, #2a2a2a 100%);
-    }
-    
-    .admin-field input {
-        background: #333;
-        color: #e0e0e0;
-        border-color: #93D500;
-    }
-    
-    .admin-product,
-    .tier-config {
-        background: linear-gradient(135deg, #333 0%, #2a2a2a 100%);
-    }
-    
-    .admin-product input,
-    .tier-config input {
-        background: #444;
-        color: #e0e0e0;
-        border-color: #93D500;
-    }
-    
-    .admin-sections::-webkit-scrollbar-track {
-        background: #444;
-    }
+/* FIXED: Light mode forced for better readability */
+.admin-panel,
+.admin-content,
+.admin-section,
+.admin-product,
+.tier-config {
+    /* Force light mode for admin panel regardless of system preference */
+    background: white !important;
+    color: #17351A !important;
 }
 
-/* High contrast mode support */
-@media (prefers-contrast: high) {
-    .admin-content {
-        border: 3px solid #93D500;
-        background: white;
-    }
-    
-    .admin-section {
-        border: 2px solid #17351A;
-        background: #f8f9fa;
-    }
-    
-    .admin-field input {
-        border: 2px solid #17351A;
-    }
-    
-    .admin-btn {
-        border: 2px solid currentColor;
-    }
-}
-
-/* Reduced motion support */
-@media (prefers-reduced-motion: reduce) {
-    .admin-content,
-    .admin-section,
-    .admin-field input,
-    .admin-btn,
-    .admin-toggle,
-    .admin-close,
-    .close-btn {
-        transition: none;
-        animation: none;
-    }
-    
-    .admin-btn:hover,
-    .admin-toggle:hover,
-    .admin-close:hover,
-    .close-btn:hover {
-        transform: none;
-    }
-    
-    .admin-loading::after {
-        animation: none;
-    }
+.admin-field input,
+.admin-product input,
+.tier-config input {
+    background: white !important;
+    color: #17351A !important;
+    border-color: rgba(147, 213, 0, 0.5) !important;
 }
 
 /* Print styles for admin panel */
