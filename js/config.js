@@ -3,9 +3,10 @@
 
 // Admin email list - Add/remove admin users here
 const adminEmails = [
-    'admin@kanvabotanicals.com',
-    'sales@kanvabotanicals.com',
-    'jared@kanvabotanicals.com'
+    'ben@kanvabotanicals.com',
+    'shane@kanvabotanicals.com',
+    'rob@cwlbrands.com',
+    'corey@cwlbrands.com'
     // Add more admin emails as needed
 ];
 
