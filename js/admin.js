@@ -1,11 +1,3 @@
-const adminEmails = [
-    'ben@kanvabotanicals.com',
-    'shane@kanvabotanicals.com',
-    'rob@cwlbrands.com',
-    'corey@cwlbrands.com'
-    // Add more admin emails as needed
-];
-
 // Default admin configuration (can be overridden by localStorage)
 let adminConfig = {
     // Product catalog with pricing and details
