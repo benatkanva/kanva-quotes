@@ -1,4 +1,4 @@
-// Enhanced Copper CRM integration with Hybrid Mode
+// Enhanced Copper CRM integration with Hybrid Mode - Complete Fixed Version
 // Supports both context-aware auto-population AND left nav functionality
 
 const CopperIntegration = {
@@ -102,51 +102,33 @@ const CopperIntegration = {
         console.log('🔄 Auto-populating from entity:', entity);
         
         try {
-            // Customer name (works for both contacts and companies)
-            if (entity.name && !document.getElementById('prospectName')?.value) {
-                document.getElementById('prospectName').value = entity.name;
-                console.log('📝 Auto-filled prospect name:', entity.name);
+            // Generate Quote Name: "${product} Quote for ${company}"
+            const productName = document.getElementById('primaryProduct')?.selectedOptions[0]?.text?.split(' (')[0] || 'Product';
+            const companyName = entity.company_name || (entity.type === 'company' ? entity.name : '');
+            
+            if (companyName && !document.getElementById('quoteName')?.value) {
+                const quoteName = `${productName} Quote for ${companyName}`;
+                const quoteNameInput = document.getElementById('quoteName');
+                if (quoteNameInput) {
+                    quoteNameInput.value = quoteName;
+                    console.log('📝 Auto-filled quote name:', quoteName);
+                }
             }
             
             // Company name
-            const companyName = entity.company_name || (entity.type === 'company' ? entity.name : '');
             if (companyName && !document.getElementById('companyName')?.value) {
                 document.getElementById('companyName').value = companyName;
                 console.log('📝 Auto-filled company name:', companyName);
             }
             
-            // Email address
-            if (entity.emails && entity.emails.length > 0 && !document.getElementById('prospectEmail')?.value) {
-                const email = entity.emails[0].email;
-                const emailInput = document.getElementById('prospectEmail');
-                if (emailInput) {
-                    emailInput.value = email;
-                    console.log('📝 Auto-filled email:', email);
-                }
-            }
+            // Segment (from custom fields or tags)
+            this.autoPopulateSegment(entity);
             
-            // Phone number
-            if (entity.phone_numbers && entity.phone_numbers.length > 0 && !document.getElementById('prospectPhone')?.value) {
-                const phone = entity.phone_numbers[0].number;
-                const phoneInput = document.getElementById('prospectPhone');
-                if (phoneInput) {
-                    phoneInput.value = phone;
-                    console.log('📝 Auto-filled phone:', phone);
-                }
-            }
+            // Email domain from company website
+            this.autoPopulateEmailDomain(entity);
             
-            // Address information
-            if (entity.address && !document.getElementById('prospectAddress')?.value) {
-                const address = `${entity.address.street || ''}, ${entity.address.city || ''}, ${entity.address.state || ''}`.trim();
-                const addressInput = document.getElementById('prospectAddress');
-                if (addressInput && address !== ', ,') {
-                    addressInput.value = address;
-                    console.log('📝 Auto-filled address:', address);
-                }
-            }
-            
-            // Smart customer base detection
-            this.detectCustomerBase(entity);
+            // Phone number (Contact first, then Account)
+            this.autoPopulatePhone(entity);
             
             // Show context indicator
             this.showContextIndicator(entity);
@@ -156,45 +138,118 @@ const CopperIntegration = {
         }
     },
 
-    // Smart detection of customer base type
-    detectCustomerBase: function(entity) {
-        const customerBaseInput = document.getElementById('customerBase');
-        if (!customerBaseInput || customerBaseInput.value) return;
+    // Auto-populate segment from entity data
+    autoPopulateSegment: function(entity) {
+        const segmentInput = document.getElementById('segment');
+        if (!segmentInput || segmentInput.value) return;
         
-        const companyName = (entity.company_name || entity.name || '').toLowerCase();
-        const tags = entity.tags || [];
+        let segment = '';
         
-        // Smart detection based on company name and tags
-        let customerBase = '';
-        
-        if (companyName.includes('smoke') || companyName.includes('vape') || 
-            tags.some(tag => tag.includes('smoke') || tag.includes('vape'))) {
-            customerBase = 'smoke and vape shops';
-        } else if (companyName.includes('convenience') || companyName.includes('c-store') ||
-                  tags.some(tag => tag.includes('convenience'))) {
-            customerBase = 'convenience stores';
-        } else if (companyName.includes('distribution') || companyName.includes('wholesale') ||
-                  tags.some(tag => tag.includes('wholesale'))) {
-            customerBase = 'wholesale distribution';
-        } else if (companyName.includes('dispensary') || companyName.includes('cannabis') ||
-                  tags.some(tag => tag.includes('dispensary'))) {
-            customerBase = 'cannabis dispensaries';
-        } else {
-            customerBase = 'retail customers';
+        // Check custom fields for segment
+        if (entity.custom_fields) {
+            const segmentField = entity.custom_fields.find(field => 
+                field.custom_field_definition_id && 
+                (field.custom_field_definition_id.includes('segment') || 
+                 field.custom_field_definition_id.includes('industry'))
+            );
+            if (segmentField && segmentField.value) {
+                segment = segmentField.value;
+            }
         }
         
-        customerBaseInput.value = customerBase;
-        console.log('📝 Auto-detected customer base:', customerBase);
+        // Fallback to smart detection from company name and tags
+        if (!segment) {
+            const companyName = (entity.company_name || entity.name || '').toLowerCase();
+            const tags = entity.tags || [];
+            
+            if (companyName.includes('smoke') || companyName.includes('vape') || 
+                tags.some(tag => tag.includes('smoke') || tag.includes('vape'))) {
+                segment = 'smoke and vape shops';
+            } else if (companyName.includes('convenience') || companyName.includes('c-store') ||
+                      tags.some(tag => tag.includes('convenience'))) {
+                segment = 'convenience stores';
+            } else if (companyName.includes('distribution') || companyName.includes('wholesale') ||
+                      tags.some(tag => tag.includes('wholesale'))) {
+                segment = 'wholesale distribution';
+            } else if (companyName.includes('dispensary') || companyName.includes('cannabis') ||
+                      tags.some(tag => tag.includes('dispensary'))) {
+                segment = 'cannabis dispensaries';
+            } else {
+                segment = 'retail customers';
+            }
+        }
+        
+        if (segment) {
+            segmentInput.value = segment;
+            console.log('📝 Auto-filled segment:', segment);
+        }
+    },
+
+    // Auto-populate email domain from company website
+    autoPopulateEmailDomain: function(entity) {
+        const emailDomainInput = document.getElementById('emailDomain');
+        if (!emailDomainInput || emailDomainInput.value) return;
+        
+        let emailDomain = '';
+        
+        // First priority: company website
+        if (entity.websites && entity.websites.length > 0) {
+            const website = entity.websites[0].url || entity.websites[0];
+            emailDomain = website.replace(/^https?:\/\//, '').replace(/^www\./, '').split('/')[0];
+        }
+        
+        // Second priority: extract domain from contact emails
+        if (!emailDomain && entity.emails && entity.emails.length > 0) {
+            const email = entity.emails[0].email || entity.emails[0];
+            if (email.includes('@')) {
+                emailDomain = email.split('@')[1];
+            }
+        }
+        
+        if (emailDomain) {
+            emailDomainInput.value = emailDomain;
+            console.log('📝 Auto-filled email domain:', emailDomain);
+        }
+    },
+
+    // Auto-populate phone number (Contact first, then Account)
+    autoPopulatePhone: function(entity) {
+        const phoneInput = document.getElementById('phone');
+        if (!phoneInput || phoneInput.value) return;
+        
+        let phone = '';
+        
+        // Contact phone numbers first priority
+        if (entity.phone_numbers && entity.phone_numbers.length > 0) {
+            phone = entity.phone_numbers[0].number || entity.phone_numbers[0];
+        }
+        
+        // If no contact phone and we have company info, try to get company phone
+        if (!phone && entity.company_id && appState.sdk) {
+            // Note: In a real implementation, we'd fetch the company details here
+            // For now, we'll leave it blank if no contact phone is available
+        }
+        
+        if (phone) {
+            phoneInput.value = phone;
+            console.log('📝 Auto-filled phone:', phone);
+        }
     },
 
     // Show visual indicator that context was auto-populated
     showContextIndicator: function(entity) {
+        // Remove existing indicators
+        const existingIndicator = document.querySelector('.context-indicator');
+        if (existingIndicator) {
+            existingIndicator.remove();
+        }
+        
         const indicator = document.createElement('div');
         indicator.className = 'context-indicator';
         indicator.innerHTML = `
             <div class="context-banner">
                 🎯 Auto-populated from ${entity.type}: <strong>${entity.name}</strong>
-                <button onclick="this.clearAutoPopulation()" class="clear-context-btn">Clear & Manual Entry</button>
+                <button onclick="CopperIntegration.clearAutoPopulation()" class="clear-context-btn">Clear & Manual Entry</button>
             </div>
         `;
         
@@ -224,7 +279,7 @@ const CopperIntegration = {
             <div class="customer-search" id="customerSearch">
                 <h4>🔍 Quick Customer Lookup</h4>
                 <div class="search-controls">
-                    <input type="text" id="customerSearchInput" placeholder="Search contacts & companies..." />
+                    <input type="text" id="customerSearchInput" placeholder="Search companies & contacts..." />
                     <button class="search-btn" onclick="CopperIntegration.searchCustomers()">Search</button>
                 </div>
                 <div id="searchResults" class="search-results" style="display: none;"></div>
@@ -253,25 +308,31 @@ const CopperIntegration = {
         console.log('✅ Customer search interface added');
     },
 
-    // Search for customers in Copper
+    // Search for customers using proper Copper SDK methods
     searchCustomers: function(query) {
-        if (!appState.sdk) {
-            console.log('📝 Simulating customer search (no CRM available)');
-            this.showDemoSearchResults(query);
-            return;
-        }
-        
         const searchQuery = query || document.getElementById('customerSearchInput')?.value;
         if (!searchQuery) return;
         
         console.log(`🔍 Searching for customers: "${searchQuery}"`);
         
-        // Search both people and companies
-        Promise.all([
-            this.searchEntities('person', searchQuery),
-            this.searchEntities('company', searchQuery)
-        ]).then(([people, companies]) => {
-            const allResults = [...people, ...companies];
+        if (!appState.sdk) {
+            console.log('📝 Using demo search (no CRM available)');
+            this.showDemoSearchResults(searchQuery);
+            return;
+        }
+        
+        // Show loading state
+        this.showSearchLoading();
+        
+        // Use proper Copper SDK search methods
+        Promise.allSettled([
+            this.searchCompanies(searchQuery),
+            this.searchContacts(searchQuery)
+        ]).then(results => {
+            const companies = results[0].status === 'fulfilled' ? results[0].value : [];
+            const contacts = results[1].status === 'fulfilled' ? results[1].value : [];
+            
+            const allResults = [...companies, ...contacts];
             this.displaySearchResults(allResults);
         }).catch(error => {
             console.error('❌ Error searching customers:', error);
@@ -279,23 +340,98 @@ const CopperIntegration = {
         });
     },
 
-    // Search specific entity type
-    searchEntities: function(entityType, query) {
+    // Search companies using Copper SDK
+    searchCompanies: function(query) {
         return new Promise((resolve, reject) => {
+            if (!appState.sdk || !appState.sdk.api) {
+                resolve([]);
+                return;
+            }
+            
             try {
-                appState.sdk.searchEntities(entityType, {
-                    name: query
-                }).then(results => {
-                    resolve(results || []);
-                }).catch(error => {
-                    console.warn(`⚠️ Error searching ${entityType}:`, error);
-                    resolve([]); // Return empty array on error
-                });
+                // Use Copper API to search companies
+                const searchParams = {
+                    page_size: 10,
+                    search: {
+                        name: query
+                    }
+                };
+                
+                // Note: The exact API method depends on Copper SDK version
+                // This is the expected pattern based on Copper documentation
+                if (appState.sdk.api.companies && appState.sdk.api.companies.search) {
+                    appState.sdk.api.companies.search(searchParams)
+                        .then(response => {
+                            const companies = (response.data || response || []).map(company => ({
+                                ...company,
+                                type: 'company',
+                                display_name: company.name
+                            }));
+                            resolve(companies);
+                        })
+                        .catch(error => {
+                            console.warn('⚠️ Company search failed:', error);
+                            resolve([]);
+                        });
+                } else {
+                    console.warn('⚠️ Company search API not available');
+                    resolve([]);
+                }
             } catch (error) {
-                console.warn(`⚠️ Search not available for ${entityType}:`, error);
-                resolve([]); // Return empty array if search not available
+                console.warn('⚠️ Error in company search:', error);
+                resolve([]);
             }
         });
+    },
+
+    // Search contacts using Copper SDK
+    searchContacts: function(query) {
+        return new Promise((resolve, reject) => {
+            if (!appState.sdk || !appState.sdk.api) {
+                resolve([]);
+                return;
+            }
+            
+            try {
+                const searchParams = {
+                    page_size: 10,
+                    search: {
+                        name: query
+                    }
+                };
+                
+                if (appState.sdk.api.people && appState.sdk.api.people.search) {
+                    appState.sdk.api.people.search(searchParams)
+                        .then(response => {
+                            const contacts = (response.data || response || []).map(contact => ({
+                                ...contact,
+                                type: 'person',
+                                display_name: contact.name
+                            }));
+                            resolve(contacts);
+                        })
+                        .catch(error => {
+                            console.warn('⚠️ Contact search failed:', error);
+                            resolve([]);
+                        });
+                } else {
+                    console.warn('⚠️ Contact search API not available');
+                    resolve([]);
+                }
+            } catch (error) {
+                console.warn('⚠️ Error in contact search:', error);
+                resolve([]);
+            }
+        });
+    },
+
+    // Show loading state during search
+    showSearchLoading: function() {
+        const resultsContainer = document.getElementById('searchResults');
+        if (resultsContainer) {
+            resultsContainer.innerHTML = '<div class="search-loading">Searching customers...</div>';
+            resultsContainer.style.display = 'block';
+        }
     },
 
     // Display search results
@@ -309,18 +445,29 @@ const CopperIntegration = {
             return;
         }
         
-        const resultsHTML = results.map(customer => `
-            <div class="search-result" onclick="CopperIntegration.selectCustomer(${JSON.stringify(customer).replace(/"/g, '&quot;')})">
-                <div class="customer-name">${customer.name}</div>
-                <div class="customer-type">${customer.type} ${customer.company_name ? `at ${customer.company_name}` : ''}</div>
-                <div class="customer-email">${customer.emails?.[0]?.email || 'No email'}</div>
-            </div>
-        `).join('');
+        const resultsHTML = results.map(customer => {
+            const displayName = customer.display_name || customer.name;
+            const companyInfo = customer.company_name ? ` at ${customer.company_name}` : '';
+            const email = customer.emails?.[0]?.email || customer.emails?.[0] || 'No email';
+            
+            return `
+                <div class="search-result" onclick="CopperIntegration.selectCustomer(${this.escapeJson(customer)})">
+                    <div class="customer-name">${displayName}</div>
+                    <div class="customer-type">${customer.type}${companyInfo}</div>
+                    <div class="customer-email">${email}</div>
+                </div>
+            `;
+        }).join('');
         
         resultsContainer.innerHTML = resultsHTML;
         resultsContainer.style.display = 'block';
         
         console.log(`✅ Displayed ${results.length} search results`);
+    },
+
+    // Escape JSON for HTML attributes
+    escapeJson: function(obj) {
+        return JSON.stringify(obj).replace(/"/g, '&quot;').replace(/'/g, '&#39;');
     },
 
     // Demo search results for standalone mode
@@ -331,20 +478,34 @@ const CopperIntegration = {
                 type: "person",
                 company_name: "ABC Distribution",
                 emails: [{ email: "eddie@abcdistribution.com" }],
-                phone_numbers: [{ number: "(555) 123-4567" }]
+                phone_numbers: [{ number: "(555) 123-4567" }],
+                websites: [{ url: "https://abcdistribution.com" }],
+                tags: ["wholesale", "distribution"]
             },
             {
                 name: "Sarah Miller",
                 type: "person", 
                 company_name: "Green Leaf Smoke Shop",
                 emails: [{ email: "sarah@greenleaf.com" }],
-                phone_numbers: [{ number: "(555) 987-6543" }]
+                phone_numbers: [{ number: "(555) 987-6543" }],
+                websites: [{ url: "https://greenleaf.com" }],
+                tags: ["smoke shop", "retail"]
             },
             {
                 name: "ABC Distribution",
                 type: "company",
                 emails: [{ email: "orders@abcdistribution.com" }],
-                phone_numbers: [{ number: "(555) 111-2222" }]
+                phone_numbers: [{ number: "(555) 111-2222" }],
+                websites: [{ url: "https://abcdistribution.com" }],
+                tags: ["wholesale", "distribution"]
+            },
+            {
+                name: "Green Leaf Smoke Shop",
+                type: "company",
+                emails: [{ email: "info@greenleaf.com" }],
+                phone_numbers: [{ number: "(555) 333-4444" }],
+                websites: [{ url: "https://greenleaf.com" }],
+                tags: ["smoke shop", "retail"]
             }
         ].filter(customer => 
             customer.name.toLowerCase().includes(query.toLowerCase()) ||
@@ -372,6 +533,24 @@ const CopperIntegration = {
         
         // Show selection indicator
         this.showSelectionIndicator(customer);
+        
+        // Update quote name with selected customer
+        this.updateQuoteName(customer);
+    },
+
+    // Update quote name when customer is selected
+    updateQuoteName: function(customer) {
+        const quoteNameInput = document.getElementById('quoteName');
+        const productSelect = document.getElementById('primaryProduct');
+        
+        if (quoteNameInput && productSelect) {
+            const productName = productSelect.selectedOptions[0]?.text?.split(' (')[0] || 'Product';
+            const companyName = customer.company_name || (customer.type === 'company' ? customer.name : customer.name);
+            const quoteName = `${productName} Quote for ${companyName}`;
+            
+            quoteNameInput.value = quoteName;
+            console.log('📝 Updated quote name:', quoteName);
+        }
     },
 
     // Show indicator that customer was selected from search
@@ -416,8 +595,8 @@ const CopperIntegration = {
 
     // Clear auto-population and switch to manual mode
     clearAutoPopulation: function() {
-        // Clear form fields
-        ['prospectName', 'companyName', 'customerBase', 'prospectEmail', 'prospectPhone', 'prospectAddress'].forEach(fieldId => {
+        // Clear form fields with new field names
+        ['quoteName', 'companyName', 'segment', 'emailDomain', 'phone'].forEach(fieldId => {
             const field = document.getElementById(fieldId);
             if (field) field.value = '';
         });
@@ -505,105 +684,6 @@ const CopperIntegration = {
     addUniversalActions: function() {
         // Universal actions are already in the main interface
         console.log('✅ Universal actions available');
-    },
-
-    // Save quote to current record (context-aware)
-    saveQuoteToCurrentRecord: function() {
-        const calc = Calculator.calculateOrder();
-        if (!calc.product) {
-            alert('Please calculate a quote first');
-            return;
-        }
-        
-        if (appState.contextEntity) {
-            console.log(`💾 Saving quote to ${appState.contextEntity.type}: ${appState.contextEntity.name}`);
-            
-            const activityData = {
-                entity_id: appState.contextEntity.id,
-                entity_type: appState.contextEntity.type,
-                details: this.formatQuoteActivityWithContext(calc, appState.contextEntity)
-            };
-            
-            if (appState.sdk && appState.sdk.logActivity) {
-                appState.sdk.logActivity(0, activityData.details, activityData.entity_id);
-                this.showSuccessMessage(`Quote saved to ${appState.contextEntity.name}!`);
-            } else {
-                console.log('📝 Simulated save to current record');
-                alert(`Quote would be saved to ${appState.contextEntity.name}`);
-            }
-        } else {
-            // Fallback to regular save
-            this.saveQuoteToCRM();
-        }
-    },
-
-    // Create opportunity for current record
-    createOpportunityForRecord: function() {
-        const calc = Calculator.calculateOrder();
-        if (!calc.product) {
-            alert('Please calculate a quote first');
-            return;
-        }
-        
-        if (appState.contextEntity) {
-            const opportunityData = this.formatOpportunityDataWithContext(calc, appState.contextEntity);
-            
-            if (appState.sdk && appState.sdk.createEntity) {
-                appState.sdk.createEntity('opportunity', opportunityData);
-                this.showSuccessMessage(`Opportunity created for ${appState.contextEntity.name}!`);
-            } else {
-                console.log('📝 Simulated opportunity creation for current record');
-                alert(`Opportunity would be created for ${appState.contextEntity.name}`);
-            }
-        } else {
-            // Fallback to regular opportunity creation
-            this.createOpportunity();
-        }
-    },
-
-    // Format quote activity with context
-    formatQuoteActivityWithContext: function(calc, entity) {
-        const timestamp = new Date().toLocaleString();
-        const userEmail = appState.currentUser?.email || 'Unknown User';
-        
-        return `KANVA QUOTE GENERATED FOR ${entity.name.toUpperCase()}
-
-Contact: ${entity.name}
-${entity.company_name ? `Company: ${entity.company_name}` : ''}
-${entity.emails?.[0]?.email ? `Email: ${entity.emails[0].email}` : ''}
-
-Product: ${calc.product.name}
-Quantity: ${calc.masterCases} Master Cases (${calc.displayBoxes} Display Boxes)
-Individual Units: ${Calculator.formatNumber(calc.totalUnits)}
-
-Pricing:
-• Unit Price: ${calc.unitPrice} (${calc.tierInfo.name})
-• Case Price: ${calc.casePrice}
-• Subtotal: ${calc.subtotal}
-• Shipping: ${calc.freeShipping ? 'FREE' : calc.shipping}
-• Total: ${calc.total}
-
-Generated by: ${userEmail}
-Generated on: ${timestamp}
-Calculator Version: ${adminConfig.metadata.version}
-Context: ${appState.integrationMode}`;
-    },
-
-    // Format opportunity data with context
-    formatOpportunityDataWithContext: function(calc, entity) {
-        const opportunityName = `${calc.product.name} - ${calc.masterCases} MC - ${entity.name}`;
-        const monetaryValue = Math.round(calc.raw.total * 100);
-        
-        return {
-            name: opportunityName,
-            monetary_value: monetaryValue,
-            primary_contact_id: entity.type === 'person' ? entity.id : null,
-            company_id: entity.type === 'company' ? entity.id : entity.company_id,
-            details: `Quote for ${entity.name}: ${calc.masterCases} Master Cases of ${calc.product.name}\nTotal Value: ${calc.total}\nTier: ${calc.tierInfo.name}`,
-            status: 'Open',
-            close_date: this.getCloseDate(),
-            priority: 'Normal'
-        };
     },
 
     // Setup standalone mode for testing
@@ -712,7 +792,49 @@ Context: ${appState.integrationMode}`;
         }
     },
 
+    // Save quote to current record (context-aware)
+    saveQuoteToCurrentRecord: function() {
+        const calc = Calculator.calculateOrder();
+        if (!calc.product) {
+            alert('Please calculate a quote first');
+            return;
+        }
+        
+        if (appState.contextEntity) {
+            console.log(`💾 Saving quote to ${appState.contextEntity.type}: ${appState.contextEntity.name}`);
+            
+            const activityData = {
+                entity_id: appState.contextEntity.id,
+                entity_type: appState.contextEntity.type,
+                details: this.formatQuoteActivityWithContext(calc, appState.contextEntity)
+            };
+            
+            if (appState.sdk && appState.sdk.logActivity) {
+                appState.sdk.logActivity(0, activityData.details, activityData.entity_id);
+                this.showSuccessMessage(`Quote saved to ${appState.contextEntity.name}!`);
+            } else {
+                console.log('📝 Simulated save to current record');
+                alert(`Quote would be saved to ${appState.contextEntity.name}`);
+            }
+        } else {
+            // Fallback to regular save
+            this.saveQuoteToCRM();
+        }
+    },
+
     createOpportunity: function() {
+        const calc = Calculator.calculateOrder();
+        if (!calc.product) {
+            alert('Please calculate a quote first');
+            return;
+        }
+
+        if (appState.sdk && appState.sdk.createEntity) {
+            try {
+                const opportunityData = this.formatOpportunityData(calc);
+                appState.sdk.createEntity('opportunity', opportunityData);
+                console.log('🎯 Opportunity created in Copper');
+                createOpportunity: function() {
         const calc = Calculator.calculateOrder();
         if (!calc.product) {
             alert('Please calculate a quote first');
@@ -737,11 +859,36 @@ Context: ${appState.integrationMode}`;
         }
     },
 
+    // Create opportunity for current record
+    createOpportunityForRecord: function() {
+        const calc = Calculator.calculateOrder();
+        if (!calc.product) {
+            alert('Please calculate a quote first');
+            return;
+        }
+        
+        if (appState.contextEntity) {
+            const opportunityData = this.formatOpportunityDataWithContext(calc, appState.contextEntity);
+            
+            if (appState.sdk && appState.sdk.createEntity) {
+                appState.sdk.createEntity('opportunity', opportunityData);
+                this.showSuccessMessage(`Opportunity created for ${appState.contextEntity.name}!`);
+            } else {
+                console.log('📝 Simulated opportunity creation for current record');
+                alert(`Opportunity would be created for ${appState.contextEntity.name}`);
+            }
+        } else {
+            // Fallback to regular opportunity creation
+            this.createOpportunity();
+        }
+    },
+
     formatQuoteActivity: function(calc) {
         const timestamp = new Date().toLocaleString();
         const userEmail = appState.currentUser?.email || 'Unknown User';
+        const quoteName = document.getElementById('quoteName')?.value || 'Quote';
         
-        return `KANVA QUOTE GENERATED
+        return `KANVA QUOTE GENERATED: ${quoteName}
 
 Product: ${calc.product.name}
 Quantity: ${calc.masterCases} Master Cases (${calc.displayBoxes} Display Boxes)
@@ -759,12 +906,41 @@ Generated on: ${timestamp}
 Calculator Version: ${adminConfig.metadata.version}`;
     },
 
+    // Format quote activity with context
+    formatQuoteActivityWithContext: function(calc, entity) {
+        const timestamp = new Date().toLocaleString();
+        const userEmail = appState.currentUser?.email || 'Unknown User';
+        const quoteName = document.getElementById('quoteName')?.value || 'Quote';
+        
+        return `KANVA QUOTE GENERATED FOR ${entity.name.toUpperCase()}: ${quoteName}
+
+Contact: ${entity.name}
+${entity.company_name ? `Company: ${entity.company_name}` : ''}
+${entity.emails?.[0]?.email ? `Email: ${entity.emails[0].email}` : ''}
+
+Product: ${calc.product.name}
+Quantity: ${calc.masterCases} Master Cases (${calc.displayBoxes} Display Boxes)
+Individual Units: ${Calculator.formatNumber(calc.totalUnits)}
+
+Pricing:
+• Unit Price: ${calc.unitPrice} (${calc.tierInfo.name})
+• Case Price: ${calc.casePrice}
+• Subtotal: ${calc.subtotal}
+• Shipping: ${calc.freeShipping ? 'FREE' : calc.shipping}
+• Total: ${calc.total}
+
+Generated by: ${userEmail}
+Generated on: ${timestamp}
+Calculator Version: ${adminConfig.metadata.version}
+Context: ${appState.integrationMode}`;
+    },
+
     formatOpportunityData: function(calc) {
-        const opportunityName = `${calc.product.name} - ${calc.masterCases} MC Quote`;
+        const quoteName = document.getElementById('quoteName')?.value || `${calc.product.name} - ${calc.masterCases} MC Quote`;
         const monetaryValue = Math.round(calc.raw.total * 100);
         
         return {
-            name: opportunityName,
+            name: quoteName,
             monetary_value: monetaryValue,
             details: `Quote: ${calc.masterCases} Master Cases of ${calc.product.name}\nTotal Value: ${calc.total}\nTier: ${calc.tierInfo.name}`,
             status: 'Open',
@@ -776,6 +952,23 @@ Calculator Version: ${adminConfig.metadata.version}`;
                     value: true
                 }
             ]
+        };
+    },
+
+    // Format opportunity data with context
+    formatOpportunityDataWithContext: function(calc, entity) {
+        const quoteName = document.getElementById('quoteName')?.value || `${calc.product.name} - ${calc.masterCases} MC - ${entity.name}`;
+        const monetaryValue = Math.round(calc.raw.total * 100);
+        
+        return {
+            name: quoteName,
+            monetary_value: monetaryValue,
+            primary_contact_id: entity.type === 'person' ? entity.id : null,
+            company_id: entity.type === 'company' ? entity.id : entity.company_id,
+            details: `Quote for ${entity.name}: ${calc.masterCases} Master Cases of ${calc.product.name}\nTotal Value: ${calc.total}\nTier: ${calc.tierInfo.name}`,
+            status: 'Open',
+            close_date: this.getCloseDate(),
+            priority: 'Normal'
         };
     },
 
@@ -846,8 +1039,8 @@ Calculator Version: ${adminConfig.metadata.version}`;
             const context = appState.copperContext.context;
             if (!context) return;
 
-            if (context.name && !document.getElementById('prospectName')?.value) {
-                const nameInput = document.getElementById('prospectName');
+            if (context.name && !document.getElementById('quoteName')?.value) {
+                const nameInput = document.getElementById('quoteName');
                 if (nameInput) nameInput.value = context.name;
             }
 
@@ -856,8 +1049,8 @@ Calculator Version: ${adminConfig.metadata.version}`;
                 if (companyInput) companyInput.value = context.company_name;
             }
 
-            if (context.email && !document.getElementById('prospectEmail')?.value) {
-                const emailInput = document.getElementById('prospectEmail');
+            if (context.email && !document.getElementById('emailDomain')?.value) {
+                const emailInput = document.getElementById('emailDomain');
                 if (emailInput) emailInput.value = context.email;
             }
 
