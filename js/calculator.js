@@ -1,30 +1,15 @@
-// FIXED Core calculation engine with proper display box math and shipping
+// Core calculation engine for Kanva Botanicals Quote Calculator
+// Handles all pricing calculations, tier logic, and quote generation
 
 const Calculator = {
-    // FIXED: Main calculation function with proper display box handling
+    // Main calculation function
     calculateOrder: function() {
         try {
             // Get form values
             const productKey = this.getElementValue('primaryProduct') || this.getElementValue('sidebarProduct');
-            let masterCases = parseInt(this.getElementValue('masterCases') || this.getElementValue('sidebarCases')) || 0;
-            let displayBoxes = parseInt(this.getElementValue('displayBoxes')) || 0;
+            const masterCases = parseInt(this.getElementValue('masterCases') || this.getElementValue('sidebarCases')) || 0;
             
-            // FIXED: Handle display box to master case conversion
-            if (displayBoxes > 0 && masterCases === 0) {
-                // User entered display boxes - convert to master cases
-                masterCases = Math.floor(displayBoxes / 12);
-                const remainingDisplayBoxes = displayBoxes % 12;
-                
-                // Update the master cases field
-                const masterCasesInput = document.getElementById('masterCases');
-                if (masterCasesInput) {
-                    masterCasesInput.value = masterCases;
-                }
-                
-                console.log(`Display boxes: ${displayBoxes} → ${masterCases} master cases + ${remainingDisplayBoxes} extra boxes`);
-            }
-            
-            if (!productKey || (masterCases <= 0 && displayBoxes <= 0)) {
+            if (!productKey || masterCases <= 0) {
                 return this.createEmptyResult();
             }
 
@@ -37,29 +22,15 @@ const Calculator = {
                 return this.createEmptyResult();
             }
 
-            // FIXED: Calculate pricing with correct math
+            // Calculate pricing
             const unitPrice = product.price * (1 - tierInfo.discount);
-            
-            // FIXED: Use correct units per case from product config
+            const casePrice = unitPrice * product.unitsPerCase;
             const totalUnits = masterCases * product.unitsPerCase;
-            const totalDisplayBoxes = masterCases * product.displayBoxesPerCase;
-            
-            // FIXED: Calculate subtotal properly
-            const casePrice = unitPrice * product.unitsPerCase;  // Price per master case
+            const displayBoxes = masterCases * product.displayBoxesPerCase;
             const subtotal = masterCases * casePrice;
             
-            // FIXED: Calculate shipping using new zone-based system
-            const customerState = this.getCustomerState();
-            let shipping = 0;
-            
-            if (customerState && typeof ShippingManager !== 'undefined') {
-                shipping = ShippingManager.calculateShipping(totalDisplayBoxes, masterCases, customerState);
-            } else {
-                // Fallback to old percentage-based shipping
-                shipping = subtotal * (adminConfig.shipping.rate || 0.015);
-            }
-            
-            // Check for free shipping
+            // Calculate shipping
+            let shipping = subtotal * adminConfig.shipping.rate;
             const freeShipping = subtotal >= adminConfig.shipping.freeThreshold;
             if (freeShipping) {
                 shipping = 0;
@@ -72,15 +43,14 @@ const Calculator = {
                 product,
                 tierInfo,
                 masterCases,
-                displayBoxes: totalDisplayBoxes,
                 unitPrice: this.formatCurrency(unitPrice),
                 casePrice: this.formatCurrency(casePrice),
                 totalUnits,
+                displayBoxes,
                 subtotal: this.formatCurrency(subtotal),
                 shipping: this.formatCurrency(shipping),
                 total: this.formatCurrency(total),
                 freeShipping,
-                customerState,
                 // Raw values for calculations
                 raw: {
                     unitPrice,
@@ -101,41 +71,6 @@ const Calculator = {
         }
     },
 
-    // NEW: Get customer state for shipping calculation
-    getCustomerState: function() {
-        // Try to get from form field
-        const stateField = document.getElementById('customerState');
-        if (stateField && stateField.value) {
-            return stateField.value.toUpperCase();
-        }
-        
-        // Try to extract from phone number area code (basic guess)
-        const phoneField = document.getElementById('phone');
-        if (phoneField && phoneField.value) {
-            const areaCode = phoneField.value.replace(/\D/g, '').substring(1, 4);
-            return this.guessStateFromAreaCode(areaCode);
-        }
-        
-        // Default to California if unknown
-        return 'CA';
-    },
-
-    // NEW: Basic area code to state mapping (simplified)
-    guessStateFromAreaCode: function(areaCode) {
-        const areaCodeMap = {
-            '213': 'CA', '310': 'CA', '415': 'CA', '510': 'CA', '619': 'CA', '714': 'CA', '818': 'CA', '831': 'CA',
-            '702': 'NV', '775': 'NV',
-            '503': 'OR', '541': 'OR', '971': 'OR',
-            '206': 'WA', '253': 'WA', '360': 'WA', '425': 'WA', '509': 'WA',
-            '208': 'ID',
-            '303': 'CO', '719': 'CO', '720': 'CO', '970': 'CO',
-            '801': 'UT', '385': 'UT', '435': 'UT',
-            '212': 'NY', '315': 'NY', '516': 'NY', '518': 'NY', '585': 'NY', '607': 'NY', '631': 'NY', '646': 'NY', '716': 'NY', '718': 'NY', '845': 'NY', '914': 'NY', '917': 'NY', '929': 'NY'
-        };
-        
-        return areaCodeMap[areaCode] || 'CA'; // Default to CA
-    },
-
     // Helper function to get element value safely
     getElementValue: function(elementId) {
         const element = document.getElementById(elementId);
@@ -148,10 +83,10 @@ const Calculator = {
             product: null,
             tierInfo: null,
             masterCases: 0,
-            displayBoxes: 0,
             unitPrice: '$0.00',
             casePrice: '$0.00',
             totalUnits: 0,
+            displayBoxes: 0,
             subtotal: '$0.00',
             shipping: '$0.00',
             total: '$0.00',
@@ -181,7 +116,7 @@ const Calculator = {
         return new Intl.NumberFormat('en-US').format(number);
     },
 
-    // UPDATED: Update main calculator results display with correct info
+    // Update main calculator results display
     updateResults: function() {
         const resultsContainer = document.getElementById('orderResults');
         if (!resultsContainer) return;
@@ -190,8 +125,9 @@ const Calculator = {
         if (!calc.product) return;
 
         // Calculate next tier information
-        const nextTierInfo = TierManager.getNextTier(calc.masterCases);
-        const hasNextTier = nextTierInfo !== null;
+        const currentTierName = calc.tierInfo.name;
+        const nextTierThreshold = this.getNextTierThreshold(calc.tierInfo);
+        const hasNextTier = nextTierThreshold > 0;
 
         resultsContainer.innerHTML = `
             <div class="calculation-summary">
@@ -199,33 +135,43 @@ const Calculator = {
                 <p>📦 <strong>${this.formatNumber(calc.displayBoxes)}</strong> Display Boxes | <strong>${this.formatNumber(calc.totalUnits)}</strong> Individual Units</p>
                 <p>💰 Unit Price: <strong>${calc.unitPrice}</strong> | Case Price: <strong>${calc.casePrice}</strong></p>
                 <p>📊 Subtotal: <strong>${calc.subtotal}</strong></p>
-                <p>🚚 Shipping${calc.customerState ? ` (${calc.customerState})` : ''}: <strong>${calc.freeShipping ? 'FREE' : calc.shipping}</strong>${calc.freeShipping ? ' (Free shipping applied!)' : ''}</p>
+                <p>🚚 Shipping: <strong>${calc.freeShipping ? 'FREE' : calc.shipping}</strong>${calc.freeShipping ? ' (Free shipping applied!)' : ''}</p>
                 <p class="total-amount" style="font-size: 18px; color: #17351A; font-weight: bold; background: linear-gradient(135deg, #e8f5e8 0%, #d4f4d4 100%); padding: 8px 12px; border-radius: 6px; border: 1px solid #93D500;">💳 TOTAL: ${calc.total}</p>
             </div>
         `;
 
         // Update tier information
-        this.updateTierInfo(calc, hasNextTier, nextTierInfo);
+        this.updateTierInfo(calc, hasNextTier, nextTierThreshold);
     },
 
-    // UPDATED: Update tier information display with correct upselling
-    updateTierInfo: function(calc, hasNextTier, nextTierInfo) {
+    // Update tier information display
+    updateTierInfo: function(calc, hasNextTier, nextTierThreshold) {
         const tierContainer = document.getElementById('tierInfo');
         if (!tierContainer) return;
 
+        const tierNumber = calc.tierInfo.name.split(' ')[1];
+        const tierClass = `tier${tierNumber}`;
         const savingsText = calc.tierInfo.discount > 0 ? 
             ` (${(calc.tierInfo.discount * 100).toFixed(1)}% savings)` : '';
         
         const nextTierText = hasNextTier ? 
-            `<br><small>📈 Order ${nextTierInfo.casesNeeded} more cases to qualify for ${nextTierInfo.tier.name} pricing</small>` : 
+            `<br><small>📈 Order ${nextTierThreshold}+ cases to qualify for better pricing</small>` : 
             '<br><small>🎉 You\'re already getting our best pricing!</small>';
 
         tierContainer.innerHTML = `
             <div class="tier-display">
-                <span class="pricing-tier tier${calc.tierInfo.name.split(' ')[1]}">${calc.tierInfo.name}</span> pricing applied${savingsText}
+                <span class="pricing-tier ${tierClass}">${calc.tierInfo.name}</span> pricing applied${savingsText}
                 ${nextTierText}
             </div>
         `;
+    },
+
+    // Get next tier threshold
+    getNextTierThreshold: function(currentTier) {
+        const tiers = adminConfig.tiers;
+        if (currentTier.name === "Tier 1") return tiers.tier2.threshold;
+        if (currentTier.name === "Tier 2") return tiers.tier3.threshold;
+        return 0; // Already at highest tier
     },
 
     // Update sidebar results (compact version)
@@ -305,17 +251,11 @@ const Calculator = {
     initializeEventListeners: function() {
         // Main calculator inputs
         const masterCasesInput = document.getElementById('masterCases');
-        const displayBoxesInput = document.getElementById('displayBoxes');
         const productSelect = document.getElementById('primaryProduct');
 
         if (masterCasesInput) {
             masterCasesInput.addEventListener('input', () => this.updateResults());
             masterCasesInput.addEventListener('change', () => this.updateResults());
-        }
-
-        if (displayBoxesInput) {
-            displayBoxesInput.addEventListener('input', () => this.updateResults());
-            displayBoxesInput.addEventListener('change', () => this.updateResults());
         }
 
         if (productSelect) {
@@ -368,7 +308,7 @@ const Calculator = {
 
 // Initialize calculator when DOM is ready
 document.addEventListener('DOMContentLoaded', function() {
-    console.log('🧮 Initializing calculator engine with zone-based shipping...');
+    console.log('🧮 Initializing calculator engine...');
     
     // Set up event listeners after a brief delay to ensure DOM is fully loaded
     setTimeout(() => {
@@ -376,4 +316,4 @@ document.addEventListener('DOMContentLoaded', function() {
     }, 100);
 });
 
-console.log('✅ Fixed calculator module loaded with proper display box math');
+console.log('✅ Calculator module loaded successfully');
