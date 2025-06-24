@@ -183,7 +183,7 @@ const App = {
         this.setInitialValues();
     },
 
-    // Generate main HTML structure
+    // Generate main HTML structure with updated field names
     generateMainHTML: function() {
         const isAdmin = appState.isAdmin;
         const isModal = appState.isModalMode;
@@ -202,25 +202,25 @@ const App = {
                 <section class="customer-info">
                     <h3>Customer Information</h3>
                     <div class="input-group">
-                        <label for="prospectName">Prospect Name:</label>
-                        <input type="text" id="prospectName" placeholder="Eddie">
+                        <label for="quoteName">Quote Name:</label>
+                        <input type="text" id="quoteName" placeholder="Product Quote for Company Name">
                     </div>
                     <div class="input-group">
                         <label for="companyName">Company Name:</label>
                         <input type="text" id="companyName" placeholder="ABC Distribution">
                     </div>
                     <div class="input-group">
-                        <label for="customerBase">Customer Base:</label>
-                        <input type="text" id="customerBase" placeholder="smoke and vape shops">
+                        <label for="segment">Segment:</label>
+                        <input type="text" id="segment" placeholder="smoke and vape shops">
+                    </div>
+                    <div class="input-group">
+                        <label for="emailDomain">Email Domain:</label>
+                        <input type="text" id="emailDomain" placeholder="company.com">
                     </div>
                     ${isLeftNav ? `
                     <div class="input-group">
-                        <label for="prospectEmail">Email:</label>
-                        <input type="email" id="prospectEmail" placeholder="eddie@abcdistribution.com">
-                    </div>
-                    <div class="input-group">
-                        <label for="prospectPhone">Phone:</label>
-                        <input type="tel" id="prospectPhone" placeholder="(555) 123-4567">
+                        <label for="phone">Phone:</label>
+                        <input type="tel" id="phone" placeholder="(555) 123-4567">
                     </div>
                     ` : ''}
                 </section>
@@ -438,7 +438,7 @@ const App = {
         });
     },
 
-    // Set initial form values
+    // Set initial form values with updated field names
     setInitialValues: function() {
         // Set default master cases
         const masterCasesInput = document.getElementById('masterCases');
@@ -454,11 +454,37 @@ const App = {
         // Set default max retail price
         this.updateMaxRetailPrice();
         
+        // Set up quote name auto-generation when product changes
+        this.setupQuoteNameGeneration();
+        
         // Auto-populate customer info from Copper if available
         if (appState.isCopperActive) {
             setTimeout(() => {
                 CopperIntegration.populateCustomerInfo();
             }, 500); // Small delay to ensure context is loaded
+        }
+    },
+
+    // Set up quote name auto-generation
+    setupQuoteNameGeneration: function() {
+        const productSelect = document.getElementById('primaryProduct');
+        const companyNameInput = document.getElementById('companyName');
+        const quoteNameInput = document.getElementById('quoteName');
+        
+        if (productSelect && companyNameInput && quoteNameInput) {
+            const updateQuoteName = () => {
+                const productText = productSelect.selectedOptions[0]?.text || '';
+                const productName = productText.split(' (')[0] || 'Product';
+                const companyName = companyNameInput.value.trim();
+                
+                if (companyName && !quoteNameInput.value) {
+                    quoteNameInput.value = `${productName} Quote for ${companyName}`;
+                    console.log('📝 Auto-generated quote name:', quoteNameInput.value);
+                }
+            };
+            
+            productSelect.addEventListener('change', updateQuoteName);
+            companyNameInput.addEventListener('blur', updateQuoteName);
         }
     },
 
@@ -541,15 +567,17 @@ const App = {
         this.setupHelpShortcuts();
     },
 
-    // Add helpful tooltips
+    // Add helpful tooltips with updated field names
     addTooltips: function() {
         const tooltips = {
             'masterCases': 'Number of master cases for the order. Higher quantities may qualify for better pricing tiers.',
             'maxRetail': 'Maximum recommended retail price to maintain market stability.',
             'primaryProduct': 'Select the main product for this quote.',
-            'prospectName': 'Name of the primary contact at the customer company.',
+            'quoteName': 'Descriptive name for this quote (auto-generated from product and company).',
             'companyName': 'Name of the customer company or business.',
-            'customerBase': 'Description of the customer\'s target market (e.g., smoke shops, convenience stores).'
+            'segment': 'Customer segment or industry type (e.g., smoke shops, convenience stores).',
+            'emailDomain': 'Company\'s website domain for email communications.',
+            'phone': 'Primary contact phone number for the customer.'
         };
         
         Object.entries(tooltips).forEach(([elementId, tooltipText]) => {
@@ -664,9 +692,28 @@ const App = {
                 select.addEventListener('change', () => {
                     this.updateMaxRetailPrice();
                     this.triggerCalculation();
+                    this.updateQuoteNameFromProductChange();
                 });
             }
         });
+    },
+
+    // Update quote name when product changes
+    updateQuoteNameFromProductChange: function() {
+        const productSelect = document.getElementById('primaryProduct');
+        const companyNameInput = document.getElementById('companyName');
+        const quoteNameInput = document.getElementById('quoteName');
+        
+        if (productSelect && companyNameInput && quoteNameInput) {
+            const productText = productSelect.selectedOptions[0]?.text || '';
+            const productName = productText.split(' (')[0] || 'Product';
+            const companyName = companyNameInput.value.trim();
+            
+            if (companyName) {
+                quoteNameInput.value = `${productName} Quote for ${companyName}`;
+                console.log('📝 Updated quote name for product change:', quoteNameInput.value);
+            }
+        }
     },
 
     // Bind calculation trigger events
@@ -685,7 +732,7 @@ const App = {
         });
     },
 
-    // Bind form validation events
+    // Bind form validation events with updated field names
     bindValidationEvents: function() {
         // Validate number inputs
         ['masterCases', 'sidebarCases', 'maxRetail'].forEach(inputId => {
@@ -696,6 +743,69 @@ const App = {
                 });
             }
         });
+        
+        // Add validation for new fields
+        ['quoteName', 'companyName', 'segment', 'emailDomain', 'phone'].forEach(inputId => {
+            const input = document.getElementById(inputId);
+            if (input) {
+                input.addEventListener('blur', () => {
+                    this.validateNewFields(input);
+                });
+            }
+        });
+    },
+
+    // Validate new field types
+    validateNewFields: function(input) {
+        const value = input.value.trim();
+        const fieldId = input.id;
+        
+        // Clear existing validation
+        input.classList.remove('invalid');
+        this.clearValidationError(input);
+        
+        // Field-specific validation
+        switch (fieldId) {
+            case 'quoteName':
+                if (!value) {
+                    this.showValidationError(input, 'Quote name is required');
+                    input.classList.add('invalid');
+                }
+                break;
+                
+            case 'companyName':
+                if (!value) {
+                    this.showValidationError(input, 'Company name is required');
+                    input.classList.add('invalid');
+                }
+                break;
+                
+            case 'emailDomain':
+                if (value && !this.isValidDomain(value)) {
+                    this.showValidationError(input, 'Please enter a valid domain (e.g., company.com)');
+                    input.classList.add('invalid');
+                }
+                break;
+                
+            case 'phone':
+                if (value && !this.isValidPhone(value)) {
+                    this.showValidationError(input, 'Please enter a valid phone number');
+                    input.classList.add('invalid');
+                }
+                break;
+        }
+    },
+
+    // Domain validation helper
+    isValidDomain: function(domain) {
+        const domainRegex = /^[a-zA-Z0-9][a-zA-Z0-9-]{0,61}[a-zA-Z0-9]?\.[a-zA-Z]{2,}$/;
+        return domainRegex.test(domain);
+    },
+
+    // Phone validation helper
+    isValidPhone: function(phone) {
+        const phoneRegex = /^[\+]?[1-9][\d]{0,15}$|^[\(]?[\d\s\-\(\)]{10,}$/;
+        return phoneRegex.test(phone.replace(/\D/g, ''));
     },
 
     // Bind keyboard shortcuts
@@ -903,10 +1013,17 @@ const App = {
                 
                 <section>
                     <h4>Getting Started</h4>
-                    <p>1. Enter customer information (name, company, target market)</p>
+                    <p>1. Enter customer information (quote name, company, segment)</p>
                     <p>2. Select a product and specify the number of master cases</p>
                     <p>3. Review the calculated pricing and terms</p>
                     <p>4. Generate a professional quote email</p>
+                </section>
+                
+                <section>
+                    <h4>New Field Guide</h4>
+                    <p><strong>Quote Name:</strong> Auto-generated as "Product Quote for Company"</p>
+                    <p><strong>Segment:</strong> Customer type (smoke shops, convenience stores, etc.)</p>
+                    <p><strong>Email Domain:</strong> Company website for communications</p>
                 </section>
                 
                 <section>
@@ -917,11 +1034,10 @@ const App = {
                 </section>
                 
                 <section>
-                    <h4>Features</h4>
-                    <p>• Professional quote email generation</p>
-                    <p>• Copper CRM integration</p>
-                    <p>• Admin configuration panel</p>
-                    <p>• Multiple display modes</p>
+                    <h4>Search & Auto-population</h4>
+                    <p>• Use the search box to find existing customers</p>
+                    <p>• Fields auto-populate when you select a customer</p>
+                    <p>• Context-aware when used within Copper CRM</p>
                 </section>
                 
                 <section>
@@ -1091,9 +1207,6 @@ const App = {
         return this.getStatus();
     }
 };
-
-// Initialize app state tracking (moved to config.js)
-// appState is now defined in config.js
 
 // Wait for DOM to be ready, then initialize
 if (document.readyState === 'loading') {
