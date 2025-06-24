@@ -426,6 +426,189 @@ function updateMultiProductResultsDisplay(results) {
 }
 
 // =============================================================================
+// ADMIN PANEL FUNCTIONS
+// =============================================================================
+
+function showAdminPanel() {
+    console.log('⚙️ Opening admin panel...');
+    const adminPanel = document.getElementById('adminPanel');
+    if (adminPanel) {
+        adminPanel.style.display = 'block';
+        populateAdminFields();
+    } else {
+        console.warn('Admin panel element not found');
+    }
+}
+
+function hideAdminPanel() {
+    console.log('⚙️ Closing admin panel...');
+    const adminPanel = document.getElementById('adminPanel');
+    if (adminPanel) {
+        adminPanel.style.display = 'none';
+    }
+}
+
+function populateAdminFields() {
+    // Populate product pricing fields
+    Object.keys(adminConfig.products).forEach(key => {
+        const product = adminConfig.products[key];
+        const priceField = document.getElementById(`admin_${key}_price`);
+        const msrpField = document.getElementById(`admin_${key}_msrp`);
+        const unitsField = document.getElementById(`admin_${key}_units`);
+        
+        if (priceField) priceField.value = product.price;
+        if (msrpField) msrpField.value = product.msrp;
+        if (unitsField) unitsField.value = product.unitsPerCase;
+    });
+
+    // Populate tier fields
+    const tier2ThresholdField = document.getElementById('admin_tier2_threshold');
+    const tier2DiscountField = document.getElementById('admin_tier2_discount');
+    const tier3ThresholdField = document.getElementById('admin_tier3_threshold');
+    const tier3DiscountField = document.getElementById('admin_tier3_discount');
+    
+    if (tier2ThresholdField) tier2ThresholdField.value = adminConfig.tiers.tier2.threshold;
+    if (tier2DiscountField) tier2DiscountField.value = adminConfig.tiers.tier2.discount * 100;
+    if (tier3ThresholdField) tier3ThresholdField.value = adminConfig.tiers.tier3.threshold;
+    if (tier3DiscountField) tier3DiscountField.value = adminConfig.tiers.tier3.discount * 100;
+
+    // Populate shipping and payment fields
+    const shippingRateField = document.getElementById('admin_shipping_rate');
+    const freeShippingField = document.getElementById('admin_free_shipping');
+    const achThresholdField = document.getElementById('admin_ach_threshold');
+    
+    if (shippingRateField) shippingRateField.value = adminConfig.shipping.rate * 100;
+    if (freeShippingField) freeShippingField.value = adminConfig.shipping.freeThreshold;
+    if (achThresholdField) achThresholdField.value = adminConfig.payment.achThreshold;
+}
+
+function saveAdminSettings() {
+    console.log('💾 Saving admin settings...');
+    
+    try {
+        // Save product settings
+        Object.keys(adminConfig.products).forEach(key => {
+            const priceField = document.getElementById(`admin_${key}_price`);
+            const msrpField = document.getElementById(`admin_${key}_msrp`);
+            const unitsField = document.getElementById(`admin_${key}_units`);
+            
+            if (priceField && priceField.value) {
+                adminConfig.products[key].price = parseFloat(priceField.value);
+            }
+            if (msrpField && msrpField.value) {
+                adminConfig.products[key].msrp = parseFloat(msrpField.value);
+            }
+            if (unitsField && unitsField.value) {
+                adminConfig.products[key].unitsPerCase = parseInt(unitsField.value);
+            }
+        });
+
+        // Save tier settings
+        const tier2ThresholdField = document.getElementById('admin_tier2_threshold');
+        const tier2DiscountField = document.getElementById('admin_tier2_discount');
+        const tier3ThresholdField = document.getElementById('admin_tier3_threshold');
+        const tier3DiscountField = document.getElementById('admin_tier3_discount');
+        
+        if (tier2ThresholdField && tier2ThresholdField.value) {
+            adminConfig.tiers.tier2.threshold = parseInt(tier2ThresholdField.value);
+        }
+        if (tier2DiscountField && tier2DiscountField.value) {
+            adminConfig.tiers.tier2.discount = parseFloat(tier2DiscountField.value) / 100;
+        }
+        if (tier3ThresholdField && tier3ThresholdField.value) {
+            adminConfig.tiers.tier3.threshold = parseInt(tier3ThresholdField.value);
+        }
+        if (tier3DiscountField && tier3DiscountField.value) {
+            adminConfig.tiers.tier3.discount = parseFloat(tier3DiscountField.value) / 100;
+        }
+
+        // Save shipping and payment settings
+        const shippingRateField = document.getElementById('admin_shipping_rate');
+        const freeShippingField = document.getElementById('admin_free_shipping');
+        const achThresholdField = document.getElementById('admin_ach_threshold');
+        
+        if (shippingRateField && shippingRateField.value) {
+            adminConfig.shipping.rate = parseFloat(shippingRateField.value) / 100;
+        }
+        if (freeShippingField && freeShippingField.value) {
+            adminConfig.shipping.freeThreshold = parseFloat(freeShippingField.value);
+        }
+        if (achThresholdField && achThresholdField.value) {
+            adminConfig.payment.achThreshold = parseFloat(achThresholdField.value);
+        }
+
+        // Save to storage
+        ConfigManager.save();
+        
+        if (typeof NotificationManager !== 'undefined') {
+            NotificationManager.showSuccess('Admin settings saved successfully!');
+        }
+        
+        // Refresh product dropdowns
+        if (typeof App !== 'undefined' && App.populateProductDropdowns) {
+            App.populateProductDropdowns();
+        }
+        
+        // Recalculate current quote
+        if (typeof Calculator !== 'undefined' && Calculator.updateResults) {
+            Calculator.updateResults();
+        }
+        
+        hideAdminPanel();
+        
+    } catch (error) {
+        console.error('❌ Error saving admin settings:', error);
+        if (typeof NotificationManager !== 'undefined') {
+            NotificationManager.showError('Failed to save settings: ' + error.message);
+        }
+    }
+}
+
+function resetAdminSettings() {
+    if (confirm('Are you sure you want to reset all settings to defaults? This cannot be undone.')) {
+        console.log('🔄 Resetting admin settings to defaults...');
+        
+        ConfigManager.reset();
+        populateAdminFields();
+        
+        if (typeof NotificationManager !== 'undefined') {
+            NotificationManager.showInfo('Settings reset to defaults');
+        }
+    }
+}
+
+function exportAdminConfig() {
+    console.log('📤 Exporting admin configuration...');
+    
+    try {
+        const config = adminConfig;
+        const configJSON = JSON.stringify(config, null, 2);
+        const blob = new Blob([configJSON], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        const timestamp = new Date().toISOString().split('T')[0];
+        
+        link.href = url;
+        link.download = `kanva-config-${timestamp}.json`;
+        link.click();
+        
+        URL.revokeObjectURL(url);
+        
+        if (typeof NotificationManager !== 'undefined') {
+            NotificationManager.showSuccess('Configuration exported successfully!');
+        }
+        
+    } catch (error) {
+        console.error('❌ Error exporting config:', error);
+        if (typeof NotificationManager !== 'undefined') {
+            NotificationManager.showError('Failed to export configuration');
+        }
+    }
+}
+
+console.log('✅ Admin panel functions loaded successfully');
+
+// =============================================================================
 // INITIALIZATION
 // =============================================================================
 
