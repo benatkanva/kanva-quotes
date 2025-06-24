@@ -3,11 +3,9 @@
 
 // Admin email list - Add/remove admin users here
 const adminEmails = [
-    'ben@kanvabotanicals.com',
-    'shane@kanvabotanicals.com',
-    'rob@cwlbrands.com',
-    'corey@cwlbrands.com',
-  
+    'admin@kanvabotanicals.com',
+    'sales@kanvabotanicals.com',
+    'jared@kanvabotanicals.com'
     // Add more admin emails as needed
 ];
 
@@ -138,7 +136,13 @@ let appState = {
     adminPanelOpen: false,
     
     // Calculation cache
-    lastCalculation: null
+    lastCalculation: null,
+    
+    // Application lifecycle
+    isReady: false,
+    hasError: false,
+    loadTime: null,
+    startTime: Date.now()
 };
 
 // Utility functions for configuration management
