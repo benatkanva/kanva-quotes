@@ -13,11 +13,84 @@
             background-color: #f5f5f5;
         }
         
-        /* Detect if we're in modal mode */
+        /* Modal Mode - Larger sizing */
         .modal-mode {
-            max-width: 1200px;
+            max-width: 1180px;
             margin: 0 auto;
             padding: 20px;
+            min-height: 760px;
+        }
+        
+        /* Left Navigation Mode - Full calculator without modal */
+        .left-nav-mode {
+            padding: 20px;
+            background-color: white;
+            min-height: 100vh;
+        }
+        
+        .left-nav-mode .calculator {
+            background: white;
+            box-shadow: none;
+            border: none;
+            padding: 0;
+        }
+        
+        .left-nav-mode .input-group {
+            margin-bottom: 18px;
+        }
+        
+        .left-nav-mode .input-group label {
+            min-width: 130px;
+            font-size: 14px;
+        }
+        
+        .left-nav-mode .input-group input,
+        .left-nav-mode .input-group select {
+            padding: 10px;
+            font-size: 14px;
+        }
+        
+        .left-nav-mode .header h1 {
+            font-size: 24px;
+        }
+        
+        .left-nav-mode .results {
+            padding: 20px;
+            margin: 20px 0;
+        }
+        
+        .modal-mode .calculator {
+            min-height: 700px;
+        }
+        
+        .modal-mode .input-group {
+            margin-bottom: 20px;
+        }
+        
+        .modal-mode .input-group label {
+            min-width: 140px;
+            font-size: 15px;
+        }
+        
+        .modal-mode .input-group input,
+        .modal-mode .input-group select {
+            padding: 12px;
+            font-size: 15px;
+        }
+        
+        .modal-mode .results {
+            padding: 25px;
+            margin: 25px 0;
+        }
+        
+        .modal-mode .header h1 {
+            font-size: 28px;
+            margin-bottom: 10px;
+        }
+        
+        .modal-mode .header p {
+            font-size: 16px;
+            margin-bottom: 30px;
         }
         
         .calculator {
@@ -171,20 +244,54 @@
         // Initialize Copper SDK
         let sdk;
         let isModalMode = false;
+        let isLeftNav = false;
+        let appLocation = 'sidebar'; // default
         
-        // Check if we're in modal mode
+        // Check URL parameters and context
         const urlParams = new URLSearchParams(window.location.search);
         if (urlParams.get('location') === 'modal') {
             isModalMode = true;
+            appLocation = 'modal';
             document.body.className = 'modal-mode';
         }
 
-        // Initialize SDK
+        // Initialize SDK and get context
         try {
             sdk = window.Copper.init();
+            
+            // Get context to determine location
+            sdk.getContext().then(function(data) {
+                console.log('Copper context:', data);
+                
+                // Check if we're in left navigation based on context or other indicators
+                // Left nav typically has more space and different context
+                if (data && (data.location === 'left_nav' || window.innerWidth > 800)) {
+                    isLeftNav = true;
+                    appLocation = 'left_nav';
+                    document.body.className = 'left-nav-mode';
+                    renderApp(); // Re-render with left nav layout
+                }
+            }).catch(function(error) {
+                console.log('Could not get Copper context:', error);
+            });
+            
+            // Configure modal size (only affects modal mode)
+            if (isModalMode) {
+                sdk.setAppUI({
+                    width: 1200,
+                    height: 800,
+                    showActionBar: false,
+                    disableAddButton: true
+                });
+            }
+            
             console.log('Copper SDK initialized');
         } catch (e) {
             console.log('Running outside Copper environment');
+            // If running standalone, assume left nav mode for testing
+            isLeftNav = true;
+            appLocation = 'left_nav';
+            document.body.className = 'left-nav-mode';
         }
 
         const products = {
@@ -403,13 +510,14 @@ Kanva Botanicals
         function renderApp() {
             const appDiv = document.getElementById('app');
             
-            if (isModalMode) {
-                // Full modal interface
+            if (isModalMode || isLeftNav) {
+                // Full calculator interface (for both modal and left nav)
                 appDiv.innerHTML = `
                     <div class="calculator">
                         <div class="header">
                             <h1>🌿 Kanva Botanicals Quote Calculator</h1>
                             <p>Professional quote generation with accurate pricing</p>
+                            ${isLeftNav ? '<p style="color: #666; font-size: 14px;">Left Navigation Mode - Full Calculator</p>' : ''}
                         </div>
 
                         <!-- Customer Information -->
@@ -459,6 +567,7 @@ Kanva Botanicals
                             <button class="copy-btn" onclick="generateEmail()">📧 Generate Quote Email</button>
                             <button class="copy-btn" onclick="saveQuoteToCRM()" style="background: #2196F3;">💾 Save to CRM</button>
                             <button class="copy-btn" onclick="createOpportunity()" style="background: #FF9800;">🎯 Create Opportunity</button>
+                            ${isLeftNav ? '<button class="copy-btn" onclick="openCopperModal()" style="background: #9C27B0;">🔍 Open in Modal</button>' : ''}
                         </div>
 
                         <!-- Generated Email Template -->
@@ -492,12 +601,12 @@ Kanva Botanicals
                     </div>
                 `;
                 
-                // Add event listeners for modal
+                // Add event listeners for full calculator
                 document.getElementById('masterCases').addEventListener('input', updateResults);
                 document.getElementById('primaryProduct').addEventListener('change', updateResults);
                 updateResults();
             } else {
-                // Compact sidebar interface
+                // Compact sidebar interface (only for sidebar placement)
                 appDiv.innerHTML = `
                     <div class="calculator sidebar-mode">
                         <div class="header" style="text-align: center; margin-bottom: 15px;">
