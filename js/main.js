@@ -1092,8 +1092,8 @@ const App = {
     }
 };
 
-// Initialize app state tracking
-appState.startTime = Date.now();
+// Initialize app state tracking (moved to config.js)
+// appState is now defined in config.js
 
 // Wait for DOM to be ready, then initialize
 if (document.readyState === 'loading') {
