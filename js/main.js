@@ -1,5 +1,38 @@
-/ Main application orchestration for Kanva Botanicals Quote Calculator
+// Main application orchestration for Kanva Botanicals Quote Calculator
 // Coordinates all modules and manages application lifecycle
+
+// CRITICAL FIX: Define appState at the very beginning, before any code uses it
+const appState = {
+    // Application status
+    isReady: false,
+    startTime: Date.now(),
+    loadTime: null,
+    hasError: false,
+    
+    // Environment detection
+    isModalMode: false,
+    isActivityPanel: false,
+    isLeftNav: false,
+    isSidebar: false,
+    isMobile: false,
+    appLocation: 'unknown',
+    
+    // CRM Integration
+    isCopperActive: false,
+    sdk: null,
+    copperContext: null,
+    integrationMode: 'standalone',
+    hasEntityContext: false,
+    contextEntity: null,
+    
+    // User management
+    currentUser: null,
+    isAdmin: false,
+    
+    // Configuration
+    currentConfig: null,
+    configVersion: '1.0.0'
+};
 
 const App = {
     // Application initialization
@@ -348,6 +381,68 @@ const App = {
                                 </div>
                                 
                                 <div>
+                                    <label for="customerState" class="block text-sm font-bold text-kanva-dark uppercase tracking-wide mb-2">
+                                        State:
+                                    </label>
+                                    <select id="customerState" 
+                                            onchange="updateShippingZone()"
+                                            class="w-full p-3 border-2 border-kanva-green rounded-lg text-kanva-dark focus:border-kanva-dark focus:ring-4 focus:ring-kanva-green/30 focus:outline-none transition-all duration-300">
+                                        <option value="">Select State...</option>
+                                        <option value="AL">AL</option>
+                                        <option value="AK">AK</option>
+                                        <option value="AZ">AZ</option>
+                                        <option value="AR">AR</option>
+                                        <option value="CA">CA</option>
+                                        <option value="CO">CO</option>
+                                        <option value="CT">CT</option>
+                                        <option value="DE">DE</option>
+                                        <option value="DC">DC</option>
+                                        <option value="FL">FL</option>
+                                        <option value="GA">GA</option>
+                                        <option value="HI">HI</option>
+                                        <option value="ID">ID</option>
+                                        <option value="IL">IL</option>
+                                        <option value="IN">IN</option>
+                                        <option value="IA">IA</option>
+                                        <option value="KS">KS</option>
+                                        <option value="KY">KY</option>
+                                        <option value="LA">LA</option>
+                                        <option value="ME">ME</option>
+                                        <option value="MD">MD</option>
+                                        <option value="MA">MA</option>
+                                        <option value="MI">MI</option>
+                                        <option value="MN">MN</option>
+                                        <option value="MS">MS</option>
+                                        <option value="MO">MO</option>
+                                        <option value="MT">MT</option>
+                                        <option value="NE">NE</option>
+                                        <option value="NV">NV</option>
+                                        <option value="NH">NH</option>
+                                        <option value="NJ">NJ</option>
+                                        <option value="NM">NM</option>
+                                        <option value="NY">NY</option>
+                                        <option value="NC">NC</option>
+                                        <option value="ND">ND</option>
+                                        <option value="OH">OH</option>
+                                        <option value="OK">OK</option>
+                                        <option value="OR">OR</option>
+                                        <option value="PA">PA</option>
+                                        <option value="RI">RI</option>
+                                        <option value="SC">SC</option>
+                                        <option value="SD">SD</option>
+                                        <option value="TN">TN</option>
+                                        <option value="TX">TX</option>
+                                        <option value="UT">UT</option>
+                                        <option value="VT">VT</option>
+                                        <option value="VA">VA</option>
+                                        <option value="WA">WA</option>
+                                        <option value="WV">WV</option>
+                                        <option value="WI">WI</option>
+                                        <option value="WY">WY</option>
+                                    </select>
+                                </div>
+                                
+                                <div>
                                     <label for="emailDomain" class="block text-sm font-bold text-kanva-dark uppercase tracking-wide mb-2">
                                         Email Domain:
                                     </label>
@@ -368,37 +463,45 @@ const App = {
                                 </div>
                             </div>
                             
-                            <!-- Tax Information -->
+                            <!-- Shipping Zone Display -->
                             <div class="mt-6 p-4 bg-gradient-to-r from-blue-50 to-blue-100 rounded-lg border-2 border-blue-300">
-                                <h4 class="text-lg font-bold text-blue-900 mb-4">🏛️ Tax Information</h4>
+                                <h4 class="text-lg font-bold text-blue-900 mb-2">📦 Shipping Zone</h4>
+                                <div id="shippingZoneDisplay" class="text-blue-800">
+                                    Select a state to see shipping zone
+                                </div>
+                            </div>
+                            
+                            <!-- Tax Information -->
+                            <div class="mt-6 p-4 bg-gradient-to-r from-green-50 to-green-100 rounded-lg border-2 border-green-300">
+                                <h4 class="text-lg font-bold text-green-900 mb-4">🏛️ Tax Information</h4>
                                 
                                 <div class="grid grid-cols-2 gap-4 mb-4">
                                     <div>
-                                        <label for="stateTaxRate" class="block text-xs font-bold text-blue-900 uppercase tracking-wide mb-1">
+                                        <label for="stateTaxRate" class="block text-xs font-bold text-green-900 uppercase tracking-wide mb-1">
                                             State Tax (%):
                                         </label>
                                         <input type="number" 
                                                id="stateTaxRate" 
                                                step="0.01" 
                                                placeholder="0.00"
-                                               class="w-full p-2 border-2 border-blue-300 rounded-md text-blue-900 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 focus:outline-none transition-all duration-300" />
+                                               class="w-full p-2 border-2 border-green-300 rounded-md text-green-900 focus:border-green-500 focus:ring-2 focus:ring-green-200 focus:outline-none transition-all duration-300" />
                                     </div>
                                     
                                     <div>
-                                        <label for="countyTaxRate" class="block text-xs font-bold text-blue-900 uppercase tracking-wide mb-1">
+                                        <label for="countyTaxRate" class="block text-xs font-bold text-green-900 uppercase tracking-wide mb-1">
                                             County Tax (%):
                                         </label>
                                         <input type="number" 
                                                id="countyTaxRate" 
                                                step="0.01" 
                                                placeholder="0.00"
-                                               class="w-full p-2 border-2 border-blue-300 rounded-md text-blue-900 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 focus:outline-none transition-all duration-300" />
+                                               class="w-full p-2 border-2 border-green-300 rounded-md text-green-900 focus:border-green-500 focus:ring-2 focus:ring-green-200 focus:outline-none transition-all duration-300" />
                                     </div>
                                 </div>
                                 
                                 <button type="button" 
                                         onclick="autoDetectTaxRate()"
-                                        class="w-full px-4 py-2 bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-500 text-white font-bold rounded-lg transition-all duration-300 transform hover:-translate-y-1 shadow-md hover:shadow-lg focus:outline-none focus:ring-4 focus:ring-blue-300">
+                                        class="w-full px-4 py-2 bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-500 text-white font-bold rounded-lg transition-all duration-300 transform hover:-translate-y-1 shadow-md hover:shadow-lg focus:outline-none focus:ring-4 focus:ring-green-300">
                                     🎯 Auto-Detect Tax Rate
                                 </button>
                             </div>
@@ -469,6 +572,31 @@ const App = {
                                                    step="0.01" 
                                                    min="0"
                                                    class="w-full p-3 pl-8 border-2 border-kanva-green rounded-lg text-kanva-dark font-medium focus:border-kanva-dark focus:ring-4 focus:ring-kanva-green/30 focus:outline-none transition-all duration-300" />
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <!-- Shipping Override Section -->
+                                <div class="mt-4 p-4 bg-gray-50 rounded-lg border-2 border-gray-300">
+                                    <label class="flex items-center text-gray-700 font-medium">
+                                        <input type="checkbox" 
+                                               id="shippingOverride" 
+                                               onchange="toggleShippingOverride()"
+                                               class="mr-3 w-5 h-5 text-kanva-green border-2 border-kanva-green rounded focus:ring-kanva-green focus:ring-2" />
+                                        Manual Shipping Override
+                                    </label>
+                                    <div id="shippingOverrideSection" class="mt-3 hidden">
+                                        <label for="manualShipping" class="block text-sm font-bold text-gray-700 mb-2">
+                                            Shipping Amount:
+                                        </label>
+                                        <div class="relative">
+                                            <span class="absolute left-3 top-3 text-gray-600 font-bold">$</span>
+                                            <input type="number" 
+                                                   id="manualShipping" 
+                                                   step="0.01" 
+                                                   placeholder="0.00"
+                                                   onchange="updateCalculation()"
+                                                   class="w-full p-3 pl-8 border-2 border-gray-300 rounded-lg text-gray-700 focus:border-gray-500 focus:ring-2 focus:ring-gray-200 focus:outline-none transition-all duration-300" />
                                         </div>
                                     </div>
                                 </div>
@@ -604,24 +732,79 @@ const App = {
     generateProductReferenceSection: function() {
         return `
             <!-- Product Reference Section -->
-            <section class="product-reference">
-                <h3>Quick Product Reference</h3>
-                <div class="product-grid">
-                    <div class="product-card">
-                        <h4>2oz Wellness Shots</h4>
-                        <p><strong>Focus + Flow:</strong> $4.50 → $9.99 MSRP <span class="pricing-tier tier1">Best Seller</span></p>
-                        <p><strong>Release + Relax:</strong> $4.50 → $9.99 MSRP <span class="pricing-tier tier1">Kanna + Kava</span></p>
-                        <p><strong>Raw + Releaf:</strong> $4.50 → $9.99 MSRP <span class="pricing-tier tier2">New Product</span></p>
+            <section class="mt-8 mx-auto max-w-7xl">
+                <div class="bg-white rounded-2xl shadow-lg border-2 border-kanva-green p-6">
+                    <h3 class="text-2xl font-bold text-kanva-dark mb-6 pb-3 border-b-2 border-kanva-green">
+                        📚 Quick Product Reference
+                    </h3>
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                        <div class="bg-gradient-to-br from-kanva-light to-green-50 p-5 rounded-xl border-2 border-kanva-green/30 hover:border-kanva-green hover:shadow-lg transition-all duration-300">
+                            <h4 class="text-xl font-bold text-kanva-dark mb-4">🥤 2oz Wellness Shots</h4>
+                            <div class="space-y-2 text-sm">
+                                <p class="flex justify-between items-center">
+                                    <span class="font-semibold">Focus + Flow:</span>
+                                    <span class="text-gray-600">$4.50 → $9.99 MSRP</span>
+                                </p>
+                                <p class="text-xs text-kanva-green font-bold">Best Seller • Kava + Kratom</p>
+                                
+                                <p class="flex justify-between items-center pt-2">
+                                    <span class="font-semibold">Release + Relax:</span>
+                                    <span class="text-gray-600">$4.50 → $9.99 MSRP</span>
+                                </p>
+                                <p class="text-xs text-blue-600 font-bold">Kanna + Kava</p>
+                                
+                                <p class="flex justify-between items-center pt-2">
+                                    <span class="font-semibold">Raw + Releaf:</span>
+                                    <span class="text-gray-600">$4.50 → $9.99 MSRP</span>
+                                </p>
+                                <p class="text-xs text-orange-600 font-bold">New Product</p>
+                            </div>
+                        </div>
+                        
+                        <div class="bg-gradient-to-br from-blue-50 to-blue-100 p-5 rounded-xl border-2 border-blue-300 hover:border-blue-400 hover:shadow-lg transition-all duration-300">
+                            <h4 class="text-xl font-bold text-blue-900 mb-4">⚡ Energy & Extract Shots</h4>
+                            <div class="space-y-2 text-sm">
+                                <p class="flex justify-between items-center">
+                                    <span class="font-semibold">Kanva Zoom:</span>
+                                    <span class="text-gray-600">$3.10 → $6.99 MSRP</span>
+                                </p>
+                                <p class="text-xs text-blue-600 font-bold">Energy Boost</p>
+                                
+                                <p class="flex justify-between items-center pt-2">
+                                    <span class="font-semibold">Mango Extract:</span>
+                                    <span class="text-gray-600">$4.25 → $11.99 MSRP</span>
+                                </p>
+                                <p class="text-xs text-purple-600 font-bold">Premium Extract</p>
+                            </div>
+                        </div>
+                        
+                        <div class="bg-gradient-to-br from-purple-50 to-purple-100 p-5 rounded-xl border-2 border-purple-300 hover:border-purple-400 hover:shadow-lg transition-all duration-300">
+                            <h4 class="text-xl font-bold text-purple-900 mb-4">💰 High-Margin Products</h4>
+                            <div class="space-y-2 text-sm">
+                                <p class="font-semibold text-purple-700">Kratom Capsules: 49-58% margins</p>
+                                <p class="font-semibold text-purple-700">Kratom Powders: 49-56% margins</p>
+                                <p class="text-xs text-gray-600 italic mt-3">Perfect add-ons for experienced customers</p>
+                            </div>
+                        </div>
                     </div>
-                    <div class="product-card">
-                        <h4>Energy & Extract Shots</h4>
-                        <p><strong>Kanva Zoom:</strong> $3.10 → $6.99 MSRP <span class="pricing-tier tier1">Energy Boost</span></p>
-                    </div>
-                    <div class="product-card">
-                        <h4>High-Margin Products</h4>
-                        <p><strong>Kratom Capsules:</strong> 49-58% margins <span class="pricing-tier tier3">High Profit</span></p>
-                        <p><strong>Kratom Powders:</strong> 49-56% margins <span class="pricing-tier tier3">High Profit</span></p>
-                        <p><em>Perfect add-ons for experienced customers</em></p>
+                    
+                    <!-- Volume Tier Reference -->
+                    <div class="mt-6 p-4 bg-gradient-to-r from-gray-50 to-gray-100 rounded-lg border-2 border-gray-300">
+                        <h4 class="text-lg font-bold text-gray-800 mb-3">📊 Volume Pricing Tiers</h4>
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
+                            <div class="text-center">
+                                <p class="font-bold text-gray-700">Tier 1 (0-55 MC)</p>
+                                <p class="text-gray-600">Standard Pricing</p>
+                            </div>
+                            <div class="text-center">
+                                <p class="font-bold text-orange-600">Tier 2 (56-111 MC)</p>
+                                <p class="text-gray-600">3.3% Discount</p>
+                            </div>
+                            <div class="text-center">
+                                <p class="font-bold text-purple-600">Tier 3 (112+ MC)</p>
+                                <p class="text-gray-600">5.6% Discount</p>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </section>
@@ -674,6 +857,7 @@ const App = {
                                                 </label>
                                                 <input type="number" 
                                                        id="admin_${key}_price" 
+                                                       value="${product.price}"
                                                        step="0.01"
                                                        class="w-full p-3 border-2 border-kanva-green rounded-lg text-kanva-dark font-medium focus:border-kanva-dark focus:ring-4 focus:ring-kanva-green/30 focus:outline-none transition-all duration-300"
                                                        placeholder="$0.00" />
@@ -684,7 +868,8 @@ const App = {
                                                     MSRP:
                                                 </label>
                                                 <input type="number" 
-                                                       id="admin_${key}_msrp" 
+                                                       id="admin_${key}_msrp"
+                                                       value="${product.msrp}" 
                                                        step="0.01"
                                                        class="w-full p-3 border-2 border-kanva-green rounded-lg text-kanva-dark font-medium focus:border-kanva-dark focus:ring-4 focus:ring-kanva-green/30 focus:outline-none transition-all duration-300"
                                                        placeholder="$0.00" />
@@ -696,6 +881,7 @@ const App = {
                                                 </label>
                                                 <input type="number" 
                                                        id="admin_${key}_units"
+                                                       value="${product.unitsPerCase}"
                                                        class="w-full p-3 border-2 border-kanva-green rounded-lg text-kanva-dark font-medium focus:border-kanva-dark focus:ring-4 focus:ring-kanva-green/30 focus:outline-none transition-all duration-300"
                                                        placeholder="12" />
                                             </div>
@@ -727,6 +913,7 @@ const App = {
                                             </label>
                                             <input type="number" 
                                                    id="admin_tier2_threshold"
+                                                   value="${adminConfig.tiers.tier2.threshold}"
                                                    class="w-full p-3 border-2 border-orange-300 rounded-lg text-orange-900 font-medium focus:border-orange-500 focus:ring-4 focus:ring-orange-200 focus:outline-none transition-all duration-300" />
                                         </div>
                                         
@@ -735,7 +922,8 @@ const App = {
                                                 Discount (%):
                                             </label>
                                             <input type="number" 
-                                                   id="admin_tier2_discount" 
+                                                   id="admin_tier2_discount"
+                                                   value="${(adminConfig.tiers.tier2.discount * 100).toFixed(1)}" 
                                                    step="0.1"
                                                    class="w-full p-3 border-2 border-orange-300 rounded-lg text-orange-900 font-medium focus:border-orange-500 focus:ring-4 focus:ring-orange-200 focus:outline-none transition-all duration-300" />
                                         </div>
@@ -755,6 +943,7 @@ const App = {
                                             </label>
                                             <input type="number" 
                                                    id="admin_tier3_threshold"
+                                                   value="${adminConfig.tiers.tier3.threshold}"
                                                    class="w-full p-3 border-2 border-purple-300 rounded-lg text-purple-900 font-medium focus:border-purple-500 focus:ring-4 focus:ring-purple-200 focus:outline-none transition-all duration-300" />
                                         </div>
                                         
@@ -763,7 +952,8 @@ const App = {
                                                 Discount (%):
                                             </label>
                                             <input type="number" 
-                                                   id="admin_tier3_discount" 
+                                                   id="admin_tier3_discount"
+                                                   value="${(adminConfig.tiers.tier3.discount * 100).toFixed(1)}" 
                                                    step="0.1"
                                                    class="w-full p-3 border-2 border-purple-300 rounded-lg text-purple-900 font-medium focus:border-purple-500 focus:ring-4 focus:ring-purple-200 focus:outline-none transition-all duration-300" />
                                         </div>
@@ -780,17 +970,7 @@ const App = {
                         </h3>
                         
                         <div class="p-6">
-                            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-                                <div>
-                                    <label class="block text-sm font-bold text-kanva-dark uppercase tracking-wide mb-2">
-                                        Shipping Rate (%):
-                                    </label>
-                                    <input type="number" 
-                                           id="admin_shipping_rate" 
-                                           step="0.01"
-                                           class="w-full p-3 border-2 border-blue-300 rounded-lg text-blue-900 font-medium focus:border-blue-500 focus:ring-4 focus:ring-blue-200 focus:outline-none transition-all duration-300" />
-                                </div>
-                                
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                                 <div>
                                     <label class="block text-sm font-bold text-kanva-dark uppercase tracking-wide mb-2">
                                         Free Shipping Threshold:
@@ -799,6 +979,7 @@ const App = {
                                         <span class="absolute left-3 top-3 text-blue-600 font-bold">$</span>
                                         <input type="number" 
                                                id="admin_free_shipping"
+                                               value="${adminConfig.shipping.freeThreshold}"
                                                class="w-full p-3 pl-8 border-2 border-blue-300 rounded-lg text-blue-900 font-medium focus:border-blue-500 focus:ring-4 focus:ring-blue-200 focus:outline-none transition-all duration-300" />
                                     </div>
                                 </div>
@@ -811,6 +992,7 @@ const App = {
                                         <span class="absolute left-3 top-3 text-blue-600 font-bold">$</span>
                                         <input type="number" 
                                                id="admin_ach_threshold"
+                                               value="${adminConfig.payment.achThreshold}"
                                                class="w-full p-3 pl-8 border-2 border-blue-300 rounded-lg text-blue-900 font-medium focus:border-blue-500 focus:ring-4 focus:ring-blue-200 focus:outline-none transition-all duration-300" />
                                     </div>
                                 </div>
@@ -1009,6 +1191,7 @@ const App = {
             'segment': 'Customer segment or industry type (e.g., smoke shops, convenience stores).',
             'emailDomain': 'Company\'s website domain for email communications.',
             'phone': 'Primary contact phone number for the customer.',
+            'customerState': 'State for shipping zone calculation',
             'stateTaxRate': 'State sales tax rate as a percentage.',
             'countyTaxRate': 'County/local tax rate as a percentage.',
             'creditCardFee': 'Add 3% credit card processing fee to the total.'
@@ -1293,7 +1476,11 @@ const App = {
         const totalUnits = masterCases * product.unitsPerCase;
         const displayBoxes = masterCases * product.displayBoxesPerCase;
         const subtotal = masterCases * unitPrice * product.unitsPerCase;
-        const shipping = subtotal * adminConfig.shipping.rate;
+        
+        // Get state for shipping calculation
+        const state = document.getElementById('customerState')?.value || 'CA';
+        const shipping = ShippingManager.calculateShipping(displayBoxes, masterCases, state);
+        
         const total = subtotal + shipping;
 
         const resultsContainer = document.getElementById('quickResults');
@@ -1314,11 +1501,11 @@ const App = {
                     </div>
                     <div class="quick-item">
                         <span class="quick-label">Unit Price:</span>
-                        <span class="quick-value">$${unitPrice.toFixed(2)} (${tierInfo.name})</span>
+                        <span class="quick-value">${unitPrice.toFixed(2)} (${tierInfo.name})</span>
                     </div>
                     <div class="quick-item total">
                         <span class="quick-label">Total:</span>
-                        <span class="quick-value">$${total.toLocaleString()}</span>
+                        <span class="quick-value">${total.toLocaleString()}</span>
                     </div>
                 </div>
             `;
@@ -1514,6 +1701,46 @@ function switchToMultiProduct() {
     }
 }
 
+// NEW: Toggle shipping override
+function toggleShippingOverride() {
+    const checkbox = document.getElementById('shippingOverride');
+    const section = document.getElementById('shippingOverrideSection');
+    
+    if (checkbox && section) {
+        if (checkbox.checked) {
+            section.classList.remove('hidden');
+        } else {
+            section.classList.add('hidden');
+            // Clear manual shipping value
+            const manualInput = document.getElementById('manualShipping');
+            if (manualInput) {
+                manualInput.value = '';
+            }
+        }
+        App.triggerCalculation();
+    }
+}
+
+// NEW: Update shipping zone display
+function updateShippingZone() {
+    const state = document.getElementById('customerState')?.value;
+    const display = document.getElementById('shippingZoneDisplay');
+    
+    if (state && display) {
+        const zoneInfo = ShippingManager.getZoneForState(state);
+        display.innerHTML = `
+            <div class="text-sm">
+                <p class="font-bold">${zoneInfo.name}</p>
+                <p class="text-xs mt-1">Rates: ${zoneInfo.rates['1-3boxes']} (1-3 boxes), ${zoneInfo.rates['4-8boxes']} (4-8 boxes), ${zoneInfo.rates['9-11boxes']} (9-11 boxes), ${zoneInfo.rates.mastercase}/MC</p>
+            </div>
+        `;
+    } else {
+        display.innerHTML = 'Select a state to see shipping zone';
+    }
+    
+    App.triggerCalculation();
+}
+
 // FIXED: Modal opening function for all modes
 function openFullCalculatorModal() {
     console.log('🔄 Opening full calculator modal...');
@@ -1591,9 +1818,6 @@ function saveQuickQuote() {
         }
     }
 }
-
-// Set start time for load measurement
-appState.startTime = Date.now();
 
 // Wait for DOM to be ready, then initialize
 if (document.readyState === 'loading') {
