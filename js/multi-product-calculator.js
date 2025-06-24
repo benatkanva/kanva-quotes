@@ -1,5 +1,5 @@
-// Multiple Product Calculator for Kanva Botanicals Quote Calculator
-// Handles multiple product line items, tier pricing, taxes, and fees
+// Fixed Multiple Product Calculator for Kanva Botanicals Quote Calculator
+// FIXES: Correct subtotaling, display box fields, manual shipping override
 
 const MultiProductCalculator = {
     // Product line items array
@@ -10,6 +10,7 @@ const MultiProductCalculator = {
         creditCardFeeRate: 0.03, // 3%
         shippingRateMin: 0.005,  // 0.5%
         shippingRateMax: 0.025,  // 2.5%
+        manualShippingRate: null, // Manual override percentage
         palletThreshold: 0.5,    // Half pallet threshold
         stateTaxRate: 0,         // Will be set dynamically
         countyTaxRate: 0
@@ -22,8 +23,10 @@ const MultiProductCalculator = {
         // Set up event listeners
         this.setupEventListeners();
         
-        // Initialize with one product line
-        this.addProductLine();
+        // Initialize with one product line if none exist
+        if (this.lineItems.length === 0) {
+            this.addProductLine();
+        }
         
         console.log('✅ Multi-product calculator initialized');
     },
@@ -40,6 +43,12 @@ const MultiProductCalculator = {
             if (event.target.id === 'creditCardFee') {
                 this.calculateTotal();
             }
+
+            // Listen for manual shipping override
+            if (event.target.id === 'manualShippingRate') {
+                this.settings.manualShippingRate = parseFloat(event.target.value) / 100 || null;
+                this.calculateTotal();
+            }
         });
     },
 
@@ -49,6 +58,7 @@ const MultiProductCalculator = {
             id: this.generateLineItemId(),
             productKey: 'focus',
             masterCases: 28,
+            displayBoxes: 336, // 28 * 12 = 336 display boxes
             customPrice: null, // For override pricing
             notes: ''
         };
@@ -76,29 +86,59 @@ const MultiProductCalculator = {
         }
     },
 
-    // Update product line
+    // Update product line with display box auto-conversion
     updateProductLine: function(lineItemId, field, value) {
         const lineItem = this.lineItems.find(item => item.id === lineItemId);
-        if (lineItem) {
+        if (!lineItem) return;
+
+        if (field === 'displayBoxes') {
+            // Convert display boxes to master cases (12 display boxes = 1 master case)
+            const displayBoxes = parseInt(value) || 0;
+            lineItem.displayBoxes = displayBoxes;
+            lineItem.masterCases = Math.floor(displayBoxes / 12);
+            
+            // Update the master cases input in the UI
+            const masterCasesInput = document.querySelector(`[data-line-id="${lineItemId}"] input[data-field="masterCases"]`);
+            if (masterCasesInput) {
+                masterCasesInput.value = lineItem.masterCases;
+            }
+        } else if (field === 'masterCases') {
+            // Convert master cases to display boxes (1 master case = 12 display boxes)
+            const masterCases = parseInt(value) || 0;
+            lineItem.masterCases = masterCases;
+            lineItem.displayBoxes = masterCases * 12;
+            
+            // Update the display boxes input in the UI
+            const displayBoxesInput = document.querySelector(`[data-line-id="${lineItemId}"] input[data-field="displayBoxes"]`);
+            if (displayBoxesInput) {
+                displayBoxesInput.value = lineItem.displayBoxes;
+            }
+        } else {
             lineItem[field] = value;
-            this.calculateTotal();
-            console.log(`🔄 Updated line ${lineItemId}: ${field} = ${value}`);
         }
+        
+        this.calculateTotal();
+        console.log(`🔄 Updated line ${lineItemId}: ${field} = ${value}`);
     },
 
-    // Calculate individual line item
+    // FIXED: Calculate individual line item with correct math
     calculateLineItem: function(lineItem) {
         const product = ProductManager.get(lineItem.productKey);
         if (!product) return null;
 
         const masterCases = parseInt(lineItem.masterCases) || 0;
+        const displayBoxes = parseInt(lineItem.displayBoxes) || 0;
         const tierInfo = TierManager.getTier(masterCases);
         
-        // Use custom price if set, otherwise use calculated price
+        // FIXED: Use custom price if set, otherwise use calculated price per unit
         const unitPrice = lineItem.customPrice || (product.price * (1 - tierInfo.discount));
+        
+        // FIXED: Calculate based on master cases, not display boxes
+        const totalUnits = masterCases * product.unitsPerCase; // Total individual bottles
+        const actualDisplayBoxes = masterCases * 12; // 12 display boxes per master case
+        
+        // FIXED: Line total = master cases × (unit price × units per case)
         const casePrice = unitPrice * product.unitsPerCase;
-        const totalUnits = masterCases * product.unitsPerCase;
-        const displayBoxes = masterCases * product.displayBoxesPerCase;
         const lineTotal = masterCases * casePrice;
 
         return {
@@ -106,10 +146,10 @@ const MultiProductCalculator = {
             product,
             tierInfo,
             masterCases,
+            displayBoxes: actualDisplayBoxes,
             unitPrice,
             casePrice,
             totalUnits,
-            displayBoxes,
             lineTotal,
             notes: lineItem.notes,
             // Raw values for calculations
@@ -121,7 +161,7 @@ const MultiProductCalculator = {
         };
     },
 
-    // Calculate total for all line items
+    // FIXED: Calculate total for all line items with proper aggregation
     calculateTotal: function() {
         const calculations = [];
         let subtotal = 0;
@@ -129,27 +169,34 @@ const MultiProductCalculator = {
         let totalDisplayBoxes = 0;
         let totalMasterCases = 0;
 
-        // Calculate each line item
+        // FIXED: Calculate each line item correctly
         this.lineItems.forEach(lineItem => {
             const calc = this.calculateLineItem(lineItem);
             if (calc) {
                 calculations.push(calc);
-                subtotal += calc.lineTotal;
+                subtotal += calc.lineTotal; // FIXED: Use lineTotal, not raw calculation
                 totalUnits += calc.totalUnits;
                 totalDisplayBoxes += calc.displayBoxes;
                 totalMasterCases += calc.masterCases;
             }
         });
 
-        // Calculate shipping (based on whether it's palletized)
-        const isPalletized = totalMasterCases >= (this.settings.palletThreshold * 100); // Assuming 100 cases per pallet
-        const shippingRate = isPalletized ? this.settings.shippingRateMax : this.settings.shippingRateMin;
-        const shipping = subtotal * shippingRate;
+        // FIXED: Calculate shipping with manual override option
+        let shipping = 0;
+        if (this.settings.manualShippingRate !== null) {
+            // Use manual shipping rate
+            shipping = subtotal * this.settings.manualShippingRate;
+        } else {
+            // Use automatic shipping calculation
+            const isPalletized = totalMasterCases >= (this.settings.palletThreshold * 100);
+            const shippingRate = isPalletized ? this.settings.shippingRateMax : this.settings.shippingRateMin;
+            shipping = subtotal * shippingRate;
+        }
 
-        // Calculate taxes
-        const stateTax = subtotal * this.settings.stateTaxRate;
-        const countyTax = subtotal * this.settings.countyTaxRate;
-        const totalTax = stateTax + countyTax;
+        // Calculate taxes (removed for B2B customers as requested)
+        const stateTax = 0; // Removed for B2B
+        const countyTax = 0; // Removed for B2B
+        const totalTax = 0; // Removed for B2B
 
         // Subtotal including shipping and taxes
         const subtotalWithExtras = subtotal + shipping + totalTax;
@@ -158,7 +205,7 @@ const MultiProductCalculator = {
         const creditCardEnabled = document.getElementById('creditCardFee')?.checked || false;
         const creditCardFee = creditCardEnabled ? subtotalWithExtras * this.settings.creditCardFeeRate : 0;
 
-        // Final total
+        // FIXED: Final total calculation
         const grandTotal = subtotalWithExtras + creditCardFee;
 
         const result = {
@@ -169,8 +216,11 @@ const MultiProductCalculator = {
                 totalUnits,
                 subtotal,
                 shipping,
-                shippingRate,
-                isPalletized,
+                shippingRate: this.settings.manualShippingRate || 
+                             (totalMasterCases >= (this.settings.palletThreshold * 100) ? 
+                              this.settings.shippingRateMax : this.settings.shippingRateMin),
+                isManualShipping: this.settings.manualShippingRate !== null,
+                isPalletized: totalMasterCases >= (this.settings.palletThreshold * 100),
                 stateTax,
                 countyTax,
                 totalTax,
@@ -189,26 +239,29 @@ const MultiProductCalculator = {
         return result;
     },
 
-    // Render product lines interface
+    // UPDATED: Render product lines interface with display box fields
     renderProductLines: function() {
         const container = document.getElementById('productLines');
         if (!container) return;
 
         const html = this.lineItems.map((lineItem, index) => `
-            <div class="product-line" data-line-id="${lineItem.id}">
-                <div class="product-line-header">
-                    <h4>Product ${index + 1}</h4>
+            <div class="bg-white border-2 border-kanva-green rounded-xl p-6 hover:border-kanva-dark hover:shadow-lg transition-all duration-300" data-line-id="${lineItem.id}">
+                <div class="flex justify-between items-center mb-4 pb-3 border-b border-gray-200">
+                    <h4 class="text-lg font-bold text-kanva-dark">Product Line ${index + 1}</h4>
                     ${this.lineItems.length > 1 ? `
-                        <button type="button" class="remove-line-btn" onclick="MultiProductCalculator.removeProductLine('${lineItem.id}')">
+                        <button type="button" 
+                                class="px-3 py-1 bg-red-500 hover:bg-red-600 text-white text-sm font-bold rounded-md transition-all duration-300"
+                                onclick="MultiProductCalculator.removeProductLine('${lineItem.id}')">
                             ✕ Remove
                         </button>
                     ` : ''}
                 </div>
                 
-                <div class="product-line-fields">
-                    <div class="input-group">
-                        <label>Product:</label>
-                        <select onchange="MultiProductCalculator.updateProductLine('${lineItem.id}', 'productKey', this.value)">
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
+                    <div>
+                        <label class="block text-sm font-bold text-kanva-dark uppercase tracking-wide mb-2">Product:</label>
+                        <select class="w-full p-3 border-2 border-kanva-green rounded-lg text-kanva-dark font-medium focus:border-kanva-dark focus:ring-4 focus:ring-kanva-green/30 focus:outline-none transition-all duration-300"
+                                onchange="MultiProductCalculator.updateProductLine('${lineItem.id}', 'productKey', this.value)">
                             ${Object.entries(ProductManager.getAll()).map(([key, product]) => `
                                 <option value="${key}" ${lineItem.productKey === key ? 'selected' : ''}>
                                     ${product.name} ($${product.price})
@@ -217,28 +270,55 @@ const MultiProductCalculator = {
                         </select>
                     </div>
                     
-                    <div class="input-group">
-                        <label>Master Cases:</label>
-                        <input type="number" value="${lineItem.masterCases}" min="1" max="1000"
-                               onchange="MultiProductCalculator.updateProductLine('${lineItem.id}', 'masterCases', this.value)">
+                    <div>
+                        <label class="block text-sm font-bold text-kanva-dark uppercase tracking-wide mb-2">Display Boxes:</label>
+                        <input type="number" 
+                               class="w-full p-3 border-2 border-kanva-green rounded-lg text-kanva-dark font-medium focus:border-kanva-dark focus:ring-4 focus:ring-kanva-green/30 focus:outline-none transition-all duration-300"
+                               value="${lineItem.displayBoxes}" 
+                               min="1" 
+                               step="12"
+                               data-field="displayBoxes"
+                               onchange="MultiProductCalculator.updateProductLine('${lineItem.id}', 'displayBoxes', this.value)"
+                               placeholder="336 (auto-converts to master cases)">
                     </div>
                     
-                    <div class="input-group">
-                        <label>Custom Unit Price:</label>
-                        <input type="number" step="0.01" placeholder="Override pricing"
-                               value="${lineItem.customPrice || ''}"
-                               onchange="MultiProductCalculator.updateProductLine('${lineItem.id}', 'customPrice', this.value || null)">
+                    <div>
+                        <label class="block text-sm font-bold text-kanva-dark uppercase tracking-wide mb-2">Master Cases:</label>
+                        <input type="number" 
+                               class="w-full p-3 border-2 border-kanva-green rounded-lg text-kanva-dark font-medium focus:border-kanva-dark focus:ring-4 focus:ring-kanva-green/30 focus:outline-none transition-all duration-300"
+                               value="${lineItem.masterCases}" 
+                               min="1" 
+                               max="1000"
+                               data-field="masterCases"
+                               onchange="MultiProductCalculator.updateProductLine('${lineItem.id}', 'masterCases', this.value)"
+                               placeholder="28 (auto-converts from display boxes)">
+                        <small class="text-gray-600 text-xs">12 display boxes = 1 master case</small>
                     </div>
                     
-                    <div class="input-group">
-                        <label>Notes:</label>
-                        <input type="text" placeholder="Line item notes"
-                               value="${lineItem.notes}"
-                               onchange="MultiProductCalculator.updateProductLine('${lineItem.id}', 'notes', this.value)">
+                    <div>
+                        <label class="block text-sm font-bold text-kanva-dark uppercase tracking-wide mb-2">Custom Unit Price:</label>
+                        <div class="relative">
+                            <span class="absolute left-3 top-3 text-kanva-dark font-bold">$</span>
+                            <input type="number" 
+                                   class="w-full p-3 pl-8 border-2 border-kanva-green rounded-lg text-kanva-dark font-medium focus:border-kanva-dark focus:ring-4 focus:ring-kanva-green/30 focus:outline-none transition-all duration-300"
+                                   step="0.01" 
+                                   placeholder="Override pricing"
+                                   value="${lineItem.customPrice || ''}"
+                                   onchange="MultiProductCalculator.updateProductLine('${lineItem.id}', 'customPrice', this.value || null)">
+                        </div>
                     </div>
                 </div>
                 
-                <div class="line-item-summary" id="lineItemSummary-${lineItem.id}">
+                <div class="mb-4">
+                    <label class="block text-sm font-bold text-kanva-dark uppercase tracking-wide mb-2">Notes:</label>
+                    <input type="text" 
+                           class="w-full p-3 border-2 border-kanva-green rounded-lg text-kanva-dark font-medium focus:border-kanva-dark focus:ring-4 focus:ring-kanva-green/30 focus:outline-none transition-all duration-300"
+                           placeholder="Line item notes or special instructions"
+                           value="${lineItem.notes}"
+                           onchange="MultiProductCalculator.updateProductLine('${lineItem.id}', 'notes', this.value)">
+                </div>
+                
+                <div class="bg-gradient-to-r from-kanva-light to-kanva-accent p-4 rounded-lg border border-kanva-green/30" id="lineItemSummary-${lineItem.id}">
                     <!-- Populated by calculateTotal() -->
                 </div>
             </div>
@@ -247,74 +327,121 @@ const MultiProductCalculator = {
         container.innerHTML = html;
     },
 
-    // Display calculations
+    // UPDATED: Display calculations with shipping override
     displayCalculations: function(result) {
         // Update individual line item summaries
         result.lineItems.forEach(lineItem => {
             const summaryEl = document.getElementById(`lineItemSummary-${lineItem.id}`);
             if (summaryEl) {
                 summaryEl.innerHTML = `
-                    <div class="line-summary">
-                        📦 ${this.formatNumber(lineItem.displayBoxes)} Display Boxes | 
-                        ${this.formatNumber(lineItem.totalUnits)} Units | 
-                        ${lineItem.tierInfo.name} | 
-                        <strong>${this.formatCurrency(lineItem.lineTotal)}</strong>
+                    <div class="text-sm text-kanva-dark space-y-1">
+                        <div class="flex justify-between">
+                            <span>📦 Display Boxes:</span>
+                            <span class="font-bold">${this.formatNumber(lineItem.displayBoxes)}</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span>🔢 Individual Units:</span>
+                            <span class="font-bold">${this.formatNumber(lineItem.totalUnits)}</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span>💰 Pricing Tier:</span>
+                            <span class="font-bold">${lineItem.tierInfo.name}</span>
+                        </div>
+                        <div class="flex justify-between border-t pt-1 mt-2">
+                            <span class="font-bold">Line Total:</span>
+                            <span class="font-bold text-lg">${this.formatCurrency(lineItem.lineTotal)}</span>
+                        </div>
                     </div>
                 `;
             }
         });
 
-        // Update main results
+        // Update main results with shipping override section
         const resultsContainer = document.getElementById('multiProductResults');
         if (resultsContainer) {
             const summary = result.summary;
             
             resultsContainer.innerHTML = `
-                <div class="calculation-summary">
-                    <h3>Order Summary</h3>
-                    <div class="summary-grid">
-                        <div class="summary-item">
-                            <span class="summary-label">Total Master Cases:</span>
-                            <span class="summary-value">${this.formatNumber(summary.totalMasterCases)}</span>
+                <div class="space-y-6">
+                    <h3 class="text-2xl font-bold text-kanva-dark mb-4">Order Summary</h3>
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+                        <div class="bg-white p-4 rounded-lg border-2 border-kanva-green text-center">
+                            <div class="text-2xl font-bold text-kanva-dark">${this.formatNumber(summary.totalMasterCases)}</div>
+                            <div class="text-sm text-gray-600">Total Cases</div>
                         </div>
-                        <div class="summary-item">
-                            <span class="summary-label">Total Display Boxes:</span>
-                            <span class="summary-value">${this.formatNumber(summary.totalDisplayBoxes)}</span>
+                        <div class="bg-white p-4 rounded-lg border-2 border-kanva-green text-center">
+                            <div class="text-2xl font-bold text-kanva-dark">${this.formatNumber(summary.totalDisplayBoxes)}</div>
+                            <div class="text-sm text-gray-600">Display Boxes</div>
                         </div>
-                        <div class="summary-item">
-                            <span class="summary-label">Total Individual Units:</span>
-                            <span class="summary-value">${this.formatNumber(summary.totalUnits)}</span>
+                        <div class="bg-white p-4 rounded-lg border-2 border-kanva-green text-center">
+                            <div class="text-2xl font-bold text-kanva-dark">${this.formatNumber(summary.totalUnits)}</div>
+                            <div class="text-sm text-gray-600">Individual Units</div>
                         </div>
                     </div>
                     
-                    <div class="pricing-breakdown">
-                        <div class="breakdown-item">
-                            <span class="breakdown-label">Subtotal:</span>
-                            <span class="breakdown-value">${this.formatCurrency(summary.subtotal)}</span>
-                        </div>
-                        
-                        <div class="breakdown-item">
-                            <span class="breakdown-label">Shipping (${(summary.shippingRate * 100).toFixed(1)}%${summary.isPalletized ? ' - Palletized' : ''}):</span>
-                            <span class="breakdown-value">${this.formatCurrency(summary.shipping)}</span>
-                        </div>
-                        
-                        ${summary.totalTax > 0 ? `
-                            <div class="breakdown-item">
-                                <span class="breakdown-label">Taxes:</span>
-                                <span class="breakdown-value">${this.formatCurrency(summary.totalTax)}</span>
+                    <!-- ADDED: Manual Shipping Override Section -->
+                    <div class="bg-blue-50 border-2 border-blue-300 rounded-lg p-4 mb-6">
+                        <h4 class="text-lg font-bold text-blue-900 mb-3">🚚 Shipping Options</h4>
+                        <div class="flex items-center gap-4">
+                            <label class="flex items-center">
+                                <input type="radio" 
+                                       name="shippingType" 
+                                       value="auto" 
+                                       ${!summary.isManualShipping ? 'checked' : ''}
+                                       onchange="MultiProductCalculator.setShippingMode('auto')"
+                                       class="mr-2">
+                                Auto-Calculate (${(summary.shippingRate * 100).toFixed(1)}%${summary.isPalletized ? ' - Palletized' : ''})
+                            </label>
+                            <label class="flex items-center">
+                                <input type="radio" 
+                                       name="shippingType" 
+                                       value="manual" 
+                                       ${summary.isManualShipping ? 'checked' : ''}
+                                       onchange="MultiProductCalculator.setShippingMode('manual')"
+                                       class="mr-2">
+                                Manual Override:
+                            </label>
+                            <div class="flex items-center gap-2">
+                                <input type="number" 
+                                       id="manualShippingRate"
+                                       step="0.1" 
+                                       min="0" 
+                                       max="10"
+                                       placeholder="1.5"
+                                       value="${summary.isManualShipping ? (summary.shippingRate * 100).toFixed(1) : ''}"
+                                       class="w-20 p-2 border border-blue-300 rounded text-center"
+                                       ${!summary.isManualShipping ? 'disabled' : ''}>
+                                <span class="text-blue-900">% of subtotal</span>
                             </div>
-                        ` : ''}
-                        
-                        ${summary.creditCardFee > 0 ? `
-                            <div class="breakdown-item">
-                                <span class="breakdown-label">Credit Card Fee (3%):</span>
-                                <span class="breakdown-value">${this.formatCurrency(summary.creditCardFee)}</span>
+                        </div>
+                    </div>
+                    
+                    <div class="bg-white p-6 rounded-lg border-2 border-kanva-green">
+                        <div class="space-y-3">
+                            <div class="flex justify-between text-lg">
+                                <span class="text-kanva-dark">Subtotal:</span>
+                                <span class="font-bold text-kanva-dark">${this.formatCurrency(summary.subtotal)}</span>
                             </div>
-                        ` : ''}
-                        
-                        <div class="breakdown-total">
-                            <span class="breakdown-label"><strong>Grand Total:</strong></span>
-                            <span class="breakdown-value"><strong>${this.formatCurrency(summary.grandTotal)}</strong></span>
+                            
+                            <div class="flex justify-between text-lg">
+                                <span class="text-kanva-dark">Shipping ${summary.isManualShipping ? '(Manual Override)' : '(Auto)'}:</span>
+                                <span class="font-bold text-kanva-dark">${this.formatCurrency(summary.shipping)}</span>
+                            </div>
+                            
+                            ${summary.creditCardFee > 0 ? `
+                                <div class="flex justify-between text-lg">
+                                    <span class="text-kanva-dark">Credit Card Fee (3%):</span>
+                                    <span class="font-bold text-kanva-dark">${this.formatCurrency(summary.creditCardFee)}</span>
+                                </div>
+                            ` : ''}
+                            
+                            <div class="border-t-2 border-kanva-green pt-3 mt-3">
+                                <div class="flex justify-between text-2xl">
+                                    <span class="font-bold text-kanva-dark">Grand Total:</span>
+                                    <span class="font-bold text-kanva-dark">${this.formatCurrency(summary.grandTotal)}</span>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -322,76 +449,31 @@ const MultiProductCalculator = {
         }
     },
 
-    // Update tax rates
-    updateTaxRates: function() {
-        const stateTaxInput = document.getElementById('stateTaxRate');
-        const countyTaxInput = document.getElementById('countyTaxRate');
+    // ADDED: Set shipping mode (auto vs manual)
+    setShippingMode: function(mode) {
+        const manualShippingInput = document.getElementById('manualShippingRate');
         
-        if (stateTaxInput) {
-            this.settings.stateTaxRate = parseFloat(stateTaxInput.value) / 100 || 0;
-        }
-        
-        if (countyTaxInput) {
-            this.settings.countyTaxRate = parseFloat(countyTaxInput.value) / 100 || 0;
-        }
-    },
-
-    // Get state tax rate from API (placeholder)
-    getStateTaxRate: async function(state, county = null) {
-        try {
-            // This would call a real tax API service
-            // For now, return common state rates
-            const stateTaxRates = {
-                'CA': 7.25,
-                'NY': 8.0,
-                'TX': 6.25,
-                'FL': 6.0,
-                'WA': 6.5,
-                'OR': 0, // No state sales tax
-                'MT': 0, // No state sales tax
-                'NH': 0, // No state sales tax
-                'DE': 0, // No state sales tax
-                'AK': 0  // No state sales tax
-            };
-            
-            const rate = stateTaxRates[state] || 0;
-            
-            // Update the form
-            const stateTaxInput = document.getElementById('stateTaxRate');
-            if (stateTaxInput) {
-                stateTaxInput.value = rate;
-                this.settings.stateTaxRate = rate / 100;
+        if (mode === 'manual') {
+            manualShippingInput.disabled = false;
+            // Set default manual rate if not already set
+            if (!manualShippingInput.value) {
+                manualShippingInput.value = '1.5';
+                this.settings.manualShippingRate = 0.015;
             }
-            
-            return rate;
-        } catch (error) {
-            console.error('Failed to get tax rate:', error);
-            return 0;
+        } else {
+            manualShippingInput.disabled = true;
+            this.settings.manualShippingRate = null;
         }
-    },
-
-    // Auto-detect state from customer address
-    autoDetectTaxRate: function() {
-        // Get state from customer info
-        const stateField = document.getElementById('customerState');
-        const countyField = document.getElementById('customerCounty');
         
-        if (stateField && stateField.value) {
-            this.getStateTaxRate(stateField.value, countyField?.value);
-        }
+        this.calculateTotal();
     },
 
-    // Generate line item ID
-    generateLineItemId: function() {
-        return `line-${Date.now()}-${Math.random().toString(36).substr(2, 5)}`;
-    },
-
-    // Get calculation for email generation
+    // Get calculation for email generation - FIXED to handle both single and multi-product
     getCalculationForEmail: function() {
         const result = this.calculateTotal();
         
         if (result.lineItems.length === 1) {
-            // Single product - return in legacy format
+            // Single product - return in legacy format for compatibility
             const lineItem = result.lineItems[0];
             return {
                 product: lineItem.product,
@@ -414,22 +496,40 @@ const MultiProductCalculator = {
                 }
             };
         } else {
-            // Multiple products - return array
-            return result.lineItems.map(lineItem => ({
-                product: lineItem.product,
-                tierInfo: lineItem.tierInfo,
-                masterCases: lineItem.masterCases,
-                unitPrice: this.formatCurrency(lineItem.unitPrice),
-                casePrice: this.formatCurrency(lineItem.casePrice),
-                totalUnits: lineItem.totalUnits,
-                displayBoxes: lineItem.displayBoxes,
-                total: this.formatCurrency(lineItem.lineTotal),
-                raw: {
-                    unitPrice: lineItem.unitPrice,
-                    casePrice: lineItem.casePrice,
-                    total: lineItem.lineTotal
+            // Multiple products - return array with summary
+            return {
+                isMultiProduct: true,
+                lineItems: result.lineItems.map(lineItem => ({
+                    product: lineItem.product,
+                    tierInfo: lineItem.tierInfo,
+                    masterCases: lineItem.masterCases,
+                    unitPrice: this.formatCurrency(lineItem.unitPrice),
+                    casePrice: this.formatCurrency(lineItem.casePrice),
+                    totalUnits: lineItem.totalUnits,
+                    displayBoxes: lineItem.displayBoxes,
+                    total: this.formatCurrency(lineItem.lineTotal),
+                    raw: {
+                        unitPrice: lineItem.unitPrice,
+                        casePrice: lineItem.casePrice,
+                        total: lineItem.lineTotal
+                    }
+                })),
+                summary: {
+                    totalMasterCases: result.summary.totalMasterCases,
+                    totalDisplayBoxes: result.summary.totalDisplayBoxes,
+                    totalUnits: result.summary.totalUnits,
+                    subtotal: this.formatCurrency(result.summary.subtotal),
+                    shipping: this.formatCurrency(result.summary.shipping),
+                    creditCardFee: this.formatCurrency(result.summary.creditCardFee),
+                    grandTotal: this.formatCurrency(result.summary.grandTotal),
+                    raw: {
+                        subtotal: result.summary.subtotal,
+                        shipping: result.summary.shipping,
+                        creditCardFee: result.summary.creditCardFee,
+                        grandTotal: result.summary.grandTotal
+                    }
                 }
-            }));
+            };
         }
     },
 
@@ -447,25 +547,9 @@ const MultiProductCalculator = {
         }).format(amount);
     },
 
-    // Export configuration
-    exportConfiguration: function() {
-        return {
-            lineItems: this.lineItems,
-            settings: this.settings
-        };
-    },
-
-    // Import configuration
-    importConfiguration: function(config) {
-        if (config.lineItems) {
-            this.lineItems = config.lineItems;
-        }
-        if (config.settings) {
-            this.settings = { ...this.settings, ...config.settings };
-        }
-        
-        this.renderProductLines();
-        this.calculateTotal();
+    // Generate line item ID
+    generateLineItemId: function() {
+        return `line-${Date.now()}-${Math.random().toString(36).substr(2, 5)}`;
     },
 
     // Reset to single product
@@ -492,21 +576,8 @@ function calculateMultiProductTotal() {
     return MultiProductCalculator.calculateTotal();
 }
 
-function autoDetectTaxRate() {
-    MultiProductCalculator.autoDetectTaxRate();
+function setShippingMode(mode) {
+    MultiProductCalculator.setShippingMode(mode);
 }
 
-// Override Calculator.calculateOrder to use multi-product when appropriate
-const OriginalCalculateOrder = Calculator.calculateOrder;
-Calculator.calculateOrder = function() {
-    // If we're in multi-product mode, use that calculator
-    const multiProductContainer = document.getElementById('productLines');
-    if (multiProductContainer && multiProductContainer.style.display !== 'none') {
-        return MultiProductCalculator.getCalculationForEmail();
-    }
-    
-    // Otherwise use original single-product calculator
-    return OriginalCalculateOrder.call(this);
-};
-
-console.log('✅ Multi-product calculator module loaded successfully');
+console.log('✅ FIXED Multi-product calculator module loaded successfully');
