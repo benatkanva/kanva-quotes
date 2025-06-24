@@ -1,5 +1,5 @@
-// Enhanced Copper CRM integration with Hybrid Mode - Complete Fixed Version
-// Supports both context-aware auto-population AND left nav functionality
+// Enhanced Copper CRM integration with Auto-Population for Activity Panel
+// Supports context-aware auto-population AND search functionality
 
 const CopperIntegration = {
     // Initialize Copper SDK and detect environment
@@ -48,19 +48,16 @@ const CopperIntegration = {
                 // Detect integration mode
                 this.detectIntegrationMode(data);
                 
-                // Auto-populate if context available
-                if (data.context && data.context.entity) {
-                    console.log('🎯 Context entity detected - enabling auto-population');
+                // Auto-populate if context available and in activity panel
+                if (data.context && data.context.entity && appState.isActivityPanel) {
+                    console.log('🎯 Activity panel context detected - enabling auto-population');
                     this.autoPopulateFromEntity(data.context.entity);
                     appState.hasEntityContext = true;
-                } else {
-                    console.log('🔍 No entity context - enabling customer search');
+                } else if (appState.isLeftNav) {
+                    console.log('🔍 Left nav mode - enabling customer search');
                     this.enableCustomerSearch();
                     appState.hasEntityContext = false;
                 }
-                
-                // Set up hybrid UI
-                this.setupHybridUI();
                 
                 // Trigger UI update
                 if (typeof UIManager !== 'undefined') {
@@ -69,8 +66,10 @@ const CopperIntegration = {
             })
             .catch((error) => {
                 console.error('❌ Error getting Copper context:', error);
-                // Fallback to search mode
-                this.enableCustomerSearch();
+                // Fallback based on mode
+                if (appState.isLeftNav) {
+                    this.enableCustomerSearch();
+                }
                 appState.hasEntityContext = false;
             });
     },
@@ -80,18 +79,19 @@ const CopperIntegration = {
         appState.integrationMode = 'left_nav'; // Default
         
         if (context && context.location) {
-            if (context.location.includes('person') || context.location.includes('company')) {
-                appState.integrationMode = 'context_aware';
-                console.log('📍 Context-aware mode: On contact/company page');
+            if (context.location.includes('activity_panel')) {
+                appState.integrationMode = 'activity_panel';
+                appState.isActivityPanel = true;
+                console.log('📍 Activity panel mode: Context-aware auto-population');
             } else if (context.location.includes('left_nav')) {
                 appState.integrationMode = 'left_nav';
-                console.log('📍 Left navigation mode: Universal access');
+                appState.isLeftNav = true;
+                console.log('📍 Left navigation mode: Universal access with search');
             }
         }
         
         // Check for entity context regardless of location
         if (context && context.context && context.context.entity) {
-            appState.integrationMode = 'context_aware';
             appState.contextEntity = context.context.entity;
             console.log(`📍 Entity context: ${context.context.entity.type} - ${context.context.entity.name}`);
         }
@@ -102,36 +102,51 @@ const CopperIntegration = {
         console.log('🔄 Auto-populating from entity:', entity);
         
         try {
-            // Generate Quote Name: "${product} Quote for ${company}"
-            const productName = document.getElementById('primaryProduct')?.selectedOptions[0]?.text?.split(' (')[0] || 'Product';
-            const companyName = entity.company_name || (entity.type === 'company' ? entity.name : '');
-            
-            if (companyName && !document.getElementById('quoteName')?.value) {
-                const quoteName = `${productName} Quote for ${companyName}`;
-                const quoteNameInput = document.getElementById('quoteName');
-                if (quoteNameInput) {
-                    quoteNameInput.value = quoteName;
-                    console.log('📝 Auto-filled quote name:', quoteName);
+            // Wait for DOM to be ready
+            setTimeout(() => {
+                // Generate Quote Name: "${product} Quote for ${company}"
+                const productSelect = document.getElementById('primaryProduct') || document.getElementById('quickProduct');
+                const productName = productSelect?.selectedOptions[0]?.text?.split(' (')[0] || 'Product';
+                const companyName = entity.company_name || (entity.type === 'company' ? entity.name : '');
+                
+                if (companyName) {
+                    const quoteName = `${productName} Quote for ${companyName}`;
+                    const quoteNameInput = document.getElementById('quoteName');
+                    if (quoteNameInput) {
+                        quoteNameInput.value = quoteName;
+                        quoteNameInput.classList.add('auto-populated');
+                        console.log('📝 Auto-filled quote name:', quoteName);
+                    }
                 }
-            }
-            
-            // Company name
-            if (companyName && !document.getElementById('companyName')?.value) {
-                document.getElementById('companyName').value = companyName;
-                console.log('📝 Auto-filled company name:', companyName);
-            }
-            
-            // Segment (from custom fields or tags)
-            this.autoPopulateSegment(entity);
-            
-            // Email domain from company website
-            this.autoPopulateEmailDomain(entity);
-            
-            // Phone number (Contact first, then Account)
-            this.autoPopulatePhone(entity);
-            
-            // Show context indicator
-            this.showContextIndicator(entity);
+                
+                // Company name
+                if (companyName) {
+                    const companyInput = document.getElementById('companyName');
+                    if (companyInput) {
+                        companyInput.value = companyName;
+                        companyInput.classList.add('auto-populated');
+                        console.log('📝 Auto-filled company name:', companyName);
+                    }
+                }
+                
+                // Segment (from custom fields or tags)
+                this.autoPopulateSegment(entity);
+                
+                // Email domain from company website
+                this.autoPopulateEmailDomain(entity);
+                
+                // Phone number (Contact first, then Account)
+                this.autoPopulatePhone(entity);
+                
+                // Show context indicator
+                this.showContextIndicator(entity);
+                
+                // Trigger initial calculation
+                if (typeof App !== 'undefined' && App.triggerCalculation) {
+                    App.triggerCalculation();
+                }
+                
+            }, 500); // Give DOM time to render
             
         } catch (error) {
             console.error('❌ Error auto-populating from entity:', error);
@@ -181,6 +196,7 @@ const CopperIntegration = {
         
         if (segment) {
             segmentInput.value = segment;
+            segmentInput.classList.add('auto-populated');
             console.log('📝 Auto-filled segment:', segment);
         }
     },
@@ -208,6 +224,7 @@ const CopperIntegration = {
         
         if (emailDomain) {
             emailDomainInput.value = emailDomain;
+            emailDomainInput.classList.add('auto-populated');
             console.log('📝 Auto-filled email domain:', emailDomain);
         }
     },
@@ -224,14 +241,9 @@ const CopperIntegration = {
             phone = entity.phone_numbers[0].number || entity.phone_numbers[0];
         }
         
-        // If no contact phone and we have company info, try to get company phone
-        if (!phone && entity.company_id && appState.sdk) {
-            // Note: In a real implementation, we'd fetch the company details here
-            // For now, we'll leave it blank if no contact phone is available
-        }
-        
         if (phone) {
             phoneInput.value = phone;
+            phoneInput.classList.add('auto-populated');
             console.log('📝 Auto-filled phone:', phone);
         }
     },
@@ -253,8 +265,8 @@ const CopperIntegration = {
             </div>
         `;
         
-        // Add to top of calculator
-        const calculator = document.getElementById('mainCalculator');
+        // Add to top of calculator or activity panel
+        const calculator = document.getElementById('mainCalculator') || document.querySelector('.activity-panel-calculator');
         if (calculator) {
             calculator.insertBefore(indicator, calculator.firstChild);
         }
@@ -342,23 +354,18 @@ const CopperIntegration = {
 
     // Search companies using Copper SDK
     searchCompanies: function(query) {
-        return new Promise((resolve, reject) => {
+        return new Promise((resolve) => {
             if (!appState.sdk || !appState.sdk.api) {
                 resolve([]);
                 return;
             }
             
             try {
-                // Use Copper API to search companies
                 const searchParams = {
                     page_size: 10,
-                    search: {
-                        name: query
-                    }
+                    search: { name: query }
                 };
                 
-                // Note: The exact API method depends on Copper SDK version
-                // This is the expected pattern based on Copper documentation
                 if (appState.sdk.api.companies && appState.sdk.api.companies.search) {
                     appState.sdk.api.companies.search(searchParams)
                         .then(response => {
@@ -374,11 +381,9 @@ const CopperIntegration = {
                             resolve([]);
                         });
                 } else {
-                    console.warn('⚠️ Company search API not available');
                     resolve([]);
                 }
             } catch (error) {
-                console.warn('⚠️ Error in company search:', error);
                 resolve([]);
             }
         });
@@ -386,7 +391,7 @@ const CopperIntegration = {
 
     // Search contacts using Copper SDK
     searchContacts: function(query) {
-        return new Promise((resolve, reject) => {
+        return new Promise((resolve) => {
             if (!appState.sdk || !appState.sdk.api) {
                 resolve([]);
                 return;
@@ -395,9 +400,7 @@ const CopperIntegration = {
             try {
                 const searchParams = {
                     page_size: 10,
-                    search: {
-                        name: query
-                    }
+                    search: { name: query }
                 };
                 
                 if (appState.sdk.api.people && appState.sdk.api.people.search) {
@@ -415,11 +418,9 @@ const CopperIntegration = {
                             resolve([]);
                         });
                 } else {
-                    console.warn('⚠️ Contact search API not available');
                     resolve([]);
                 }
             } catch (error) {
-                console.warn('⚠️ Error in contact search:', error);
                 resolve([]);
             }
         });
@@ -490,22 +491,6 @@ const CopperIntegration = {
                 phone_numbers: [{ number: "(555) 987-6543" }],
                 websites: [{ url: "https://greenleaf.com" }],
                 tags: ["smoke shop", "retail"]
-            },
-            {
-                name: "ABC Distribution",
-                type: "company",
-                emails: [{ email: "orders@abcdistribution.com" }],
-                phone_numbers: [{ number: "(555) 111-2222" }],
-                websites: [{ url: "https://abcdistribution.com" }],
-                tags: ["wholesale", "distribution"]
-            },
-            {
-                name: "Green Leaf Smoke Shop",
-                type: "company",
-                emails: [{ email: "info@greenleaf.com" }],
-                phone_numbers: [{ number: "(555) 333-4444" }],
-                websites: [{ url: "https://greenleaf.com" }],
-                tags: ["smoke shop", "retail"]
             }
         ].filter(customer => 
             customer.name.toLowerCase().includes(query.toLowerCase()) ||
@@ -533,24 +518,6 @@ const CopperIntegration = {
         
         // Show selection indicator
         this.showSelectionIndicator(customer);
-        
-        // Update quote name with selected customer
-        this.updateQuoteName(customer);
-    },
-
-    // Update quote name when customer is selected
-    updateQuoteName: function(customer) {
-        const quoteNameInput = document.getElementById('quoteName');
-        const productSelect = document.getElementById('primaryProduct');
-        
-        if (quoteNameInput && productSelect) {
-            const productName = productSelect.selectedOptions[0]?.text?.split(' (')[0] || 'Product';
-            const companyName = customer.company_name || (customer.type === 'company' ? customer.name : customer.name);
-            const quoteName = `${productName} Quote for ${companyName}`;
-            
-            quoteNameInput.value = quoteName;
-            console.log('📝 Updated quote name:', quoteName);
-        }
     },
 
     // Show indicator that customer was selected from search
@@ -595,10 +562,13 @@ const CopperIntegration = {
 
     // Clear auto-population and switch to manual mode
     clearAutoPopulation: function() {
-        // Clear form fields with new field names
+        // Clear form fields
         ['quoteName', 'companyName', 'segment', 'emailDomain', 'phone'].forEach(fieldId => {
             const field = document.getElementById(fieldId);
-            if (field) field.value = '';
+            if (field) {
+                field.value = '';
+                field.classList.remove('auto-populated');
+            }
         });
         
         // Remove context indicator
@@ -607,8 +577,10 @@ const CopperIntegration = {
             indicator.remove();
         }
         
-        // Show manual entry message
-        this.showMessage('Switched to manual entry mode', 'info');
+        // Show notification
+        if (typeof NotificationManager !== 'undefined') {
+            NotificationManager.showInfo('Switched to manual entry mode');
+        }
         
         console.log('🔄 Cleared auto-population, switched to manual entry');
     },
@@ -624,153 +596,74 @@ const CopperIntegration = {
         }
     },
 
-    // Setup hybrid UI based on context
-    setupHybridUI: function() {
-        console.log(`🎨 Setting up hybrid UI for ${appState.integrationMode} mode`);
-        
-        if (appState.integrationMode === 'context_aware') {
-            // Context-aware mode: emphasis on the current record
-            this.setupContextAwareUI();
-        } else {
-            // Left nav mode: emphasis on search and universal access
-            this.setupLeftNavUI();
-        }
-    },
-
-    // Setup UI for context-aware mode
-    setupContextAwareUI: function() {
-        // Hide search interface if auto-populated
-        const searchSection = document.getElementById('customerSearch');
-        if (searchSection && appState.hasEntityContext) {
-            searchSection.style.display = 'none';
-        }
-        
-        // Add context-specific buttons
-        this.addContextActions();
-    },
-
-    // Setup UI for left navigation mode
-    setupLeftNavUI: function() {
-        // Ensure search interface is visible
-        const searchSection = document.getElementById('customerSearch');
-        if (searchSection) {
-            searchSection.style.display = 'block';
-        }
-        
-        // Add universal actions
-        this.addUniversalActions();
-    },
-
-    // Add context-specific action buttons
-    addContextActions: function() {
-        const actionsSection = document.querySelector('.actions');
-        if (!actionsSection) return;
-        
-        const contextActionsHTML = `
-            <div class="context-actions">
-                <button class="copy-btn context-btn" onclick="CopperIntegration.saveQuoteToCurrentRecord()">
-                    💾 Save Quote to This Record
-                </button>
-                <button class="copy-btn context-btn" onclick="CopperIntegration.createOpportunityForRecord()">
-                    🎯 Create Opportunity for This Contact
-                </button>
-            </div>
-        `;
-        
-        actionsSection.insertAdjacentHTML('beforeend', contextActionsHTML);
-    },
-
-    // Add universal action buttons
-    addUniversalActions: function() {
-        // Universal actions are already in the main interface
-        console.log('✅ Universal actions available');
-    },
-
-    // Setup standalone mode for testing
-    setupStandaloneMode: function() {
-        appState.isCopperActive = false;
-        appState.isAdmin = true;
-        appState.integrationMode = 'standalone';
-        
-        AuthManager.setUser({
-            email: 'demo@kanvabotanicals.com',
-            name: 'Demo User'
-        });
-        
-        console.log('🔧 Running in standalone demo mode with customer search');
-        
-        // Enable customer search even in standalone mode
-        setTimeout(() => {
-            this.enableCustomerSearch();
-        }, 1000);
-    },
-
-    // Show user message
-    showMessage: function(message, type = 'info') {
-        if (typeof AdminPanel !== 'undefined' && AdminPanel.showSuccess) {
-            if (type === 'error') {
-                AdminPanel.showError(message);
-            } else {
-                AdminPanel.showSuccess(message);
-            }
-        } else {
-            console.log(`📢 ${type.toUpperCase()}: ${message}`);
-        }
-    },
-
-    // All the existing methods from the original file...
+    // Configure SDK settings based on current mode
     configureSdk: function() {
         if (!appState.sdk) return;
 
         try {
             if (appState.isModalMode) {
                 appState.sdk.setAppUI({
-                    width: 1200,
-                    height: 800,
+                    width: 1000,
+                    height: 700,
                     showActionBar: false,
                     disableAddButton: true
                 });
-                console.log('📐 Configured SDK for modal mode (1200x800)');
+                console.log('📐 Configured SDK for modal mode (1000x700)');
+            } else if (appState.isActivityPanel) {
+                appState.sdk.setAppUI({
+                    width: 400,
+                    height: 600,
+                    showActionBar: false,
+                    disableAddButton: true
+                });
+                console.log('📐 Configured SDK for activity panel mode (400x600)');
             }
         } catch (error) {
             console.error('❌ Error configuring SDK:', error);
         }
     },
 
-    detectLocationMode: function(context) {
-        const isLeftNav = context && (
-            context.location === 'left_nav' || 
-            window.innerWidth > 800 ||
-            window.location.search.includes('nav=left')
-        );
-        
-        if (isLeftNav) {
-            appState.isLeftNav = true;
-            appState.appLocation = 'left_nav';
-            document.body.className = 'left-nav-mode';
-            console.log('📍 Detected left navigation mode');
-        }
-    },
-
+    // Open modal with full calculator
     openModal: function() {
         if (appState.sdk && appState.sdk.showModal) {
             try {
+                // Configure modal for full calculator
+                appState.sdk.setAppUI({
+                    width: 1000,
+                    height: 700,
+                    showActionBar: false
+                });
+                
+                // Create modal URL with mode parameter
+                const currentUrl = new URL(window.location.href);
+                currentUrl.searchParams.set('location', 'modal');
+                
+                // Open modal
                 appState.sdk.showModal();
                 console.log('🔄 Opened Copper native modal');
             } catch (error) {
                 console.error('❌ Error opening Copper modal:', error);
-                alert('Failed to open modal. Please try again.');
+                if (typeof NotificationManager !== 'undefined') {
+                    NotificationManager.showError('Failed to open modal. Please try again.');
+                } else {
+                    console.error('Failed to open modal. Please try again.');
+                }
             }
         } else {
             console.warn('⚠️  Copper SDK not available - modal cannot be opened');
-            alert('Copper SDK not available. This feature requires running within Copper CRM.');
+            if (typeof NotificationManager !== 'undefined') {
+                NotificationManager.showWarning('Modal functionality requires Copper CRM integration.');
+            }
         }
     },
 
+    // Save quote to CRM as activity
     saveQuoteToCRM: function() {
         const calc = Calculator.calculateOrder();
-        if (!calc.product) {
-            alert('Please calculate a quote first');
+        if (!calc || (!calc.product && !Array.isArray(calc))) {
+            if (typeof NotificationManager !== 'undefined') {
+                NotificationManager.showError('Please calculate a quote first');
+            }
             return;
         }
 
@@ -779,53 +672,33 @@ const CopperIntegration = {
                 const details = this.formatQuoteActivity(calc);
                 appState.sdk.logActivity(0, details);
                 console.log('💾 Quote saved to CRM activity log');
-                this.showSuccessMessage('Quote saved to CRM activity log!');
+                
+                if (typeof NotificationManager !== 'undefined') {
+                    NotificationManager.showSuccess('Quote saved to CRM activity log!');
+                }
+                
                 this.refreshCopperUI();
             } catch (error) {
                 console.error('❌ Error saving quote to CRM:', error);
-                alert('Failed to save quote to CRM: ' + error.message);
+                if (typeof NotificationManager !== 'undefined') {
+                    NotificationManager.showError('Failed to save quote to CRM: ' + error.message);
+                }
             }
         } else {
             console.log('📝 Simulating CRM save (SDK not available)');
-            const message = `Quote would be saved to CRM!\n\nProduct: ${calc.product.name}\nCases: ${calc.masterCases}\nTotal: ${calc.total}`;
-            alert(message);
-        }
-    },
-
-    // Save quote to current record (context-aware)
-    saveQuoteToCurrentRecord: function() {
-        const calc = Calculator.calculateOrder();
-        if (!calc.product) {
-            alert('Please calculate a quote first');
-            return;
-        }
-        
-        if (appState.contextEntity) {
-            console.log(`💾 Saving quote to ${appState.contextEntity.type}: ${appState.contextEntity.name}`);
-            
-            const activityData = {
-                entity_id: appState.contextEntity.id,
-                entity_type: appState.contextEntity.type,
-                details: this.formatQuoteActivityWithContext(calc, appState.contextEntity)
-            };
-            
-            if (appState.sdk && appState.sdk.logActivity) {
-                appState.sdk.logActivity(0, activityData.details, activityData.entity_id);
-                this.showSuccessMessage(`Quote saved to ${appState.contextEntity.name}!`);
-            } else {
-                console.log('📝 Simulated save to current record');
-                alert(`Quote would be saved to ${appState.contextEntity.name}`);
+            if (typeof NotificationManager !== 'undefined') {
+                NotificationManager.showInfo('CRM integration not available - quote ready to copy');
             }
-        } else {
-            // Fallback to regular save
-            this.saveQuoteToCRM();
         }
     },
 
+    // Create opportunity in Copper
     createOpportunity: function() {
         const calc = Calculator.calculateOrder();
-        if (!calc.product) {
-            alert('Please calculate a quote first');
+        if (!calc || (!calc.product && !Array.isArray(calc))) {
+            if (typeof NotificationManager !== 'undefined') {
+                NotificationManager.showError('Please calculate a quote first');
+            }
             return;
         }
 
@@ -834,150 +707,87 @@ const CopperIntegration = {
                 const opportunityData = this.formatOpportunityData(calc);
                 appState.sdk.createEntity('opportunity', opportunityData);
                 console.log('🎯 Opportunity created in Copper');
-                createOpportunity: function() {
-        const calc = Calculator.calculateOrder();
-        if (!calc.product) {
-            alert('Please calculate a quote first');
-            return;
-        }
-
-        if (appState.sdk && appState.sdk.createEntity) {
-            try {
-                const opportunityData = this.formatOpportunityData(calc);
-                appState.sdk.createEntity('opportunity', opportunityData);
-                console.log('🎯 Opportunity created in Copper');
-                this.showSuccessMessage('Opportunity created in Copper CRM!');
+                
+                if (typeof NotificationManager !== 'undefined') {
+                    NotificationManager.showSuccess('Opportunity created in Copper CRM!');
+                }
+                
                 this.refreshCopperUI();
             } catch (error) {
                 console.error('❌ Error creating opportunity:', error);
-                alert('Failed to create opportunity: ' + error.message);
+                if (typeof NotificationManager !== 'undefined') {
+                    NotificationManager.showError('Failed to create opportunity: ' + error.message);
+                }
             }
         } else {
             console.log('💼 Simulating opportunity creation (SDK not available)');
-            const message = `Opportunity would be created!\n\nValue: ${calc.total}\nProduct: ${calc.product.name}\nStatus: Quote Sent`;
-            alert(message);
-        }
-    },
-
-    // Create opportunity for current record
-    createOpportunityForRecord: function() {
-        const calc = Calculator.calculateOrder();
-        if (!calc.product) {
-            alert('Please calculate a quote first');
-            return;
-        }
-        
-        if (appState.contextEntity) {
-            const opportunityData = this.formatOpportunityDataWithContext(calc, appState.contextEntity);
-            
-            if (appState.sdk && appState.sdk.createEntity) {
-                appState.sdk.createEntity('opportunity', opportunityData);
-                this.showSuccessMessage(`Opportunity created for ${appState.contextEntity.name}!`);
-            } else {
-                console.log('📝 Simulated opportunity creation for current record');
-                alert(`Opportunity would be created for ${appState.contextEntity.name}`);
+            if (typeof NotificationManager !== 'undefined') {
+                NotificationManager.showInfo('CRM integration not available');
             }
-        } else {
-            // Fallback to regular opportunity creation
-            this.createOpportunity();
         }
     },
 
+    // Format quote activity with support for multiple products
     formatQuoteActivity: function(calc) {
         const timestamp = new Date().toLocaleString();
         const userEmail = appState.currentUser?.email || 'Unknown User';
         const quoteName = document.getElementById('quoteName')?.value || 'Quote';
         
+        let productDetails = '';
+        let total = 0;
+        
+        if (Array.isArray(calc)) {
+            // Multiple products
+            calc.forEach((item, index) => {
+                productDetails += `Product ${index + 1}: ${item.product.name} - ${item.masterCases} cases - ${item.total}\n`;
+                total += item.raw.total;
+            });
+        } else {
+            // Single product
+            productDetails = `Product: ${calc.product.name}\nQuantity: ${calc.masterCases} Master Cases (${calc.displayBoxes} Display Boxes)\nIndividual Units: ${calc.totalUnits.toLocaleString()}\nUnit Price: ${calc.unitPrice} (${calc.tierInfo.name})\nCase Price: ${calc.casePrice}\nSubtotal: ${calc.subtotal}\nShipping: ${calc.freeShipping ? 'FREE' : calc.shipping}`;
+            total = calc.raw.total;
+        }
+        
         return `KANVA QUOTE GENERATED: ${quoteName}
 
-Product: ${calc.product.name}
-Quantity: ${calc.masterCases} Master Cases (${calc.displayBoxes} Display Boxes)
-Individual Units: ${Calculator.formatNumber(calc.totalUnits)}
+${productDetails}
 
-Pricing:
-• Unit Price: ${calc.unitPrice} (${calc.tierInfo.name})
-• Case Price: ${calc.casePrice}
-• Subtotal: ${calc.subtotal}
-• Shipping: ${calc.freeShipping ? 'FREE' : calc.shipping}
-• Total: ${calc.total}
+Total: ${total.toLocaleString()}
 
 Generated by: ${userEmail}
 Generated on: ${timestamp}
 Calculator Version: ${adminConfig.metadata.version}`;
     },
 
-    // Format quote activity with context
-    formatQuoteActivityWithContext: function(calc, entity) {
-        const timestamp = new Date().toLocaleString();
-        const userEmail = appState.currentUser?.email || 'Unknown User';
-        const quoteName = document.getElementById('quoteName')?.value || 'Quote';
-        
-        return `KANVA QUOTE GENERATED FOR ${entity.name.toUpperCase()}: ${quoteName}
-
-Contact: ${entity.name}
-${entity.company_name ? `Company: ${entity.company_name}` : ''}
-${entity.emails?.[0]?.email ? `Email: ${entity.emails[0].email}` : ''}
-
-Product: ${calc.product.name}
-Quantity: ${calc.masterCases} Master Cases (${calc.displayBoxes} Display Boxes)
-Individual Units: ${Calculator.formatNumber(calc.totalUnits)}
-
-Pricing:
-• Unit Price: ${calc.unitPrice} (${calc.tierInfo.name})
-• Case Price: ${calc.casePrice}
-• Subtotal: ${calc.subtotal}
-• Shipping: ${calc.freeShipping ? 'FREE' : calc.shipping}
-• Total: ${calc.total}
-
-Generated by: ${userEmail}
-Generated on: ${timestamp}
-Calculator Version: ${adminConfig.metadata.version}
-Context: ${appState.integrationMode}`;
-    },
-
+    // Format opportunity data for Copper
     formatOpportunityData: function(calc) {
-        const quoteName = document.getElementById('quoteName')?.value || `${calc.product.name} - ${calc.masterCases} MC Quote`;
-        const monetaryValue = Math.round(calc.raw.total * 100);
+        const quoteName = document.getElementById('quoteName')?.value || 'Kanva Quote';
+        let monetaryValue = 0;
+        
+        if (Array.isArray(calc)) {
+            monetaryValue = calc.reduce((sum, item) => sum + item.raw.total, 0);
+        } else {
+            monetaryValue = calc.raw.total;
+        }
         
         return {
             name: quoteName,
-            monetary_value: monetaryValue,
-            details: `Quote: ${calc.masterCases} Master Cases of ${calc.product.name}\nTotal Value: ${calc.total}\nTier: ${calc.tierInfo.name}`,
-            status: 'Open',
-            close_date: this.getCloseDate(),
-            priority: 'Normal',
-            custom_fields: [
-                {
-                    custom_field_definition_id: 'quote_tool_generated',
-                    value: true
-                }
-            ]
-        };
-    },
-
-    // Format opportunity data with context
-    formatOpportunityDataWithContext: function(calc, entity) {
-        const quoteName = document.getElementById('quoteName')?.value || `${calc.product.name} - ${calc.masterCases} MC - ${entity.name}`;
-        const monetaryValue = Math.round(calc.raw.total * 100);
-        
-        return {
-            name: quoteName,
-            monetary_value: monetaryValue,
-            primary_contact_id: entity.type === 'person' ? entity.id : null,
-            company_id: entity.type === 'company' ? entity.id : entity.company_id,
-            details: `Quote for ${entity.name}: ${calc.masterCases} Master Cases of ${calc.product.name}\nTotal Value: ${calc.total}\nTier: ${calc.tierInfo.name}`,
+            monetary_value: Math.round(monetaryValue * 100), // Convert to cents
+            details: `Kanva Botanicals Quote\nTotal Value: ${monetaryValue.toLocaleString()}`,
             status: 'Open',
             close_date: this.getCloseDate(),
             priority: 'Normal'
         };
     },
 
+    // Get suggested close date (30 days from now)
     getCloseDate: function() {
         const closeDate = new Date();
         closeDate.setDate(closeDate.getDate() + 30);
         return Math.floor(closeDate.getTime() / 1000);
     },
 
+    // Refresh Copper UI to show new data
     refreshCopperUI: function() {
         if (appState.sdk && appState.sdk.refreshUI) {
             try {
@@ -997,6 +807,7 @@ Context: ${appState.integrationMode}`;
         }
     },
 
+    // Navigate to entity in Copper
     navigateToEntity: function(entityType, entityId) {
         if (appState.sdk && appState.sdk.navigateTo) {
             try {
@@ -1008,6 +819,7 @@ Context: ${appState.integrationMode}`;
         }
     },
 
+    // Get current context data
     getContextData: function() {
         return {
             user: appState.currentUser,
@@ -1020,47 +832,35 @@ Context: ${appState.integrationMode}`;
         };
     },
 
+    // Check if CRM features are available
     isCrmAvailable: function() {
         return appState.sdk !== null;
     },
 
-    showSuccessMessage: function(message) {
-        if (typeof AdminPanel !== 'undefined' && AdminPanel.showSuccess) {
-            AdminPanel.showSuccess(message);
-        } else {
-            alert(message);
+    // Setup standalone mode for testing
+    setupStandaloneMode: function() {
+        appState.isCopperActive = false;
+        appState.isAdmin = true;
+        appState.integrationMode = 'standalone';
+        
+        AuthManager.setUser({
+            email: 'demo@kanvabotanicals.com',
+            name: 'Demo User'
+        });
+        
+        console.log('🔧 Running in standalone demo mode');
+        
+        // Enable customer search in left nav mode
+        if (appState.isLeftNav) {
+            setTimeout(() => {
+                this.enableCustomerSearch();
+            }, 1000);
         }
     },
 
-    populateCustomerInfo: function() {
-        if (!appState.copperContext) return;
-
-        try {
-            const context = appState.copperContext.context;
-            if (!context) return;
-
-            if (context.name && !document.getElementById('quoteName')?.value) {
-                const nameInput = document.getElementById('quoteName');
-                if (nameInput) nameInput.value = context.name;
-            }
-
-            if (context.company_name && !document.getElementById('companyName')?.value) {
-                const companyInput = document.getElementById('companyName');
-                if (companyInput) companyInput.value = context.company_name;
-            }
-
-            if (context.email && !document.getElementById('emailDomain')?.value) {
-                const emailInput = document.getElementById('emailDomain');
-                if (emailInput) emailInput.value = context.email;
-            }
-
-            console.log('📝 Customer information auto-populated from Copper context');
-        } catch (error) {
-            console.error('⚠️  Error auto-populating customer info:', error);
-        }
-    },
-
+    // Check environment and show appropriate UI
     checkEnvironment: function() {
+        // Check URL parameters for mode detection
         const urlParams = new URLSearchParams(window.location.search);
         
         if (urlParams.get('location') === 'modal') {
@@ -1068,13 +868,21 @@ Context: ${appState.integrationMode}`;
             appState.appLocation = 'modal';
             document.body.className = 'modal-mode';
             console.log('📍 Modal mode detected from URL parameters');
+        } else if (urlParams.get('location') === 'activity_panel') {
+            appState.isActivityPanel = true;
+            appState.appLocation = 'activity_panel';
+            document.body.className = 'activity-panel-mode';
+            console.log('📍 Activity panel mode detected from URL parameters');
         }
 
+        // Set up fallback for non-Copper environments
         if (!this.isCrmAvailable()) {
             appState.isAdmin = true;
-            appState.isLeftNav = true;
-            appState.appLocation = 'standalone';
-            document.body.className = 'left-nav-mode';
+            appState.isLeftNav = !appState.isActivityPanel;
+            appState.appLocation = appState.isActivityPanel ? 'activity_panel' : 'standalone';
+            if (!appState.isActivityPanel) {
+                document.body.className = 'left-nav-mode';
+            }
             console.log('🔧 Running in standalone demo mode');
         }
     }
@@ -1082,6 +890,10 @@ Context: ${appState.integrationMode}`;
 
 // Global functions for HTML onclick handlers
 function openCopperModal() {
+    CopperIntegration.openModal();
+}
+
+function openFullCalculatorModal() {
     CopperIntegration.openModal();
 }
 
@@ -1093,7 +905,6 @@ function createOpportunity() {
     CopperIntegration.createOpportunity();
 }
 
-// Additional global functions for hybrid features
 function searchCustomers() {
     CopperIntegration.searchCustomers();
 }
