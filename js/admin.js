@@ -1,7 +1,3 @@
-// Configuration and settings for Kanva Botanicals Quote Calculator
-// This file contains all admin-configurable variables
-
-// Admin email list - Add/remove admin users here
 const adminEmails = [
     'ben@kanvabotanicals.com',
     'shane@kanvabotanicals.com',
