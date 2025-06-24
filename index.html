@@ -19,6 +19,75 @@
             box-shadow: 0 4px 6px rgba(0,0,0,0.1);
             margin-bottom: 30px;
         }
+        
+        /* Sidebar Mode - Compact */
+        .sidebar-mode {
+            padding: 15px;
+            margin: 0;
+        }
+        .sidebar-mode .input-group {
+            flex-direction: column;
+            margin-bottom: 10px;
+        }
+        .sidebar-mode .input-group label {
+            min-width: auto;
+            margin-bottom: 5px;
+            font-size: 12px;
+        }
+        .sidebar-mode .product-grid {
+            display: none;
+        }
+        
+        /* Modal Styles */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.7);
+            z-index: 1000;
+            overflow-y: auto;
+        }
+        .modal-content {
+            background: white;
+            margin: 2% auto;
+            padding: 20px;
+            border-radius: 10px;
+            width: 90%;
+            max-width: 1000px;
+            position: relative;
+            max-height: 95vh;
+            overflow-y: auto;
+        }
+        .modal-close {
+            position: absolute;
+            top: 15px;
+            right: 20px;
+            font-size: 28px;
+            font-weight: bold;
+            cursor: pointer;
+            color: #999;
+        }
+        .modal-close:hover {
+            color: #333;
+        }
+        .launch-modal-btn {
+            background: #7cb342;
+            color: white;
+            border: none;
+            padding: 12px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            width: 100%;
+            font-size: 16px;
+            font-weight: bold;
+            margin-bottom: 15px;
+        }
+        .launch-modal-btn:hover {
+            background: #689f35;
+        }
         .header {
             text-align: center;
             color: #7cb342;
@@ -112,85 +181,125 @@
     </style>
 </head>
 <body>
-    <div class="calculator">
-        <div class="header">
-            <h1>🌿 Kanva Botanicals Quote Calculator</h1>
-            <p>Instantly generate professional quotes with accurate pricing</p>
+    <div id="sidebarView" class="calculator sidebar-mode">
+        <div class="header" style="text-align: center; margin-bottom: 20px;">
+            <h2 style="color: #7cb342; margin: 0;">🌿 Kanva Calculator</h2>
         </div>
 
-        <!-- Customer Information -->
-        <h3>Customer Information</h3>
-        <div class="input-group">
-            <label>Prospect Name:</label>
-            <input type="text" id="prospectName" placeholder="Eddie">
-        </div>
-        <div class="input-group">
-            <label>Company Name:</label>
-            <input type="text" id="companyName" placeholder="ABC Distribution">
-        </div>
-        <div class="input-group">
-            <label>Customer Base:</label>
-            <input type="text" id="customerBase" placeholder="smoke and vape shops">
-        </div>
+        <!-- Launch Modal Button -->
+        <button class="launch-modal-btn" onclick="openModal()">
+            📊 Open Full Calculator
+        </button>
 
-        <!-- Product Selection -->
-        <h3>Product & Order Details</h3>
+        <!-- Quick Calculation in Sidebar -->
         <div class="input-group">
-            <label>Primary Product:</label>
-            <select id="primaryProduct">
-                <option value="focus">Focus + Flow ($4.50)</option>
-                <option value="release">Release + Relax ($4.50)</option>
-                <option value="zoom">Kanva Zoom ($3.10)</option>
-                <option value="mango">Mango Extract ($4.25)</option>
+            <label>Product:</label>
+            <select id="sidebarProduct" onchange="updateSidebarResults()">
+                <option value="focus">Focus + Flow</option>
+                <option value="release">Release + Relax</option>
+                <option value="zoom">Kanva Zoom</option>
+                <option value="mango">Mango Extract</option>
             </select>
         </div>
         <div class="input-group">
             <label>Master Cases:</label>
-            <input type="number" id="masterCases" value="28" min="1" max="500">
-        </div>
-        <div class="input-group">
-            <label>Max Retail Price:</label>
-            <input type="number" id="maxRetail" value="5.00" step="0.01" min="0">
+            <input type="number" id="sidebarCases" value="28" min="1" max="500" onchange="updateSidebarResults()">
         </div>
 
-        <!-- Calculation Results -->
+        <!-- Quick Results -->
         <div class="results">
-            <h3>Order Calculation</h3>
-            <div id="orderResults"></div>
-            <div id="tierInfo" class="tier-info"></div>
+            <div id="sidebarResults" style="font-size: 14px;"></div>
         </div>
-
-        <!-- Generate Email Button -->
-        <button class="copy-btn" onclick="generateEmail()">Generate Professional Quote Email</button>
     </div>
 
-    <!-- Generated Email Template -->
-    <div class="email-template" id="emailTemplate" style="display: none;">
-        <h2>Generated Quote Email</h2>
-        <button class="copy-btn" onclick="copyEmail()">Copy Email to Clipboard</button>
-        <div id="emailOutput"></div>
-    </div>
+    <!-- Modal Overlay -->
+    <div id="modalOverlay" class="modal-overlay" onclick="closeModal(event)">
+        <div class="modal-content" onclick="event.stopPropagation()">
+            <span class="modal-close" onclick="closeModal()">&times;</span>
+            
+            <div class="calculator">
+                <div class="header">
+                    <h1>🌿 Kanva Botanicals Quote Calculator</h1>
+                    <p>Professional quote generation with accurate pricing</p>
+                </div>
 
-    <!-- Product Reference -->
-    <div class="calculator">
-        <h3>Quick Product Reference</h3>
-        <div class="product-grid">
-            <div class="product-card">
-                <h4>2oz Wellness Shots</h4>
-                <p><strong>Focus + Flow:</strong> $4.50 → $9.99 MSRP <span class="pricing-tier tier1">10% margin</span></p>
-                <p><strong>Release + Relax:</strong> $4.50 → $9.99 MSRP <span class="pricing-tier tier1">10% margin</span></p>
-                <p><strong>Raw + Releaf:</strong> <em>Coming Soon</em></p>
-            </div>
-            <div class="product-card">
-                <h4>Energy & Extract Shots</h4>
-                <p><strong>Kanva Zoom:</strong> $3.10 → $6.99 MSRP <span class="pricing-tier tier1">11.43% margin</span></p>
-                <p><strong>Mango Extract:</strong> $4.25 → $9.99 MSRP <span class="pricing-tier tier2">15% margin</span></p>
-            </div>
-            <div class="product-card">
-                <h4>High-Margin Products</h4>
-                <p><strong>Kratom Capsules:</strong> 49-58% margins <span class="pricing-tier tier3">High Profit</span></p>
-                <p><strong>Kratom Powders:</strong> 49-56% margins <span class="pricing-tier tier3">High Profit</span></p>
-                <p><em>Perfect add-ons for experienced customers</em></p>
+                <!-- Customer Information -->
+                <h3>Customer Information</h3>
+                <div class="input-group">
+                    <label>Prospect Name:</label>
+                    <input type="text" id="prospectName" placeholder="Eddie">
+                </div>
+                <div class="input-group">
+                    <label>Company Name:</label>
+                    <input type="text" id="companyName" placeholder="ABC Distribution">
+                </div>
+                <div class="input-group">
+                    <label>Customer Base:</label>
+                    <input type="text" id="customerBase" placeholder="smoke and vape shops">
+                </div>
+
+                <!-- Product Selection -->
+                <h3>Product & Order Details</h3>
+                <div class="input-group">
+                    <label>Primary Product:</label>
+                    <select id="primaryProduct">
+                        <option value="focus">Focus + Flow ($4.50)</option>
+                        <option value="release">Release + Relax ($4.50)</option>
+                        <option value="zoom">Kanva Zoom ($3.10)</option>
+                        <option value="mango">Mango Extract ($4.25)</option>
+                    </select>
+                </div>
+                <div class="input-group">
+                    <label>Master Cases:</label>
+                    <input type="number" id="masterCases" value="28" min="1" max="500">
+                </div>
+                <div class="input-group">
+                    <label>Max Retail Price:</label>
+                    <input type="number" id="maxRetail" value="5.00" step="0.01" min="0">
+                </div>
+
+                <!-- Calculation Results -->
+                <div class="results">
+                    <h3>Order Calculation</h3>
+                    <div id="orderResults"></div>
+                    <div id="tierInfo" class="tier-info"></div>
+                </div>
+
+                <!-- Action Buttons -->
+                <div style="display: flex; gap: 10px; margin: 20px 0;">
+                    <button class="copy-btn" onclick="generateEmail()">📧 Generate Quote Email</button>
+                    <button class="copy-btn" onclick="saveQuoteToCRM()" style="background: #2196F3;">💾 Save to CRM</button>
+                    <button class="copy-btn" onclick="createOpportunity()" style="background: #FF9800;">🎯 Create Opportunity</button>
+                </div>
+
+                <!-- Generated Email Template -->
+                <div class="email-template" id="emailTemplate" style="display: none; margin-top: 20px;">
+                    <h3>Generated Quote Email</h3>
+                    <button class="copy-btn" onclick="copyEmail()">📋 Copy Email to Clipboard</button>
+                    <div id="emailOutput"></div>
+                </div>
+
+                <!-- Product Reference -->
+                <h3>Quick Product Reference</h3>
+                <div class="product-grid">
+                    <div class="product-card">
+                        <h4>2oz Wellness Shots</h4>
+                        <p><strong>Focus + Flow:</strong> $4.50 → $9.99 MSRP <span class="pricing-tier tier1">10% margin</span></p>
+                        <p><strong>Release + Relax:</strong> $4.50 → $9.99 MSRP <span class="pricing-tier tier1">10% margin</span></p>
+                        <p><strong>Raw + Releaf:</strong> <em>Coming Soon</em></p>
+                    </div>
+                    <div class="product-card">
+                        <h4>Energy & Extract Shots</h4>
+                        <p><strong>Kanva Zoom:</strong> $3.10 → $6.99 MSRP <span class="pricing-tier tier1">11.43% margin</span></p>
+                        <p><strong>Mango Extract:</strong> $4.25 → $9.99 MSRP <span class="pricing-tier tier2">15% margin</span></p>
+                    </div>
+                    <div class="product-card">
+                        <h4>High-Margin Products</h4>
+                        <p><strong>Kratom Capsules:</strong> 49-58% margins <span class="pricing-tier tier3">High Profit</span></p>
+                        <p><strong>Kratom Powders:</strong> 49-56% margins <span class="pricing-tier tier3">High Profit</span></p>
+                        <p><em>Perfect add-ons for experienced customers</em></p>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
@@ -349,12 +458,68 @@ Kanva Botanicals
             });
         }
 
+        // Modal Functions
+        function openModal() {
+            document.getElementById('modalOverlay').style.display = 'block';
+            document.body.style.overflow = 'hidden'; // Prevent background scrolling
+            
+            // Sync values from sidebar to modal
+            document.getElementById('primaryProduct').value = document.getElementById('sidebarProduct').value;
+            document.getElementById('masterCases').value = document.getElementById('sidebarCases').value;
+            
+            updateResults();
+        }
+
+        function closeModal(event) {
+            if (event && event.target !== document.getElementById('modalOverlay')) return;
+            document.getElementById('modalOverlay').style.display = 'none';
+            document.body.style.overflow = 'auto'; // Restore scrolling
+        }
+
+        // Sidebar Functions
+        function updateSidebarResults() {
+            const productKey = document.getElementById('sidebarProduct').value;
+            const masterCases = parseInt(document.getElementById('sidebarCases').value) || 0;
+            const product = products[productKey];
+            const tierInfo = getTier(masterCases);
+            
+            const unitPrice = product.price * (1 - tierInfo.discount);
+            const total = (masterCases * unitPrice * product.unitsPerCase * 1.015).toFixed(0);
+            
+            document.getElementById('sidebarResults').innerHTML = `
+                <p><strong>${product.name}</strong></p>
+                <p>💰 <strong>${unitPrice.toFixed(2)}</strong> per unit</p>
+                <p>📦 <strong>${masterCases}</strong> Master Cases</p>
+                <p style="color: #7cb342; font-weight: bold;">Total: ${parseInt(total).toLocaleString()}</p>
+                <p style="font-size: 12px; color: #666;">${tierInfo.name} pricing</p>
+            `;
+        }
+
+        // CRM Integration Functions (Placeholder for now)
+        function saveQuoteToCRM() {
+            const calc = calculateOrder();
+            alert(`Quote saved to CRM!\n\nProduct: ${calc.product.name}\nCases: ${calc.masterCases}\nTotal: ${parseFloat(calc.total).toLocaleString()}\n\n(This will integrate with Copper API in the next phase)`);
+        }
+
+        function createOpportunity() {
+            const calc = calculateOrder();
+            alert(`Opportunity created!\n\nValue: ${parseFloat(calc.total).toLocaleString()}\nProduct: ${calc.product.name}\nStatus: Quote Sent\n\n(This will integrate with Copper API in the next phase)`);
+        }
+
         // Auto-update results when inputs change
         document.getElementById('masterCases').addEventListener('input', updateResults);
         document.getElementById('primaryProduct').addEventListener('change', updateResults);
 
-        // Initialize
+        // Initialize both sidebar and modal
+        updateSidebarResults();
         updateResults();
+
+        // Close modal with Escape key
+        document.addEventListener('keydown', function(event) {
+            if (event.key === 'Escape') {
+                closeModal({ target: document.getElementById('modalOverlay') });
+            }
+        });
     </script>
 </body>
 </html>`;
