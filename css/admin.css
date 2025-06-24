@@ -309,3 +309,226 @@
         max-width: 200px;
     }
 }
+
+/* Additional admin sections styling */
+.admin-product {
+    background: linear-gradient(135deg, white 0%, #f8f9fa 100%);
+    border: 1px solid rgba(147, 213, 0, 0.2);
+    border-radius: 8px;
+    padding: 15px;
+    margin-bottom: 15px;
+    transition: all 0.3s ease;
+}
+
+.admin-product:hover {
+    border-color: #93D500;
+    box-shadow: 0 2px 8px rgba(147, 213, 0, 0.1);
+}
+
+.admin-product h4 {
+    color: #17351A;
+    margin-top: 0;
+    margin-bottom: 10px;
+    font-size: 16px;
+    border-bottom: 2px solid #93D500;
+    padding-bottom: 5px;
+}
+
+.admin-product label {
+    display: block;
+    margin-bottom: 8px;
+    font-size: 13px;
+    color: #17351A;
+    font-weight: bold;
+}
+
+.admin-product input {
+    width: 100%;
+    padding: 8px;
+    border: 1px solid rgba(147, 213, 0, 0.3);
+    border-radius: 4px;
+    font-size: 14px;
+    margin-bottom: 10px;
+}
+
+.tier-config {
+    background: linear-gradient(135deg, #f8f9fa 0%, white 100%);
+    border: 1px solid rgba(147, 213, 0, 0.2);
+    border-radius: 8px;
+    padding: 15px;
+    margin-bottom: 15px;
+}
+
+.tier-config h4 {
+    color: #17351A;
+    margin-top: 0;
+    margin-bottom: 10px;
+    font-size: 16px;
+}
+
+.tier-config label {
+    display: block;
+    margin-bottom: 8px;
+    font-size: 13px;
+    color: #17351A;
+    font-weight: bold;
+}
+
+.tier-config input {
+    width: 100%;
+    padding: 8px;
+    border: 1px solid rgba(147, 213, 0, 0.3);
+    border-radius: 4px;
+    font-size: 14px;
+    margin-bottom: 10px;
+}
+
+/* Admin header buttons */
+.admin-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+    padding-bottom: 15px;
+    border-bottom: 2px solid #93D500;
+}
+
+.close-btn {
+    background: linear-gradient(135deg, #f44336 0%, #d32f2f 100%);
+    color: white;
+    border: none;
+    padding: 8px 12px;
+    border-radius: 50%;
+    font-size: 16px;
+    cursor: pointer;
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.3s ease;
+    box-shadow: 0 2px 8px rgba(244, 67, 54, 0.3);
+}
+
+.close-btn:hover {
+    background: linear-gradient(135deg, #d32f2f 0%, #f44336 100%);
+    transform: rotate(90deg) scale(1.1);
+    box-shadow: 0 4px 12px rgba(244, 67, 54, 0.4);
+}
+
+/* Admin sections container */
+.admin-sections {
+    max-height: 70vh;
+    overflow-y: auto;
+    padding-right: 10px;
+}
+
+/* Custom scrollbar for admin sections */
+.admin-sections::-webkit-scrollbar {
+    width: 8px;
+}
+
+.admin-sections::-webkit-scrollbar-track {
+    background: #f1f1f1;
+    border-radius: 4px;
+}
+
+.admin-sections::-webkit-scrollbar-thumb {
+    background: linear-gradient(135deg, #93D500 0%, #7ab300 100%);
+    border-radius: 4px;
+}
+
+.admin-sections::-webkit-scrollbar-thumb:hover {
+    background: linear-gradient(135deg, #7ab300 0%, #93D500 100%);
+}
+
+/* Dark mode support for admin panel */
+@media (prefers-color-scheme: dark) {
+    .admin-panel {
+        background: rgba(0, 0, 0, 0.8);
+    }
+    
+    .admin-content {
+        background: linear-gradient(135deg, #2a2a2a 0%, #1e3a1e 100%);
+        color: #e0e0e0;
+    }
+    
+    .admin-section {
+        background: linear-gradient(135deg, #333 0%, #2a2a2a 100%);
+    }
+    
+    .admin-field input {
+        background: #333;
+        color: #e0e0e0;
+        border-color: #93D500;
+    }
+    
+    .admin-product,
+    .tier-config {
+        background: linear-gradient(135deg, #333 0%, #2a2a2a 100%);
+    }
+    
+    .admin-product input,
+    .tier-config input {
+        background: #444;
+        color: #e0e0e0;
+        border-color: #93D500;
+    }
+    
+    .admin-sections::-webkit-scrollbar-track {
+        background: #444;
+    }
+}
+
+/* High contrast mode support */
+@media (prefers-contrast: high) {
+    .admin-content {
+        border: 3px solid #93D500;
+        background: white;
+    }
+    
+    .admin-section {
+        border: 2px solid #17351A;
+        background: #f8f9fa;
+    }
+    
+    .admin-field input {
+        border: 2px solid #17351A;
+    }
+    
+    .admin-btn {
+        border: 2px solid currentColor;
+    }
+}
+
+/* Reduced motion support */
+@media (prefers-reduced-motion: reduce) {
+    .admin-content,
+    .admin-section,
+    .admin-field input,
+    .admin-btn,
+    .admin-toggle,
+    .admin-close,
+    .close-btn {
+        transition: none;
+        animation: none;
+    }
+    
+    .admin-btn:hover,
+    .admin-toggle:hover,
+    .admin-close:hover,
+    .close-btn:hover {
+        transform: none;
+    }
+    
+    .admin-loading::after {
+        animation: none;
+    }
+}
+
+/* Print styles for admin panel */
+@media print {
+    .admin-panel {
+        display: none !important;
+    }
+}
