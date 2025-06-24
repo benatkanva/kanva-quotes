@@ -132,17 +132,9 @@ Our complete product line includes high-margin kratom capsules and powders (49-5
 
 ${nextStepsSection}
 
-We're excited about building a successful partnership with you and supporting your business growth in the functional beverage market.
+We're excited about building a successful partnership with you and supporting your business growth.
 
 Please let me know if you have any questions or need any clarification on these terms.
-
-Best regards,
-
-${userName}  
-[YOUR TITLE]  
-Kanva Botanicals  
-[PHONE NUMBER]  
-${userEmail}
 
 ---
 Generated on ${timestamp} using Kanva Quote Calculator v${adminConfig.metadata.version}`;
