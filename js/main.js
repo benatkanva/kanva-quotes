@@ -266,8 +266,6 @@ const App = {
                     ${isAdmin ? '<button class="admin-btn" onclick="showAdminPanel()">⚙️ Admin Settings</button>' : ''}
                 </div>
 
-                ${isLeftNav ? this.generateCustomerSearchSection() : ''}
-
                 <!-- Customer Information Section -->
                 <section class="customer-info">
                     <h3>Customer Information</h3>
@@ -404,20 +402,7 @@ const App = {
         `;
     },
 
-    // Generate customer search section for left nav
-    generateCustomerSearchSection: function() {
-        return `
-            <!-- Customer Search Section -->
-            <section class="customer-search" id="customerSearch">
-                <h4>🔍 Quick Customer Lookup</h4>
-                <div class="search-controls">
-                    <input type="text" id="customerSearchInput" placeholder="Search companies & contacts..." />
-                    <button class="search-btn" onclick="searchCustomers()">Search</button>
-                </div>
-                <div id="searchResults" class="search-results" style="display: none;"></div>
-            </section>
-        `;
-    },
+    // REMOVED: generateCustomerSearchSection function - Let copper-integration.js handle this
 
     // Generate product reference section for left nav mode
     generateProductReferenceSection: function() {
@@ -639,12 +624,8 @@ const App = {
             productReference.style.display = 'block';
         }
         
-        // Enable customer search
-        setTimeout(() => {
-            if (typeof CopperIntegration !== 'undefined') {
-                CopperIntegration.enableCustomerSearch();
-            }
-        }, 500);
+        // REMOVED: Direct call to enableCustomerSearch - let copper-integration handle it
+        // The copper-integration.js will automatically add search interface when needed
     },
 
     // Optimize interface for sidebar mode
