@@ -1,450 +1,403 @@
-// UPDATED Configuration with REAL Kanva Botanicals pricing data from 2025 sheet
+// Kanva Botanicals Quote Calculator - Configuration
+// Version 2.0 - Enhanced with all products and zone-based shipping
 
-// Admin email list - Add/remove admin users here
-const adminEmails = [
-    'ben@kanvabotanicals.com',
-    'shane@kanvabotanicals.com',
-    'rob@cwlbrands.com',
-    'corey@cwlbrands.com'
+const adminConfig = {
+    metadata: {
+        version: "2.0.0",
+        lastUpdated: "2025-01-07",
+        company: "Kanva Botanicals"
+    },
+    
+    // Admin access configuration
+    adminPassword: "kanva2025!",
+    
+    // Customer segments
+    segments: [
+        "smoke and vape shops",
+        "convenience stores", 
+        "cannabis dispensaries",
+        "wholesale distribution",
+        "retail customers"
+    ],
+    
+    // Product categories
+    categories: {
+        shots: "Ready-to-Drink Shots",
+        powders: "Kratom Powders"
+    }
+};
+
+// Product catalog with all items
+const products = {
+    // Ready-to-Drink Shots
+    focus: {
+        name: "Focus+Flow",
+        category: "shots",
+        wholesalePrice: 4.50,
+        msrp: 9.99,
+        unitsPerDisplayBox: 12,
+        displayBoxesPerCase: 12,
+        unitsPerCase: 144,
+        margin: 54.95,
+        description: "Kava + Kratom Extract Blend"
+    },
+    release: {
+        name: "Release+Relax", 
+        category: "shots",
+        wholesalePrice: 4.50,
+        msrp: 9.99,
+        unitsPerDisplayBox: 12,
+        displayBoxesPerCase: 8,
+        unitsPerCase: 96,
+        margin: 54.95,
+        description: "Kanna + Kava Blend"
+    },
+    raw: {
+        name: "Raw+Releaf",
+        category: "shots",
+        wholesalePrice: 4.50,
+        msrp: 9.99,
+        unitsPerDisplayBox: 12,
+        displayBoxesPerCase: 12,
+        unitsPerCase: 144,
+        margin: 54.95,
+        description: "Raw Kratom + Kava Extract"
+    },
+    zoom: {
+        name: "Zoom", 
+        category: "shots",
+        wholesalePrice: 3.10,
+        msrp: 6.99,
+        unitsPerDisplayBox: 6,
+        displayBoxesPerCase: 16,
+        unitsPerCase: 96,
+        margin: 55.65,
+        description: "Pure Kratom Energy Boost"
+    },
+    mango: {
+        name: "Mango",
+        category: "shots", 
+        wholesalePrice: 3.10,
+        msrp: 6.99,
+        unitsPerDisplayBox: 6,
+        displayBoxesPerCase: 16,
+        unitsPerCase: 96,
+        margin: 55.65,
+        description: "Pure Kava Relaxation"
+    },
+    
+    // Kratom Powders
+    green20g: {
+        name: "Green Kratom 20g",
+        category: "powders",
+        wholesalePrice: 2.50,
+        msrp: 4.99,
+        unitsPerDisplayBox: 1,
+        displayBoxesPerCase: 250,
+        unitsPerCase: 250,
+        margin: 49.90,
+        description: "Green Vein Kratom Powder"
+    },
+    red20g: {
+        name: "Red Kratom 20g",
+        category: "powders",
+        wholesalePrice: 2.50,
+        msrp: 4.99,
+        unitsPerDisplayBox: 1,
+        displayBoxesPerCase: 250,
+        unitsPerCase: 250,
+        margin: 49.90,
+        description: "Red Vein Kratom Powder"
+    },
+    white20g: {
+        name: "White Kratom 20g",
+        category: "powders",
+        wholesalePrice: 2.50,
+        msrp: 4.99,
+        unitsPerDisplayBox: 1,
+        displayBoxesPerCase: 250,
+        unitsPerCase: 250,
+        margin: 49.90,
+        description: "White Vein Kratom Powder"
+    },
+    green60g: {
+        name: "Green Kratom 60g",
+        category: "powders",
+        wholesalePrice: 5.00,
+        msrp: 9.99,
+        unitsPerDisplayBox: 1,
+        displayBoxesPerCase: 125,
+        unitsPerCase: 125,
+        margin: 49.95,
+        description: "Green Vein Kratom Powder"
+    },
+    red60g: {
+        name: "Red Kratom 60g",
+        category: "powders",
+        wholesalePrice: 5.00,
+        msrp: 9.99,
+        unitsPerDisplayBox: 1,
+        displayBoxesPerCase: 125,
+        unitsPerCase: 125,
+        margin: 49.95,
+        description: "Red Vein Kratom Powder"
+    },
+    white60g: {
+        name: "White Kratom 60g",
+        category: "powders",
+        wholesalePrice: 5.00,
+        msrp: 9.99,
+        unitsPerDisplayBox: 1,
+        displayBoxesPerCase: 125,
+        unitsPerCase: 125,
+        margin: 49.95,
+        description: "White Vein Kratom Powder"
+    },
+    green120g: {
+        name: "Green Kratom 120g",
+        category: "powders",
+        wholesalePrice: 7.50,
+        msrp: 14.99,
+        unitsPerDisplayBox: 1,
+        displayBoxesPerCase: 125,
+        unitsPerCase: 125,
+        margin: 49.97,
+        description: "Green Vein Kratom Powder"
+    },
+    red120g: {
+        name: "Red Kratom 120g",
+        category: "powders",
+        wholesalePrice: 7.50,
+        msrp: 14.99,
+        unitsPerDisplayBox: 1,
+        displayBoxesPerCase: 125,
+        unitsPerCase: 125,
+        margin: 49.97,
+        description: "Red Vein Kratom Powder"
+    },
+    white120g: {
+        name: "White Kratom 120g",
+        category: "powders",
+        wholesalePrice: 7.50,
+        msrp: 14.99,
+        unitsPerDisplayBox: 1,
+        displayBoxesPerCase: 125,
+        unitsPerCase: 125,
+        margin: 49.97,
+        description: "White Vein Kratom Powder"
+    },
+    green250g: {
+        name: "Green Kratom 250g",
+        category: "powders",
+        wholesalePrice: 11.50,
+        msrp: 24.99,
+        unitsPerDisplayBox: 1,
+        displayBoxesPerCase: 25,
+        unitsPerCase: 25,
+        margin: 53.98,
+        description: "Green Vein Kratom Powder"
+    },
+    red250g: {
+        name: "Red Kratom 250g",
+        category: "powders",
+        wholesalePrice: 11.50,
+        msrp: 24.99,
+        unitsPerDisplayBox: 1,
+        displayBoxesPerCase: 25,
+        unitsPerCase: 25,
+        margin: 53.98,
+        description: "Red Vein Kratom Powder"
+    },
+    white250g: {
+        name: "White Kratom 250g",
+        category: "powders",
+        wholesalePrice: 11.50,
+        msrp: 24.99,
+        unitsPerDisplayBox: 1,
+        displayBoxesPerCase: 25,
+        unitsPerCase: 25,
+        margin: 53.98,
+        description: "White Vein Kratom Powder"
+    },
+    green1kg: {
+        name: "Green Kratom 1kg",
+        category: "powders",
+        wholesalePrice: 35.00,
+        msrp: 79.99,
+        unitsPerDisplayBox: 1,
+        displayBoxesPerCase: 10,
+        unitsPerCase: 10,
+        margin: 56.24,
+        description: "Green Vein Kratom Powder"
+    },
+    red1kg: {
+        name: "Red Kratom 1kg",
+        category: "powders",
+        wholesalePrice: 35.00,
+        msrp: 79.99,
+        unitsPerDisplayBox: 1,
+        displayBoxesPerCase: 10,
+        unitsPerCase: 10,
+        margin: 56.24,
+        description: "Red Vein Kratom Powder"
+    },
+    white1kg: {
+        name: "White Kratom 1kg",
+        category: "powders",
+        wholesalePrice: 35.00,
+        msrp: 79.99,
+        unitsPerDisplayBox: 1,
+        displayBoxesPerCase: 10,
+        unitsPerCase: 10,
+        margin: 56.24,
+        description: "White Vein Kratom Powder"
+    }
+};
+
+// Volume-based pricing tiers
+const pricingTiers = {
+    tier1: {
+        name: "Standard Pricing",
+        threshold: 1,
+        discount: 0,
+        color: "#93D500"
+    },
+    tier2: {
+        name: "Volume Discount",
+        threshold: 5,
+        discount: 10,
+        color: "#7AB500"
+    },
+    tier3: {
+        name: "Wholesale Pricing", 
+        threshold: 10,
+        discount: 15,
+        color: "#5A9500"
+    }
+};
+
+// Shipping zones by state
+const shippingZones = {
+    // Zone 1 - Pacific Northwest & Mountain West
+    zone1: {
+        states: ["ID", "WA", "OR", "MT", "WY", "UT", "NV"],
+        percentage: 5,
+        color: "#FF6B6B"
+    },
+    // Zone 2 - West & Southwest
+    zone2: {
+        states: ["CA", "AZ", "NM", "CO", "ND", "SD", "NE", "KS"],
+        percentage: 7,
+        color: "#4ECDC4"
+    },
+    // Zone 3 - Central & South
+    zone3: {
+        states: ["TX", "OK", "AR", "LA", "MS", "AL", "TN", "KY", "MO", "IA", "MN", "WI", "IL", "IN", "MI", "OH"],
+        percentage: 9,
+        color: "#FFD93D"
+    },
+    // Zone 4 - East Coast
+    zone4: {
+        states: ["FL", "GA", "SC", "NC", "VA", "WV", "MD", "DE", "PA", "NJ", "NY", "CT", "RI", "MA", "VT", "NH", "ME", "DC"],
+        percentage: 11,
+        color: "#FF5252"
+    },
+    // Non-contiguous
+    special: {
+        states: ["AK", "HI"],
+        percentage: 15,
+        color: "#9C27B0"
+    }
+};
+
+// Free shipping thresholds
+const shippingConfig = {
+    freeShippingThreshold: 2500,
+    manualOverrideEnabled: true
+};
+
+// Tax configuration
+const taxConfig = {
+    defaultRate: 8.5,
+    exemptStates: ["OR", "NH", "DE", "MT", "AK"],
+    customRates: {
+        "CA": 10.25,
+        "NY": 8.0,
+        "TX": 6.25,
+        "WA": 6.5,
+        "FL": 6.0,
+        "IL": 6.25,
+        "PA": 6.0,
+        "OH": 5.75,
+        "GA": 4.0,
+        "NC": 4.75
+    }
+};
+
+// US States for dropdown
+const usStates = [
+    { code: "AL", name: "Alabama" },
+    { code: "AK", name: "Alaska" },
+    { code: "AZ", name: "Arizona" },
+    { code: "AR", name: "Arkansas" },
+    { code: "CA", name: "California" },
+    { code: "CO", name: "Colorado" },
+    { code: "CT", name: "Connecticut" },
+    { code: "DE", name: "Delaware" },
+    { code: "DC", name: "District of Columbia" },
+    { code: "FL", name: "Florida" },
+    { code: "GA", name: "Georgia" },
+    { code: "HI", name: "Hawaii" },
+    { code: "ID", name: "Idaho" },
+    { code: "IL", name: "Illinois" },
+    { code: "IN", name: "Indiana" },
+    { code: "IA", name: "Iowa" },
+    { code: "KS", name: "Kansas" },
+    { code: "KY", name: "Kentucky" },
+    { code: "LA", name: "Louisiana" },
+    { code: "ME", name: "Maine" },
+    { code: "MD", name: "Maryland" },
+    { code: "MA", name: "Massachusetts" },
+    { code: "MI", name: "Michigan" },
+    { code: "MN", name: "Minnesota" },
+    { code: "MS", name: "Mississippi" },
+    { code: "MO", name: "Missouri" },
+    { code: "MT", name: "Montana" },
+    { code: "NE", name: "Nebraska" },
+    { code: "NV", name: "Nevada" },
+    { code: "NH", name: "New Hampshire" },
+    { code: "NJ", name: "New Jersey" },
+    { code: "NM", name: "New Mexico" },
+    { code: "NY", name: "New York" },
+    { code: "NC", name: "North Carolina" },
+    { code: "ND", name: "North Dakota" },
+    { code: "OH", name: "Ohio" },
+    { code: "OK", name: "Oklahoma" },
+    { code: "OR", name: "Oregon" },
+    { code: "PA", name: "Pennsylvania" },
+    { code: "RI", name: "Rhode Island" },
+    { code: "SC", name: "South Carolina" },
+    { code: "SD", name: "South Dakota" },
+    { code: "TN", name: "Tennessee" },
+    { code: "TX", name: "Texas" },
+    { code: "UT", name: "Utah" },
+    { code: "VT", name: "Vermont" },
+    { code: "VA", name: "Virginia" },
+    { code: "WA", name: "Washington" },
+    { code: "WV", name: "West Virginia" },
+    { code: "WI", name: "Wisconsin" },
+    { code: "WY", name: "Wyoming" }
 ];
 
-// FIXED: Real product catalog with actual pricing from sheet
-let adminConfig = {
-    products: {
-        focus: {
-            name: "Focus+Flow",
-            price: 4.50,                    // CONFIRMED: $4.50 from sheet
-            msrp: 9.99,                     
-            unitsPerCase: 144,              // FIXED: 144 units per master case (12x12)
-            displayBoxesPerCase: 12,        // FIXED: 12 display boxes per master case
-            unitsPerDisplayBox: 12,         // NEW: 12 units per display box
-            description: "Kava + Kratom extract blend - #1 selling shot",
-            category: "2oz_wellness",
-            isBestSeller: true,
-            // NEW: Pack dimensions for shipping
-            masterCaseDimensions: { length: 14, width: 10, height: 12, weight: 42 },
-            displayBoxDimensions: { length: 4, width: 5, height: 7, weight: 3.5 }
-        },
-        release: {
-            name: "Release+Relax", 
-            price: 4.50,                    // CONFIRMED: $4.50 from sheet
-            msrp: 9.99,                     
-            unitsPerCase: 96,               // FIXED: 96 units per master case (8x12)  
-            displayBoxesPerCase: 8,         // FIXED: 8 display boxes per master case
-            unitsPerDisplayBox: 12,         
-            description: "Kanna + Kava blend for stress relief",
-            category: "2oz_wellness",
-            isBestSeller: false,
-            // NEW: Pack dimensions
-            masterCaseDimensions: { length: 14, width: 10, height: 8, weight: 28 },
-            displayBoxDimensions: { length: 4, width: 5, height: 7, weight: 3.5 }
-        },
-        zoom: {
-            name: "Kanva Zoom",
-            price: 3.10,                    // FIXED: $3.10 from sheet (was wrong!)
-            msrp: 6.99,                     // FIXED: Lower MSRP for Zoom
-            unitsPerCase: 144,              // 144 units per master case
-            displayBoxesPerCase: 12,        
-            unitsPerDisplayBox: 12,         
-            description: "Kratom energy shot",
-            category: "energy_shots",
-            isBestSeller: false,
-            // NEW: Pack dimensions  
-            masterCaseDimensions: { length: 9, width: 9, height: 9, weight: 18 },
-            displayBoxDimensions: { length: 3, width: 4, height: 5, weight: 2 }
-        },
-        mango: {
-            name: "Mango Extract",
-            price: 4.25,                    // From pricing sheet
-            msrp: 11.99,                    
-            unitsPerCase: 144,              
-            displayBoxesPerCase: 12,        
-            unitsPerDisplayBox: 12,         
-            description: "Mango Extract 12ct shot",
-            category: "extract_shots",
-            isBestSeller: false,
-            // NEW: Pack dimensions
-            masterCaseDimensions: { length: 14, width: 10, height: 12, weight: 42 },
-            displayBoxDimensions: { length: 4, width: 5, height: 7, weight: 3.5 }
-        },
-        raw: {
-            name: "Raw+Releaf",
-            price: 4.50,                    
-            msrp: 9.99,                     
-            unitsPerCase: 144,              
-            displayBoxesPerCase: 12,        
-            unitsPerDisplayBox: 12,         
-            description: "Pure leaf, pure relief - Kratom leaf + Kava extract",
-            category: "2oz_wellness",
-            isNewProduct: true,
-            // NEW: Pack dimensions
-            masterCaseDimensions: { length: 14, width: 10, height: 12, weight: 42 },
-            displayBoxDimensions: { length: 4, width: 5, height: 7, weight: 3.5 }
-        }
-    },
-
-    // FIXED: Volume tier pricing structure from actual sheet
-    tiers: {
-        tier1: {
-            threshold: 0,
-            discount: 0,
-            name: "Tier 1",
-            description: "Standard pricing for 0-55 master cases",
-            margin: "10.00%"
-        },
-        tier2: {
-            threshold: 56,                  // FIXED: Starts at 56 MC (was wrong)
-            discount: 0.033,                // FIXED: 3.3% discount ($4.50 -> $4.35)
-            name: "Tier 2", 
-            description: "Volume discount for 56-111 master cases",
-            margin: "13.00%"
-        },
-        tier3: {
-            threshold: 112,                 // FIXED: Starts at 112 MC  
-            discount: 0.056,                // FIXED: 5.6% discount ($4.50 -> $4.25)
-            name: "Tier 3",
-            description: "Best pricing for 112+ master cases",
-            margin: "15.00%"
-        }
-    },
-
-    // NEW: Zone-based shipping structure from sheet
-    shipping: {
-        zones: {
-            zone1: {
-                name: "Zone 1 (West)",
-                states: ['CA', 'NV', 'OR', 'WA', 'ID'],
-                rates: {
-                    '1-3boxes': 5,
-                    '4-8boxes': 10, 
-                    '9-11boxes': 10,
-                    'mastercase': 20
-                }
-            },
-            zone2: {
-                name: "Zone 2 (Mountain)",
-                states: ['UT', 'MT', 'WY', 'CO', 'AZ', 'NM'],
-                rates: {
-                    '1-3boxes': 10,
-                    '4-8boxes': 10,
-                    '9-11boxes': 15,
-                    'mastercase': 20
-                }
-            },
-            zone3: {
-                name: "Zone 3 (Central)",
-                states: ['ND', 'SD', 'NE', 'KS', 'OK', 'TX', 'MN', 'IA', 'MO', 'AR', 'LA', 'IN', 'WI', 'IL', 'MS', 'AL', 'TN', 'KY'],
-                rates: {
-                    '1-3boxes': 10,
-                    '4-8boxes': 15,
-                    '9-11boxes': 20,
-                    'mastercase': 25
-                }
-            },
-            zone4: {
-                name: "Zone 4 (East)",
-                states: ['MI', 'OH', 'WV', 'VA', 'NC', 'SC', 'GA', 'FL', 'DC', 'PA', 'DE', 'MD', 'RI', 'NY', 'CT', 'MA', 'NH', 'VT', 'NJ', 'ME', 'AK', 'HI'],
-                rates: {
-                    '1-3boxes': 15,
-                    '4-8boxes': 20,
-                    '9-11boxes': 25,
-                    'mastercase': 30
-                }
-            }
-        },
-        freeThreshold: 50000,              // Free shipping over $50k
-        description: "Zone-based shipping rates by master cases and display boxes"
-    },
-
-    // Payment processing rules  
-    payment: {
-        achThreshold: 10000,               // ACH required over $10k
-        acceptedMethods: ['ACH', 'Wire Transfer', 'Company Check'],
-        description: "Payment thresholds and accepted methods"
-    },
-
-    // FIXED: Maximum retail price guidance per product
-    maxRetailPrices: {
-        default: 5.00,
-        focus: 5.00,        
-        release: 5.00,      
-        raw: 5.00,          
-        zoom: 3.50,                        // FIXED: Lower for Zoom
-        mango: 6.00,                       // NEW: Mango pricing
-        description: "Maximum recommended retail prices"
-    },
-
-    // Email template settings
-    emailSettings: {
-        companyName: "Kanva Botanicals",
-        supportEmail: "sales@kanvabotanicals.com",
-        phone: "[PHONE NUMBER]",
-        website: "www.kanvabotanicals.com"
-    },
-
-    // Feature flags
-    features: {
-        adminPanel: true,
-        emailGeneration: true,
-        crmIntegration: true,
-        freeShipping: true,
-        volumeDiscounts: true,
-        zoneShipping: true                 // NEW: Enable zone-based shipping
-    },
-
-    // Application metadata
-    metadata: {
-        version: "2.1.0",                  // Updated version
-        lastUpdated: new Date().toISOString(),
-        configuredBy: null,
-        pricingSheetVersion: "2025-v1"     // NEW: Track pricing sheet version
-    }
-};
-
-// NEW: Shipping zone detection helper
-const ShippingManager = {
-    // Get shipping zone for a state
-    getZoneForState: function(state) {
-        const stateUpper = state.toUpperCase();
-        
-        for (const [zoneKey, zone] of Object.entries(adminConfig.shipping.zones)) {
-            if (zone.states.includes(stateUpper)) {
-                return {
-                    zone: zoneKey,
-                    name: zone.name,
-                    rates: zone.rates
-                };
-            }
-        }
-        
-        // Default to Zone 4 (highest rate) if state not found
-        return {
-            zone: 'zone4',
-            name: adminConfig.shipping.zones.zone4.name,
-            rates: adminConfig.shipping.zones.zone4.rates
-        };
-    },
-    
-    // Calculate shipping cost based on quantity and zone
-    calculateShipping: function(totalDisplayBoxes, totalMasterCases, state) {
-        const zoneInfo = this.getZoneForState(state);
-        const rates = zoneInfo.rates;
-        
-        // If customer ordered full master cases, use master case rate
-        if (totalMasterCases >= 1) {
-            return rates.mastercase * totalMasterCases;
-        }
-        
-        // Otherwise use display box rates
-        if (totalDisplayBoxes >= 1 && totalDisplayBoxes <= 3) {
-            return rates['1-3boxes'];
-        } else if (totalDisplayBoxes >= 4 && totalDisplayBoxes <= 8) {
-            return rates['4-8boxes'];
-        } else if (totalDisplayBoxes >= 9 && totalDisplayBoxes <= 11) {
-            return rates['9-11boxes'];
-        }
-        
-        // Default fallback
-        return rates['1-3boxes'];
-    },
-    
-    // Get all zones for dropdown
-    getAllZones: function() {
-        return Object.entries(adminConfig.shipping.zones).map(([key, zone]) => ({
-            value: key,
-            label: zone.name,
-            states: zone.states
-        }));
-    }
-};
-
-// FIXED: Updated TierManager with correct thresholds
-const TierManager = {
-    // Get tier for given quantity (FIXED)
-    getTier: function(masterCases) {
-        const tiers = adminConfig.tiers;
-        
-        if (masterCases >= tiers.tier3.threshold) return tiers.tier3;
-        if (masterCases >= tiers.tier2.threshold) return tiers.tier2;
-        return tiers.tier1;
-    },
-
-    // Get all tiers
-    getAll: function() {
-        return adminConfig.tiers;
-    },
-    
-    // Get next tier info for upselling
-    getNextTier: function(currentMasterCases) {
-        const tiers = adminConfig.tiers;
-        
-        if (currentMasterCases < tiers.tier2.threshold) {
-            return {
-                tier: tiers.tier2,
-                casesNeeded: tiers.tier2.threshold - currentMasterCases
-            };
-        } else if (currentMasterCases < tiers.tier3.threshold) {
-            return {
-                tier: tiers.tier3,
-                casesNeeded: tiers.tier3.threshold - currentMasterCases
-            };
-        }
-        
-        return null; // Already at highest tier
-    }
-};
-
-// Keep existing managers but update them
-const ConfigManager = {
-    // Load configuration from localStorage
-    load: function() {
-        try {
-            const saved = localStorage.getItem('kanvaAdminConfig');
-            if (saved) {
-                const savedConfig = JSON.parse(saved);
-                // Merge saved config with defaults to handle new fields
-                adminConfig = this.mergeConfigs(adminConfig, savedConfig);
-                console.log('✅ Admin configuration loaded from localStorage');
-                return true;
-            }
-        } catch (error) {
-            console.error('❌ Error loading admin configuration:', error);
-        }
-        return false;
-    },
-
-    // Save configuration to localStorage
-    save: function(config = adminConfig) {
-        try {
-            config.metadata.lastUpdated = new Date().toISOString();
-            config.metadata.configuredBy = appState.currentUser?.email || 'Unknown';
-            localStorage.setItem('kanvaAdminConfig', JSON.stringify(config));
-            console.log('✅ Admin configuration saved to localStorage');
-            return true;
-        } catch (error) {
-            console.error('❌ Error saving admin configuration:', error);
-        }
-        return false;
-    },
-
-    // Merge configurations (saved overwrites defaults)
-    mergeConfigs: function(defaultConfig, savedConfig) {
-        const merged = { ...defaultConfig };
-        
-        // Deep merge for nested objects
-        for (const key in savedConfig) {
-            if (typeof savedConfig[key] === 'object' && !Array.isArray(savedConfig[key])) {
-                merged[key] = { ...defaultConfig[key], ...savedConfig[key] };
-            } else {
-                merged[key] = savedConfig[key];
-            }
-        }
-        
-        return merged;
-    },
-
-    // Reset to default configuration
-    reset: function() {
-        try {
-            localStorage.removeItem('kanvaAdminConfig');
-            console.log('✅ Admin configuration reset to defaults');
-            return true;
-        } catch (error) {
-            console.error('❌ Error resetting admin configuration:', error);
-        }
-        return false;
-    },
-
-    // Validate configuration integrity
-    validate: function(config = adminConfig) {
-        const errors = [];
-
-        // Validate products
-        for (const [key, product] of Object.entries(config.products)) {
-            if (!product.name || product.price <= 0 || product.msrp <= 0) {
-                errors.push(`Invalid product configuration: ${key}`);
-            }
-        }
-
-        // Validate tiers  
-        if (config.tiers.tier2.threshold <= config.tiers.tier1.threshold ||
-            config.tiers.tier3.threshold <= config.tiers.tier2.threshold) {
-            errors.push('Invalid tier thresholds');
-        }
-
-        return {
-            isValid: errors.length === 0,
-            errors: errors
-        };
-    },
-
-    // Get current configuration
-    get: function() {
-        return adminConfig;
-    },
-
-    // Update specific configuration section
-    update: function(section, data) {
-        if (adminConfig[section]) {
-            adminConfig[section] = { ...adminConfig[section], ...data };
-            return this.save();
-        }
-        return false;
-    }
-};
-
-// Keep existing AuthManager
-const AuthManager = {
-    // Check if user is admin
-    isAdmin: function(email) {
-        return adminEmails.includes(email?.toLowerCase());
-    },
-
-    // Set current user
-    setUser: function(user) {
-        appState.currentUser = user;
-        appState.isAdmin = this.isAdmin(user?.email);
-        console.log(`👤 User set: ${user?.email || 'Unknown'} (Admin: ${appState.isAdmin})`);
-    },
-
-    // Get current user
-    getUser: function() {
-        return appState.currentUser;
-    }
-};
-
-// Keep existing ProductManager
-const ProductManager = {
-    // Get all products
-    getAll: function() {
-        return adminConfig.products;
-    },
-
-    // Get specific product
-    get: function(productKey) {
-        return adminConfig.products[productKey];
-    },
-
-    // Get product options for dropdowns
-    getOptions: function() {
-        return Object.entries(adminConfig.products).map(([key, product]) => ({
-            value: key,
-            label: `${product.name} ($${product.price})`,
-            product: product
-        }));
-    }
-};
-
-// Initialize configuration on script load
-console.log('🔧 Initializing Kanva Botanicals configuration with 2025 pricing...');
-
-// Load saved configuration
-ConfigManager.load();
-
-// Validate configuration
-const validation = ConfigManager.validate();
-if (!validation.isValid) {
-    console.warn('⚠️  Configuration validation errors:', validation.errors);
+// Export configuration
+if (typeof module !== 'undefined' && module.exports) {
+    module.exports = {
+        adminConfig,
+        products,
+        pricingTiers,
+        shippingZones,
+        shippingConfig,
+        taxConfig,
+        usStates
+    };
 }
-
-console.log('✅ Configuration initialized with real 2025 pricing data');
