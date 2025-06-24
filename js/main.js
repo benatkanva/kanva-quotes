@@ -170,6 +170,10 @@ const App = {
         // Set user and check admin status
         AuthManager.setUser(testUser);
         appState.isAdmin = AuthManager.isAdmin(testUser.email);
+        // Temporary debug - remove after testing
+        console.log('🔍 DEBUG - Current user:', appState.currentUser);
+        console.log('🔍 DEBUG - Is admin?:', appState.isAdmin);
+        console.log('🔍 DEBUG - Admin emails:', adminEmails);
         
         console.log('🔧 Running in standalone demo mode');
         console.log(`👤 User: ${testUser.email}`);
