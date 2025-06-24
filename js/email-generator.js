@@ -346,10 +346,6 @@ I'm here to answer any questions you might have about:
 
 Would you like to schedule a brief call this week to discuss next steps?
 
-Best regards,
-[YOUR NAME]
-Kanva Botanicals`;
-
         return { subject, body };
     },
 
@@ -374,10 +370,6 @@ I'm open to discussing:
 What would work best for your business? I'm confident we can find a solution that works for both of us.
 
 Looking forward to hearing from you.
-
-Best regards,
-[YOUR NAME]
-Kanva Botanicals`;
 
         return { subject, body };
     },
