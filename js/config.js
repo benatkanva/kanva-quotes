@@ -7,6 +7,7 @@ const adminEmails = [
     'shane@kanvabotanicals.com',
     'rob@cwlbrands.com'
     'corey@cwlbrands.com'
+  
     // Add more admin emails as needed
 ];
 
