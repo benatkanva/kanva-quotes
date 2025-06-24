@@ -14,39 +14,48 @@ const adminEmails = [
 let adminConfig = {
     // Product catalog with pricing and details
     products: {
-        focus: {
-            name: "Focus + Flow",
-            price: 4.50,
-            msrp: 9.99,
-            unitsPerCase: 144,
-            displayBoxesPerCase: 12,
-            description: "Kava + Kratom extract blend for focus and flow"
-        },
-        release: {
-            name: "Release + Relax",
-            price: 4.50,
-            msrp: 9.99,
-            unitsPerCase: 96,
-            displayBoxesPerCase: 8,
-            description: "Kanna + Kava blend for relaxation"
-        },
-        zoom: {
-            name: "Kanva Zoom",
-            price: 3.10,
-            msrp: 6.99,
-            unitsPerCase: 144,
-            displayBoxesPerCase: 12,
-            description: "Kratom energy shot with caffeine"
-        },
-        mango: {
-            name: "Mango Extract",
-            price: 4.25,
-            msrp: 9.99,
-            unitsPerCase: 144,
-            displayBoxesPerCase: 12,
-            description: "Premium kratom extract shot"
-        }
+    focus: {
+        name: "Focus+Flow",
+        price: 4.50,                    // Wholesale price per bottle
+        msrp: 9.99,                     // MSRP per bottle
+        unitsPerCase: 12,               // 12 bottles per display box (as shown in PDF)
+        displayBoxesPerCase: 12,        // 12 display boxes per master case
+        description: "Kava + Kratom extract blend - #1 selling shot",
+        category: "kava_kratom",
+        isBestSeller: true
     },
+    release: {
+        name: "Release+Relax", 
+        price: 4.50,                    // Wholesale price per bottle
+        msrp: 9.99,                     // MSRP per bottle
+        unitsPerCase: 12,               // 12 bottles per display box
+        displayBoxesPerCase: 12,        // 12 display boxes per master case
+        description: "Kanna + Kava blend for stress relief",
+        category: "kanna_kava",
+        isBestSeller: false
+    },
+    raw: {
+        name: "Raw+Releaf",
+        price: 4.50,                    // Wholesale price per bottle
+        msrp: 9.99,                     // MSRP per bottle  
+        unitsPerCase: 12,               // 12 bottles per display box
+        displayBoxesPerCase: 12,        // 12 display boxes per master case
+        description: "Pure leaf, pure relief - Kratom leaf + Kava extract",
+        category: "kratom_kava",
+        isNewProduct: true
+    },
+    zoom: {
+        name: "Kanva Zoom",
+        price: 3.10,                    // Lower wholesale price
+        msrp: 6.99,                     // Lower MSRP
+        unitsPerCase: 12,               // 12 bottles per display box
+        displayBoxesPerCase: 12,        // 12 display boxes per master case  
+        description: "Kratom energy shot",
+        category: "kratom_energy",
+        isBestSeller: false
+    }
+},
+
 
     // Volume tier pricing structure
     tiers: {
@@ -86,13 +95,13 @@ let adminConfig = {
 
     // Maximum retail price guidance
     maxRetailPrices: {
-        default: 5.00,
-        focus: 5.00,
-        release: 5.00,
-        zoom: 5.00,
-        mango: 5.00,
-        description: "Maximum recommended retail prices"
-    },
+    default: 5.00,
+    focus: 5.00,        // Focus+Flow max retail
+    release: 5.00,      // Release+Relax max retail  
+    raw: 5.00,          // Raw+Releaf max retail
+    zoom: 3.50,         // Zoom max retail (lower due to lower MSRP)
+    description: "Maximum recommended retail prices"
+},
 
     // Email template settings
     emailSettings: {
