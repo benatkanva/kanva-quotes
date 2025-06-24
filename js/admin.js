@@ -1,356 +1,332 @@
-// Kanva Botanicals Quote Calculator - Admin Panel
-// Version 2.0 - Fixed admin panel access and functionality
+// Configuration and settings for Kanva Botanicals Quote Calculator
+// This file contains all admin-configurable variables
 
-const AdminPanel = {
-    isLoggedIn: false,
-    
-    // Toggle admin panel visibility
-    toggle: function() {
-        const panel = document.getElementById('adminPanel');
-        if (panel) {
-            const isVisible = panel.style.display !== 'none';
-            panel.style.display = isVisible ? 'none' : 'block';
-            
-            // Focus password field if opening
-            if (!isVisible && !this.isLoggedIn) {
-                setTimeout(() => {
-                    document.getElementById('adminPassword')?.focus();
-                }, 100);
-            }
+// Admin email list - Add/remove admin users here
+const adminEmails = [
+    'ben@kanvabotanicals.com',
+    'shane@kanvabotanicals.com',
+    'rob@cwlbrands.com',
+    'corey@cwlbrands.com'
+    // Add more admin emails as needed
+];
+
+// Default admin configuration (can be overridden by localStorage)
+let adminConfig = {
+    // Product catalog with pricing and details
+    products: {
+    focus: {
+        name: "Focus+Flow",
+        price: 4.50,                    // Wholesale price per bottle
+        msrp: 9.99,                     // MSRP per bottle
+        unitsPerCase: 12,               // 12 bottles per display box (as shown in PDF)
+        displayBoxesPerCase: 12,        // 12 display boxes per master case
+        description: "Kava + Kratom extract blend - #1 selling shot",
+        category: "kava_kratom",
+        isBestSeller: true
+    },
+    release: {
+        name: "Release+Relax", 
+        price: 4.50,                    // Wholesale price per bottle
+        msrp: 9.99,                     // MSRP per bottle
+        unitsPerCase: 12,               // 12 bottles per display box
+        displayBoxesPerCase: 12,        // 12 display boxes per master case
+        description: "Kanna + Kava blend for stress relief",
+        category: "kanna_kava",
+        isBestSeller: false
+    },
+    raw: {
+        name: "Raw+Releaf",
+        price: 4.50,                    // Wholesale price per bottle
+        msrp: 9.99,                     // MSRP per bottle  
+        unitsPerCase: 12,               // 12 bottles per display box
+        displayBoxesPerCase: 12,        // 12 display boxes per master case
+        description: "Pure leaf, pure relief - Kratom leaf + Kava extract",
+        category: "kratom_kava",
+        isNewProduct: true
+    },
+    zoom: {
+        name: "Kanva Zoom",
+        price: 3.10,                    // Lower wholesale price
+        msrp: 6.99,                     // Lower MSRP
+        unitsPerCase: 12,               // 12 bottles per display box
+        displayBoxesPerCase: 12,        // 12 display boxes per master case  
+        description: "Kratom energy shot",
+        category: "kratom_energy",
+        isBestSeller: false
+    }
+},
+
+
+    // Volume tier pricing structure
+    tiers: {
+        tier1: {
+            threshold: 0,
+            discount: 0,
+            name: "Tier 1",
+            description: "Standard pricing for orders under 56 cases"
+        },
+        tier2: {
+            threshold: 56,
+            discount: 0.035,
+            name: "Tier 2", 
+            description: "Volume discount for 56-111 cases"
+        },
+        tier3: {
+            threshold: 112,
+            discount: 0.06,
+            name: "Tier 3",
+            description: "Best pricing for 112+ cases"
         }
     },
-    
-    // Login to admin panel
-    login: function() {
-        const passwordInput = document.getElementById('adminPassword');
-        const password = passwordInput?.value;
-        
-        if (password === adminConfig.adminPassword) {
-            this.isLoggedIn = true;
-            document.getElementById('adminLogin').style.display = 'none';
-            document.getElementById('adminControls').style.display = 'block';
-            
-            // Update user display
-            const userDisplay = document.getElementById('userDisplay');
-            if (userDisplay) {
-                const currentUser = appState?.currentUser?.email || 'Admin';
-                userDisplay.textContent = `User: ${currentUser} | Admin: YES`;
-            }
-            
-            // Clear password field
-            passwordInput.value = '';
-            
-            // Show notification
-            if (typeof NotificationManager !== 'undefined') {
-                NotificationManager.showSuccess('Admin access granted');
-            }
-        } else {
-            // Wrong password
-            passwordInput.classList.add('error');
-            setTimeout(() => passwordInput.classList.remove('error'), 500);
-            
-            if (typeof NotificationManager !== 'undefined') {
-                NotificationManager.showError('Invalid password');
-            }
-        }
+
+    // Shipping and logistics settings
+    shipping: {
+        rate: 0.015,                    // 1.5% of subtotal
+        freeThreshold: 50000,           // Free shipping over $50k
+        description: "Standard shipping rate and thresholds"
     },
-    
-    // Show product editor
-    showProductEditor: function() {
-        const content = document.getElementById('editorContent');
-        if (!content) return;
-        
-        let html = '<div class="product-editor">';
-        html += '<h4>Product Configuration</h4>';
-        html += '<div class="product-list">';
-        
-        // Group products by category
-        const shots = Object.entries(products).filter(([key, p]) => p.category === 'shots');
-        const powders = Object.entries(products).filter(([key, p]) => p.category === 'powders');
-        
-        // Shots section
-        html += '<div class="product-category"><h5>Ready-to-Drink Shots</h5>';
-        shots.forEach(([key, product]) => {
-            html += this.createProductEditRow(key, product);
-        });
-        html += '</div>';
-        
-        // Powders section
-        html += '<div class="product-category"><h5>Kratom Powders</h5>';
-        powders.forEach(([key, product]) => {
-            html += this.createProductEditRow(key, product);
-        });
-        html += '</div>';
-        
-        html += '</div>';
-        html += '<button onclick="AdminPanel.saveProducts()" class="save-btn">Save All Changes</button>';
-        html += '</div>';
-        
-        content.innerHTML = html;
+
+    // Payment processing rules
+    payment: {
+        achThreshold: 10000,            // ACH required over $10k
+        acceptedMethods: ['ACH', 'Wire Transfer', 'Company Check'],
+        description: "Payment thresholds and accepted methods"
     },
-    
-    // Create product edit row
-    createProductEditRow: function(key, product) {
-        return `
-            <div class="product-edit-row" data-product-key="${key}">
-                <div class="product-header">
-                    <strong>${product.name}</strong>
-                    <span class="product-meta">${product.unitsPerCase} units/case</span>
-                </div>
-                <div class="product-fields">
-                    <div class="field-group">
-                        <label>Wholesale Price:</label>
-                        <input type="number" step="0.01" value="${product.wholesalePrice}" 
-                               data-field="wholesalePrice" onchange="AdminPanel.updateProduct('${key}', this)">
-                    </div>
-                    <div class="field-group">
-                        <label>MSRP:</label>
-                        <input type="number" step="0.01" value="${product.msrp}" 
-                               data-field="msrp" onchange="AdminPanel.updateProduct('${key}', this)">
-                    </div>
-                    <div class="field-group">
-                        <label>Margin:</label>
-                        <span class="margin-display">${product.margin}%</span>
-                    </div>
-                </div>
-            </div>
-        `;
+
+    // Maximum retail price guidance
+    maxRetailPrices: {
+    default: 5.00,
+    focus: 5.00,        // Focus+Flow max retail
+    release: 5.00,      // Release+Relax max retail  
+    raw: 5.00,          // Raw+Releaf max retail
+    zoom: 3.50,         // Zoom max retail (lower due to lower MSRP)
+    description: "Maximum recommended retail prices"
+},
+
+    // Email template settings
+    emailSettings: {
+        companyName: "Kanva Botanicals",
+        supportEmail: "sales@kanvabotanicals.com",
+        phone: "[PHONE NUMBER]",
+        website: "www.kanvabotanicals.com"
     },
-    
-    // Update product in real-time
-    updateProduct: function(key, input) {
-        const field = input.dataset.field;
-        const value = parseFloat(input.value);
-        
-        if (products[key] && !isNaN(value)) {
-            products[key][field] = value;
-            
-            // Recalculate margin if price changed
-            if (field === 'wholesalePrice' || field === 'msrp') {
-                const margin = ((products[key].msrp - products[key].wholesalePrice) / products[key].msrp * 100).toFixed(2);
-                products[key].margin = parseFloat(margin);
-                
-                // Update margin display
-                const marginDisplay = input.closest('.product-edit-row').querySelector('.margin-display');
-                if (marginDisplay) {
-                    marginDisplay.textContent = margin + '%';
-                }
-            }
-        }
+
+    // Feature flags
+    features: {
+        adminPanel: true,
+        emailGeneration: true,
+        crmIntegration: true,
+        freeShipping: true,
+        volumeDiscounts: true
     },
-    
-    // Save all product changes
-    saveProducts: function() {
-        // In a real app, this would save to a backend
-        console.log('Saving product configuration:', products);
-        
-        if (typeof NotificationManager !== 'undefined') {
-            NotificationManager.showSuccess('Product configuration saved successfully');
-        }
-        
-        // Refresh the calculator if needed
-        if (typeof calculateAndUpdate === 'function') {
-            calculateAndUpdate();
-        }
-    },
-    
-    // Show shipping editor
-    showShippingEditor: function() {
-        const content = document.getElementById('editorContent');
-        if (!content) return;
-        
-        let html = '<div class="shipping-editor">';
-        html += '<h4>Shipping Zone Configuration</h4>';
-        html += '<div class="zone-list">';
-        
-        Object.entries(shippingZones).forEach(([key, zone]) => {
-            html += `
-                <div class="zone-edit-row" data-zone-key="${key}">
-                    <div class="zone-header">
-                        <strong>${key.replace('zone', 'Zone ').toUpperCase()}</strong>
-                        <span class="zone-percentage">${zone.percentage}% of subtotal</span>
-                    </div>
-                    <div class="zone-fields">
-                        <div class="field-group">
-                            <label>Percentage:</label>
-                            <input type="number" step="0.5" value="${zone.percentage}" 
-                                   data-field="percentage" onchange="AdminPanel.updateZone('${key}', this)">
-                        </div>
-                        <div class="field-group states-list">
-                            <label>States:</label>
-                            <span>${zone.states.join(', ')}</span>
-                        </div>
-                    </div>
-                </div>
-            `;
-        });
-        
-        html += '</div>';
-        html += `
-            <div class="shipping-threshold">
-                <label>Free Shipping Threshold:</label>
-                <input type="number" id="freeShippingThreshold" value="${shippingConfig.freeShippingThreshold}">
-            </div>
-        `;
-        html += '<button onclick="AdminPanel.saveShipping()" class="save-btn">Save Shipping Configuration</button>';
-        html += '</div>';
-        
-        content.innerHTML = html;
-    },
-    
-    // Update shipping zone
-    updateZone: function(key, input) {
-        const value = parseFloat(input.value);
-        
-        if (shippingZones[key] && !isNaN(value)) {
-            shippingZones[key].percentage = value;
-            
-            // Update display
-            const percentDisplay = input.closest('.zone-edit-row').querySelector('.zone-percentage');
-            if (percentDisplay) {
-                percentDisplay.textContent = value + '% of subtotal';
-            }
-        }
-    },
-    
-    // Save shipping configuration
-    saveShipping: function() {
-        const thresholdInput = document.getElementById('freeShippingThreshold');
-        if (thresholdInput) {
-            shippingConfig.freeShippingThreshold = parseFloat(thresholdInput.value) || 2500;
-        }
-        
-        console.log('Saving shipping configuration:', shippingZones, shippingConfig);
-        
-        if (typeof NotificationManager !== 'undefined') {
-            NotificationManager.showSuccess('Shipping configuration saved successfully');
-        }
-        
-        // Refresh calculation
-        if (typeof calculateAndUpdate === 'function') {
-            calculateAndUpdate();
-        }
-    },
-    
-    // Show tax editor
-    showTaxEditor: function() {
-        const content = document.getElementById('editorContent');
-        if (!content) return;
-        
-        let html = '<div class="tax-editor">';
-        html += '<h4>Tax Configuration</h4>';
-        html += `
-            <div class="default-tax">
-                <label>Default Tax Rate:</label>
-                <input type="number" step="0.1" id="defaultTaxRate" value="${taxConfig.defaultRate}">%
-            </div>
-        `;
-        
-        html += '<div class="custom-rates">';
-        html += '<h5>Custom State Rates</h5>';
-        
-        Object.entries(taxConfig.customRates).forEach(([state, rate]) => {
-            html += `
-                <div class="tax-rate-row">
-                    <span class="state-code">${state}</span>
-                    <input type="number" step="0.1" value="${rate}" 
-                           data-state="${state}" onchange="AdminPanel.updateTaxRate(this)">%
-                </div>
-            `;
-        });
-        
-        html += '</div>';
-        html += '<button onclick="AdminPanel.saveTax()" class="save-btn">Save Tax Configuration</button>';
-        html += '</div>';
-        
-        content.innerHTML = html;
-    },
-    
-    // Update tax rate
-    updateTaxRate: function(input) {
-        const state = input.dataset.state;
-        const rate = parseFloat(input.value);
-        
-        if (state && !isNaN(rate)) {
-            taxConfig.customRates[state] = rate;
-        }
-    },
-    
-    // Save tax configuration
-    saveTax: function() {
-        const defaultInput = document.getElementById('defaultTaxRate');
-        if (defaultInput) {
-            taxConfig.defaultRate = parseFloat(defaultInput.value) || 8.5;
-        }
-        
-        console.log('Saving tax configuration:', taxConfig);
-        
-        if (typeof NotificationManager !== 'undefined') {
-            NotificationManager.showSuccess('Tax configuration saved successfully');
-        }
-    },
-    
-    // Export configuration
-    exportConfig: function() {
-        const config = {
-            adminConfig,
-            products,
-            pricingTiers,
-            shippingZones,
-            shippingConfig,
-            taxConfig
-        };
-        
-        const blob = new Blob([JSON.stringify(config, null, 2)], {type: 'application/json'});
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = `kanva-config-${new Date().toISOString().split('T')[0]}.json`;
-        a.click();
-        URL.revokeObjectURL(url);
-        
-        if (typeof NotificationManager !== 'undefined') {
-            NotificationManager.showSuccess('Configuration exported successfully');
-        }
+
+    // Application metadata
+    metadata: {
+        version: "2.0.0",
+        lastUpdated: new Date().toISOString(),
+        configuredBy: null
     }
 };
 
-// Global functions for HTML onclick handlers
-function toggleAdminPanel() {
-    AdminPanel.toggle();
-}
+// Global application state
+let appState = {
+    // User and authentication
+    currentUser: null,
+    isAdmin: false,
+    isModalMode: false,
+    isLeftNav: false,
+    appLocation: 'sidebar',
 
-function loginAdmin() {
-    AdminPanel.login();
-}
+    // Copper SDK integration
+    sdk: null,
+    copperContext: null,
 
-function showProductEditor() {
-    AdminPanel.showProductEditor();
-}
+    // UI state
+    currentView: 'calculator',
+    adminPanelOpen: false,
+    
+    // Calculation cache
+    lastCalculation: null,
+    
+    // Application lifecycle
+    isReady: false,
+    hasError: false,
+    loadTime: null,
+    startTime: Date.now()
+};
 
-function showShippingEditor() {
-    AdminPanel.showShippingEditor();
-}
-
-function showTaxEditor() {
-    AdminPanel.showTaxEditor();
-}
-
-function exportConfig() {
-    AdminPanel.exportConfig();
-}
-
-// Initialize admin panel on load
-document.addEventListener('DOMContentLoaded', function() {
-    // Add enter key support for password field
-    const passwordField = document.getElementById('adminPassword');
-    if (passwordField) {
-        passwordField.addEventListener('keypress', function(e) {
-            if (e.key === 'Enter') {
-                loginAdmin();
+// Utility functions for configuration management
+const ConfigManager = {
+    // Load configuration from localStorage
+    load: function() {
+        try {
+            const saved = localStorage.getItem('kanvaAdminConfig');
+            if (saved) {
+                const savedConfig = JSON.parse(saved);
+                // Merge saved config with defaults to handle new fields
+                adminConfig = this.mergeConfigs(adminConfig, savedConfig);
+                console.log('✅ Admin configuration loaded from localStorage');
+                return true;
             }
-        });
-    }
-});
+        } catch (error) {
+            console.error('❌ Error loading admin configuration:', error);
+        }
+        return false;
+    },
 
-console.log('✅ Admin panel module loaded');
+    // Save configuration to localStorage
+    save: function(config = adminConfig) {
+        try {
+            config.metadata.lastUpdated = new Date().toISOString();
+            config.metadata.configuredBy = appState.currentUser?.email || 'Unknown';
+            localStorage.setItem('kanvaAdminConfig', JSON.stringify(config));
+            console.log('✅ Admin configuration saved to localStorage');
+            return true;
+        } catch (error) {
+            console.error('❌ Error saving admin configuration:', error);
+        }
+        return false;
+    },
+
+    // Merge configurations (saved overwrites defaults)
+    mergeConfigs: function(defaultConfig, savedConfig) {
+        const merged = { ...defaultConfig };
+        
+        // Deep merge for nested objects
+        for (const key in savedConfig) {
+            if (typeof savedConfig[key] === 'object' && !Array.isArray(savedConfig[key])) {
+                merged[key] = { ...defaultConfig[key], ...savedConfig[key] };
+            } else {
+                merged[key] = savedConfig[key];
+            }
+        }
+        
+        return merged;
+    },
+
+    // Reset to default configuration
+    reset: function() {
+        try {
+            localStorage.removeItem('kanvaAdminConfig');
+            console.log('✅ Admin configuration reset to defaults');
+            return true;
+        } catch (error) {
+            console.error('❌ Error resetting admin configuration:', error);
+        }
+        return false;
+    },
+
+    // Validate configuration integrity
+    validate: function(config = adminConfig) {
+        const errors = [];
+
+        // Validate products
+        for (const [key, product] of Object.entries(config.products)) {
+            if (!product.name || product.price <= 0 || product.msrp <= 0) {
+                errors.push(`Invalid product configuration: ${key}`);
+            }
+        }
+
+        // Validate tiers
+        if (config.tiers.tier2.threshold <= config.tiers.tier1.threshold ||
+            config.tiers.tier3.threshold <= config.tiers.tier2.threshold) {
+            errors.push('Invalid tier thresholds');
+        }
+
+        // Validate shipping
+        if (config.shipping.rate < 0 || config.shipping.freeThreshold < 0) {
+            errors.push('Invalid shipping configuration');
+        }
+
+        return {
+            isValid: errors.length === 0,
+            errors: errors
+        };
+    },
+
+    // Get current configuration
+    get: function() {
+        return adminConfig;
+    },
+
+    // Update specific configuration section
+    update: function(section, data) {
+        if (adminConfig[section]) {
+            adminConfig[section] = { ...adminConfig[section], ...data };
+            return this.save();
+        }
+        return false;
+    }
+};
+
+// Authentication helper functions
+const AuthManager = {
+    // Check if user is admin
+    isAdmin: function(email) {
+        return adminEmails.includes(email?.toLowerCase());
+    },
+
+    // Set current user
+    setUser: function(user) {
+        appState.currentUser = user;
+        appState.isAdmin = this.isAdmin(user?.email);
+        console.log(`👤 User set: ${user?.email || 'Unknown'} (Admin: ${appState.isAdmin})`);
+    },
+
+    // Get current user
+    getUser: function() {
+        return appState.currentUser;
+    }
+};
+
+// Product helper functions
+const ProductManager = {
+    // Get all products
+    getAll: function() {
+        return adminConfig.products;
+    },
+
+    // Get specific product
+    get: function(productKey) {
+        return adminConfig.products[productKey];
+    },
+
+    // Get product options for dropdowns
+    getOptions: function() {
+        return Object.entries(adminConfig.products).map(([key, product]) => ({
+            value: key,
+            label: `${product.name} ($${product.price})`,
+            product: product
+        }));
+    }
+};
+
+// Tier calculation helper
+const TierManager = {
+    // Get tier for given quantity
+    getTier: function(masterCases) {
+        const tiers = adminConfig.tiers;
+        if (masterCases < tiers.tier2.threshold) return tiers.tier1;
+        if (masterCases < tiers.tier3.threshold) return tiers.tier2;
+        return tiers.tier3;
+    },
+
+    // Get all tiers
+    getAll: function() {
+        return adminConfig.tiers;
+    }
+};
+
+// Initialize configuration on script load
+console.log('🔧 Initializing Kanva Botanicals configuration...');
+
+// Load saved configuration
+ConfigManager.load();
+
+// Validate configuration
+const validation = ConfigManager.validate();
+if (!validation.isValid) {
+    console.warn('⚠️  Configuration validation errors:', validation.errors);
+}
+
+console.log('✅ Configuration initialized successfully');
