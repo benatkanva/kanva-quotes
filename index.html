@@ -5,325 +5,147 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Kanva Botanicals Quote Calculator</title>
     
-    <!-- CSS Files -->
-    <link rel="stylesheet" href="css/main.css">
-    <link rel="stylesheet" href="css/admin.css">
-    <link rel="stylesheet" href="css/hybrid.css">
+    <!-- Tailwind CSS CDN with custom configuration -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        // Custom Tailwind configuration for Kanva branding
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        'kanva': {
+                            'green': '#93D500',
+                            'dark': '#17351A',
+                            'light': '#f8fdf8',
+                            'accent': '#e8f5e8'
+                        }
+                    },
+                    borderWidth: {
+                        '3': '3px'
+                    },
+                    backdropBlur: {
+                        'xs': '2px'
+                    }
+                }
+            }
+        }
+    </script>
     
-    <!-- Copper CRM SDK -->
-    <script src="https://cdn.jsdelivr.net/npm/copper-sdk@latest/dist/copper-sdk.min.js"></script>
+    <!-- Copper SDK - Load first for CRM integration -->
+    <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/copper-sdk@latest/dist/copper-sdk.min.js"></script>
+    
+    <!-- SIMPLIFIED CSS - Only keep essential custom styles -->
+    <style>
+        /* Only keep styles that Tailwind can't handle */
+        
+        /* Custom animations */
+        @keyframes kanva-pulse {
+            0%, 100% { transform: scale(1); opacity: 1; }
+            50% { transform: scale(1.05); opacity: 0.8; }
+        }
+        
+        @keyframes kanva-spin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+        
+        .kanva-pulse { animation: kanva-pulse 2s infinite; }
+        .kanva-spin { animation: kanva-spin 1s linear infinite; }
+        
+        /* Custom gradients that extend Tailwind */
+        .bg-kanva-gradient {
+            background: linear-gradient(135deg, #93D500 0%, #7ab300 100%);
+        }
+        
+        .bg-kanva-gradient-hover:hover {
+            background: linear-gradient(135deg, #7ab300 0%, #93D500 100%);
+        }
+        
+        /* Loading animation */
+        .loading-dots::after {
+            content: '';
+            animation: kanva-pulse 1.5s infinite;
+        }
+    </style>
 </head>
-<body>
-    <!-- Header -->
-    <header class="calculator-header">
-        <div class="header-content">
-            <div class="logo-section">
-                <span class="logo">🌿</span>
-                <h1>Kanva Botanicals Quote Calculator</h1>
-            </div>
-            <p class="tagline">Instantly generate professional quotes with accurate pricing</p>
-            <div class="user-info">
-                <span id="userDisplay">User: None | Admin: NO</span>
-                <button id="adminToggle" onclick="toggleAdminPanel()" class="admin-btn">⚙️</button>
-            </div>
-        </div>
-    </header>
-
-    <!-- Admin Panel -->
-    <div id="adminPanel" class="admin-panel" style="display: none;">
-        <div class="admin-content">
-            <h3>🔐 Admin Panel</h3>
-            <div id="adminLogin" class="admin-login">
-                <input type="password" id="adminPassword" placeholder="Enter admin password">
-                <button onclick="loginAdmin()">Login</button>
-            </div>
-            <div id="adminControls" class="admin-controls" style="display: none;">
-                <h4>Product Management</h4>
-                <div class="admin-sections">
-                    <button onclick="showProductEditor()">Edit Products</button>
-                    <button onclick="showShippingEditor()">Edit Shipping Zones</button>
-                    <button onclick="showTaxEditor()">Edit Tax Rates</button>
-                    <button onclick="exportConfig()">Export Config</button>
+<body class="bg-gray-50 font-sans">
+    <!-- Main Application Container with Tailwind classes -->
+    <div id="app" class="min-h-screen">
+        <!-- Loading state with Tailwind -->
+        <div class="flex items-center justify-center min-h-screen bg-gradient-to-br from-kanva-light to-kanva-accent">
+            <div class="text-center p-8">
+                <div class="text-4xl mb-4 kanva-pulse">🌿</div>
+                <div class="text-xl font-bold text-kanva-dark">Loading Kanva Calculator<span class="loading-dots">...</span></div>
+                <div class="mt-4 w-32 h-1 bg-kanva-green rounded-full mx-auto">
+                    <div class="h-full bg-kanva-dark rounded-full kanva-spin origin-left" style="width: 30%;"></div>
                 </div>
-                <div id="editorContent" class="editor-content"></div>
             </div>
         </div>
     </div>
 
-    <!-- Main Calculator -->
-    <main id="mainCalculator" class="calculator-container">
-        <div class="calculator-grid">
-            <!-- Customer Information -->
-            <section class="customer-info">
-                <h3>👤 Customer Information</h3>
-                
-                <div class="form-group">
-                    <label for="quoteName">Quote Name:</label>
-                    <input type="text" id="quoteName" placeholder="Product Quote for Company Name">
-                </div>
-                
-                <div class="form-group">
-                    <label for="companyName">Company Name:</label>
-                    <input type="text" id="companyName" placeholder="ABC Distribution">
-                </div>
-                
-                <div class="form-group">
-                    <label for="segment">Customer Segment:</label>
-                    <select id="segment">
-                        <option value="">Select segment...</option>
-                        <option value="smoke and vape shops">Smoke & Vape Shops</option>
-                        <option value="convenience stores">Convenience Stores</option>
-                        <option value="cannabis dispensaries">Cannabis Dispensaries</option>
-                        <option value="wholesale distribution">Wholesale Distribution</option>
-                        <option value="retail customers">Retail Customers</option>
-                    </select>
-                </div>
-                
-                <div class="form-group">
-                    <label for="customerState">State:</label>
-                    <select id="customerState" onchange="Calculator.calculateOrder(); updateDisplay();">
-                        <option value="ID">ID - Idaho</option>
-                        <option value="AL">AL - Alabama</option>
-                        <option value="AK">AK - Alaska</option>
-                        <option value="AZ">AZ - Arizona</option>
-                        <option value="AR">AR - Arkansas</option>
-                        <option value="CA">CA - California</option>
-                        <option value="CO">CO - Colorado</option>
-                        <option value="CT">CT - Connecticut</option>
-                        <option value="DE">DE - Delaware</option>
-                        <option value="DC">DC - District of Columbia</option>
-                        <option value="FL">FL - Florida</option>
-                        <option value="GA">GA - Georgia</option>
-                        <option value="HI">HI - Hawaii</option>
-                        <option value="IL">IL - Illinois</option>
-                        <option value="IN">IN - Indiana</option>
-                        <option value="IA">IA - Iowa</option>
-                        <option value="KS">KS - Kansas</option>
-                        <option value="KY">KY - Kentucky</option>
-                        <option value="LA">LA - Louisiana</option>
-                        <option value="ME">ME - Maine</option>
-                        <option value="MD">MD - Maryland</option>
-                        <option value="MA">MA - Massachusetts</option>
-                        <option value="MI">MI - Michigan</option>
-                        <option value="MN">MN - Minnesota</option>
-                        <option value="MS">MS - Mississippi</option>
-                        <option value="MO">MO - Missouri</option>
-                        <option value="MT">MT - Montana</option>
-                        <option value="NE">NE - Nebraska</option>
-                        <option value="NV">NV - Nevada</option>
-                        <option value="NH">NH - New Hampshire</option>
-                        <option value="NJ">NJ - New Jersey</option>
-                        <option value="NM">NM - New Mexico</option>
-                        <option value="NY">NY - New York</option>
-                        <option value="NC">NC - North Carolina</option>
-                        <option value="ND">ND - North Dakota</option>
-                        <option value="OH">OH - Ohio</option>
-                        <option value="OK">OK - Oklahoma</option>
-                        <option value="OR">OR - Oregon</option>
-                        <option value="PA">PA - Pennsylvania</option>
-                        <option value="RI">RI - Rhode Island</option>
-                        <option value="SC">SC - South Carolina</option>
-                        <option value="SD">SD - South Dakota</option>
-                        <option value="TN">TN - Tennessee</option>
-                        <option value="TX">TX - Texas</option>
-                        <option value="UT">UT - Utah</option>
-                        <option value="VT">VT - Vermont</option>
-                        <option value="VA">VA - Virginia</option>
-                        <option value="WA">WA - Washington</option>
-                        <option value="WV">WV - West Virginia</option>
-                        <option value="WI">WI - Wisconsin</option>
-                        <option value="WY">WY - Wyoming</option>
-                    </select>
-                </div>
-                
-                <div class="form-group">
-                    <label for="emailDomain">Email Domain:</label>
-                    <input type="text" id="emailDomain" placeholder="company.com">
-                </div>
-                
-                <div class="form-group">
-                    <label for="phone">Phone Number:</label>
-                    <input type="tel" id="phone" placeholder="(555) 123-4567">
-                </div>
-            </section>
-
-            <!-- Product Selection -->
-            <section class="product-selection">
-                <h3>📦 Product & Order Details</h3>
-                
-                <div class="mode-toggle">
-                    <button class="mode-btn active" onclick="setMode('single')">Single Product</button>
-                    <button class="mode-btn" onclick="setMode('multiple')">Multiple Products</button>
-                </div>
-                
-                <div id="singleProductMode" class="product-mode">
-                    <div class="form-row">
-                        <div class="form-group">
-                            <label>Primary Product:</label>
-                            <select id="primaryProduct" onchange="updateProductInfo()">
-                                <optgroup label="Ready-to-Drink Shots">
-                                    <option value="focus">Focus+Flow ($4.50)</option>
-                                    <option value="release">Release+Relax ($4.50)</option>
-                                    <option value="raw">Raw+Releaf ($4.50)</option>
-                                    <option value="zoom">Zoom ($3.10)</option>
-                                    <option value="mango">Mango ($3.10)</option>
-                                </optgroup>
-                                <optgroup label="Kratom Powders - Green">
-                                    <option value="green20g">Green Kratom 20g ($2.50)</option>
-                                    <option value="green60g">Green Kratom 60g ($5.00)</option>
-                                    <option value="green120g">Green Kratom 120g ($7.50)</option>
-                                    <option value="green250g">Green Kratom 250g ($11.50)</option>
-                                    <option value="green1kg">Green Kratom 1kg ($35.00)</option>
-                                </optgroup>
-                                <optgroup label="Kratom Powders - Red">
-                                    <option value="red20g">Red Kratom 20g ($2.50)</option>
-                                    <option value="red60g">Red Kratom 60g ($5.00)</option>
-                                    <option value="red120g">Red Kratom 120g ($7.50)</option>
-                                    <option value="red250g">Red Kratom 250g ($11.50)</option>
-                                    <option value="red1kg">Red Kratom 1kg ($35.00)</option>
-                                </optgroup>
-                                <optgroup label="Kratom Powders - White">
-                                    <option value="white20g">White Kratom 20g ($2.50)</option>
-                                    <option value="white60g">White Kratom 60g ($5.00)</option>
-                                    <option value="white120g">White Kratom 120g ($7.50)</option>
-                                    <option value="white250g">White Kratom 250g ($11.50)</option>
-                                    <option value="white1kg">White Kratom 1kg ($35.00)</option>
-                                </optgroup>
-                            </select>
-                        </div>
-                        
-                        <div class="form-group">
-                            <label>Display Boxes:</label>
-                            <input type="number" id="displayBoxes" min="0" value="12" onchange="calculateAndUpdate()">
-                            <small id="displayBoxInfo">12 boxes = 1 master case</small>
-                        </div>
-                        
-                        <div class="form-group">
-                            <label>Master Cases:</label>
-                            <input type="number" id="masterCases" min="0" value="1" onchange="calculateAndUpdate()">
-                            <small>Auto-updates from display boxes</small>
-                        </div>
-                        
-                        <div class="form-group">
-                            <label>Max Retail Price:</label>
-                            <input type="text" id="maxRetailPrice" readonly>
-                        </div>
-                    </div>
-                </div>
-                
-                <div id="multipleProductMode" class="product-mode" style="display: none;">
-                    <div id="productList"></div>
-                    <button class="add-product-btn" onclick="addProductLine()">+ Add Product</button>
-                </div>
-            </section>
-        </div>
-
-        <!-- Order Calculation -->
-        <section class="order-calculation">
-            <h3>📊 Order Calculation</h3>
-            <div id="calculationResults" class="calculation-results">
-                <p class="empty-state">Enter product details to see calculation</p>
-            </div>
-            
-            <div class="shipping-override" style="display: none;">
-                <label>
-                    <input type="checkbox" id="manualShipping" onchange="toggleManualShipping()">
-                    Manual Shipping Override
-                </label>
-                <input type="number" id="manualShippingAmount" placeholder="Enter shipping amount" style="display: none;">
-            </div>
-        </section>
-
-        <!-- Action Buttons -->
-        <section class="action-buttons">
-            <button class="btn btn-primary" onclick="generateEmail()">
-                ✉️ Generate Professional Quote Email
-            </button>
-            <button class="btn btn-secondary" onclick="saveQuoteToCRM()">
-                💾 Save to CRM
-            </button>
-            <button class="btn btn-tertiary" onclick="createOpportunity()">
-                🎯 Create Opportunity
-            </button>
-        </section>
-
-        <!-- Quick Product Reference -->
-        <section class="product-reference">
-            <h3>📋 Quick Product Reference</h3>
-            <div class="reference-grid">
-                <div class="reference-category">
-                    <h4>🥤 2oz Wellness Shots</h4>
-                    <div class="product-list">
-                        <div class="product-item">
-                            <span class="product-name">Focus+Flow</span>
-                            <span class="product-info">$4.50 → $9.99 MSRP (54.95% margin)</span>
-                        </div>
-                        <div class="product-item">
-                            <span class="product-name">Release+Relax</span>
-                            <span class="product-info">$4.50 → $9.99 MSRP (54.95% margin)</span>
-                        </div>
-                        <div class="product-item">
-                            <span class="product-name">Raw+Releaf</span>
-                            <span class="product-info">$4.50 → $9.99 MSRP (54.95% margin)</span>
-                        </div>
-                    </div>
-                </div>
-                
-                <div class="reference-category">
-                    <h4>⚡ Energy & Extract Shots</h4>
-                    <div class="product-list">
-                        <div class="product-item">
-                            <span class="product-name">Zoom</span>
-                            <span class="product-info">$3.10 → $6.99 MSRP (55.65% margin)</span>
-                        </div>
-                        <div class="product-item">
-                            <span class="product-name">Mango</span>
-                            <span class="product-info">$3.10 → $6.99 MSRP (55.65% margin)</span>
-                        </div>
-                    </div>
-                </div>
-                
-                <div class="reference-category">
-                    <h4>🌿 Kratom Powders</h4>
-                    <div class="product-list">
-                        <div class="product-item">
-                            <span class="product-name">20g Bags</span>
-                            <span class="product-info">$2.50 → $4.99 MSRP (49.90% margin)</span>
-                        </div>
-                        <div class="product-item">
-                            <span class="product-name">60g Bags</span>
-                            <span class="product-info">$5.00 → $9.99 MSRP (49.95% margin)</span>
-                        </div>
-                        <div class="product-item">
-                            <span class="product-name">120g Bags</span>
-                            <span class="product-info">$7.50 → $14.99 MSRP (49.97% margin)</span>
-                        </div>
-                        <div class="product-item">
-                            <span class="product-name">250g Bags</span>
-                            <span class="product-info">$11.50 → $24.99 MSRP (53.98% margin)</span>
-                        </div>
-                        <div class="product-item">
-                            <span class="product-name">1kg Bags</span>
-                            <span class="product-info">$35.00 → $79.99 MSRP (56.24% margin)</span>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            
-            <div class="reference-footer">
-                <p>🚚 Free shipping on orders over $2,500 | 📦 Volume discounts: 5+ cases (10% off), 10+ cases (15% off)</p>
-            </div>
-        </section>
-    </main>
-
-    <!-- JavaScript Files -->
+    <!-- JavaScript Files - Critical loading order! -->
+    
+    <!-- 1. Core configuration and utilities -->
     <script src="js/config.js"></script>
-    <script src="js/calculator.js"></script>
-    <script src="js/admin.js"></script>
-    <script src="js/email-generator.js"></script>
-    <script src="js/copper-integration.js"></script>
-    <script src="js/multi-product-calculator.js"></script>
+    
+    <!-- 2. Notification system (must load before other modules that use it) -->
     <script src="js/notification-manager.js"></script>
+    
+    <!-- 3. Missing functions (must load before modules that reference them) -->
+    <script src="js/missing-functions.js"></script>
+    
+    <!-- 4. Core calculation engine -->
+    <script src="js/calculator.js"></script>
+    
+    <!-- 5. Admin panel functionality -->
+    <script src="js/admin.js"></script>
+    
+    <!-- 6. CRM integration -->
+    <script src="js/copper-integration.js"></script>
+    
+    <!-- 7. Email generation -->
+    <script src="js/email-generator.js"></script>
+    
+    <!-- 8. Main application orchestrator (must load last) -->
     <script src="js/main.js"></script>
+    
+    <!-- Global error handling -->
+    <script>
+        // Global error handler for debugging
+        window.addEventListener('error', function(event) {
+            console.error('💥 Global JavaScript Error:', {
+                message: event.message,
+                filename: event.filename,
+                lineno: event.lineno,
+                colno: event.colno,
+                error: event.error
+            });
+            
+            // Show user-friendly error if NotificationManager is available
+            if (typeof NotificationManager !== 'undefined') {
+                NotificationManager.showError(
+                    'A technical error occurred. Please refresh the page or contact support if the problem persists.',
+                    'Application Error'
+                );
+            }
+        });
+        
+        // Unhandled promise rejection handler
+        window.addEventListener('unhandledrejection', function(event) {
+            console.error('💥 Unhandled Promise Rejection:', event.reason);
+            
+            if (typeof NotificationManager !== 'undefined') {
+                NotificationManager.showError(
+                    'A network or data error occurred. Please try again.',
+                    'Connection Error'
+                );
+            }
+        });
+        
+        // Log when app is fully loaded
+        window.addEventListener('load', function() {
+            console.log('🚀 Kanva Calculator fully loaded and ready');
+        });
+    </script>
 </body>
 </html>
