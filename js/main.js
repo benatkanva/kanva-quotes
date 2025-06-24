@@ -284,154 +284,321 @@ const App = {
 
     // Generate full calculator HTML
     generateFullCalculatorHTML: function() {
-        const isAdmin = appState.isAdmin;
-        const isModal = appState.isModalMode;
-        const isLeftNav = appState.isLeftNav;
-        
-        return `
-            <!-- Main Calculator Container -->
-            <div class="calculator" id="mainCalculator">
-                <div class="header">
-                    <h1>🌿 Kanva Botanicals Quote Calculator</h1>
-                    <p>Instantly generate professional quotes with accurate pricing</p>
-                    ${isAdmin ? '<button class="admin-btn" onclick="showAdminPanel()">⚙️ Admin Settings</button>' : ''}
+    const isAdmin = appState.isAdmin;
+    const isModal = appState.isModalMode;
+    const isLeftNav = appState.isLeftNav;
+    
+    return `
+        <!-- Main Calculator Container with Tailwind -->
+        <div class="min-h-screen bg-gradient-to-br from-gray-50 to-kanva-light p-4" id="mainCalculator">
+            
+            <!-- Header Section -->
+            <div class="max-w-7xl mx-auto">
+                <div class="text-center mb-8 p-6 bg-white rounded-2xl shadow-lg border-2 border-kanva-green">
+                    <h1 class="text-4xl lg:text-5xl font-bold bg-gradient-to-r from-kanva-dark to-kanva-green bg-clip-text text-transparent mb-4">
+                        🌿 Kanva Botanicals Quote Calculator
+                    </h1>
+                    <p class="text-lg text-gray-600 mb-4">Instantly generate professional quotes with accurate pricing</p>
+                    ${isAdmin ? `
+                        <button onclick="showAdminPanel()" 
+                                class="px-6 py-3 bg-gradient-to-r from-kanva-dark to-gray-700 hover:from-gray-700 hover:to-kanva-dark text-white font-bold rounded-lg transition-all duration-300 transform hover:-translate-y-1 shadow-lg hover:shadow-xl focus:outline-none focus:ring-4 focus:ring-kanva-dark/50">
+                            ⚙️ Admin Settings
+                        </button>
+                    ` : ''}
                 </div>
 
-                <!-- Customer Information Section -->
-                <section class="customer-info">
-                    <h3>Customer Information</h3>
-                    <div class="input-group">
-                        <label for="quoteName">Quote Name:</label>
-                        <input type="text" id="quoteName" placeholder="Product Quote for Company Name">
-                    </div>
-                    <div class="input-group">
-                        <label for="companyName">Company Name:</label>
-                        <input type="text" id="companyName" placeholder="ABC Distribution">
-                    </div>
-                    <div class="input-group">
-                        <label for="segment">Segment:</label>
-                        <input type="text" id="segment" placeholder="smoke and vape shops">
-                    </div>
-                    <div class="input-group">
-                        <label for="emailDomain">Email Domain:</label>
-                        <input type="text" id="emailDomain" placeholder="company.com">
-                    </div>
-                    <div class="input-group">
-                        <label for="phone">Phone:</label>
-                        <input type="tel" id="phone" placeholder="(555) 123-4567">
-                    </div>
+                <div class="grid grid-cols-1 xl:grid-cols-3 gap-6">
                     
-                    <!-- Tax Information -->
-                    <div class="tax-section">
-                        <h4>Tax Information</h4>
-                        <div class="input-group">
-                            <label for="stateTaxRate">State Tax Rate (%):</label>
-                            <input type="number" id="stateTaxRate" step="0.01" placeholder="0.00">
-                        </div>
-                        <div class="input-group">
-                            <label for="countyTaxRate">County Tax Rate (%):</label>
-                            <input type="number" id="countyTaxRate" step="0.01" placeholder="0.00">
-                        </div>
-                        <button type="button" class="detect-tax-btn" onclick="autoDetectTaxRate()">Auto-Detect Tax Rate</button>
-                    </div>
-                </section>
-
-                <!-- Product & Order Details Section -->
-                <section class="product-details">
-                    <div class="product-mode-toggle">
-                        <h3>Product & Order Details</h3>
-                        <div class="mode-buttons">
-                            <button type="button" id="singleProductBtn" class="mode-btn active" onclick="switchToSingleProduct()">Single Product</button>
-                            <button type="button" id="multiProductBtn" class="mode-btn" onclick="switchToMultiProduct()">Multiple Products</button>
-                        </div>
-                    </div>
-                    
-                    <!-- Single Product Mode -->
-                    <div id="singleProductMode" class="product-mode">
-                        <div class="input-group">
-                            <label for="primaryProduct">Primary Product:</label>
-                            <select id="primaryProduct" onchange="updateCalculation()">
-                                <!-- Populated by JavaScript -->
-                            </select>
-                        </div>
-                        <div class="input-group">
-                            <label for="masterCases">Master Cases:</label>
-                            <input type="number" id="masterCases" value="28" min="1" max="500" onchange="updateCalculation()">
-                        </div>
-                        <div class="input-group">
-                            <label for="maxRetail">Max Retail Price:</label>
-                            <input type="number" id="maxRetail" value="5.00" step="0.01" min="0">
-                        </div>
-                    </div>
-                    
-                    <!-- Multiple Product Mode -->
-                    <div id="multiProductMode" class="product-mode" style="display: none;">
-                        <div class="multi-product-controls">
-                            <button type="button" class="add-product-btn" onclick="addProductLine()">➕ Add Product Line</button>
-                            <div class="input-group">
-                                <label>
-                                    <input type="checkbox" id="creditCardFee" onchange="calculateMultiProductTotal()">
-                                    Add 3% Credit Card Fee
-                                </label>
+                    <!-- Customer Information Section -->
+                    <div class="xl:col-span-1">
+                        <section class="bg-white rounded-2xl shadow-lg border-2 border-kanva-green p-6 mb-6">
+                            <h3 class="text-2xl font-bold text-kanva-dark mb-6 pb-3 border-b-2 border-kanva-green">
+                                👤 Customer Information
+                            </h3>
+                            
+                            <div class="space-y-4">
+                                <div>
+                                    <label for="quoteName" class="block text-sm font-bold text-kanva-dark uppercase tracking-wide mb-2">
+                                        Quote Name:
+                                    </label>
+                                    <input type="text" 
+                                           id="quoteName" 
+                                           placeholder="Product Quote for Company Name"
+                                           class="w-full p-3 border-2 border-kanva-green rounded-lg text-kanva-dark focus:border-kanva-dark focus:ring-4 focus:ring-kanva-green/30 focus:outline-none transition-all duration-300" />
+                                </div>
+                                
+                                <div>
+                                    <label for="companyName" class="block text-sm font-bold text-kanva-dark uppercase tracking-wide mb-2">
+                                        Company Name:
+                                    </label>
+                                    <input type="text" 
+                                           id="companyName" 
+                                           placeholder="ABC Distribution"
+                                           class="w-full p-3 border-2 border-kanva-green rounded-lg text-kanva-dark focus:border-kanva-dark focus:ring-4 focus:ring-kanva-green/30 focus:outline-none transition-all duration-300" />
+                                </div>
+                                
+                                <div>
+                                    <label for="segment" class="block text-sm font-bold text-kanva-dark uppercase tracking-wide mb-2">
+                                        Customer Segment:
+                                    </label>
+                                    <input type="text" 
+                                           id="segment" 
+                                           placeholder="smoke and vape shops"
+                                           class="w-full p-3 border-2 border-kanva-green rounded-lg text-kanva-dark focus:border-kanva-dark focus:ring-4 focus:ring-kanva-green/30 focus:outline-none transition-all duration-300" />
+                                </div>
+                                
+                                <div>
+                                    <label for="emailDomain" class="block text-sm font-bold text-kanva-dark uppercase tracking-wide mb-2">
+                                        Email Domain:
+                                    </label>
+                                    <input type="text" 
+                                           id="emailDomain" 
+                                           placeholder="company.com"
+                                           class="w-full p-3 border-2 border-kanva-green rounded-lg text-kanva-dark focus:border-kanva-dark focus:ring-4 focus:ring-kanva-green/30 focus:outline-none transition-all duration-300" />
+                                </div>
+                                
+                                <div>
+                                    <label for="phone" class="block text-sm font-bold text-kanva-dark uppercase tracking-wide mb-2">
+                                        Phone Number:
+                                    </label>
+                                    <input type="tel" 
+                                           id="phone" 
+                                           placeholder="(555) 123-4567"
+                                           class="w-full p-3 border-2 border-kanva-green rounded-lg text-kanva-dark focus:border-kanva-dark focus:ring-4 focus:ring-kanva-green/30 focus:outline-none transition-all duration-300" />
+                                </div>
                             </div>
-                        </div>
-                        <div id="productLines" class="product-lines">
-                            <!-- Product lines populated by MultiProductCalculator -->
-                        </div>
-                        <div id="multiProductResults" class="multi-product-results">
-                            <!-- Results populated by MultiProductCalculator -->
-                        </div>
+                            
+                            <!-- Tax Information -->
+                            <div class="mt-6 p-4 bg-gradient-to-r from-blue-50 to-blue-100 rounded-lg border-2 border-blue-300">
+                                <h4 class="text-lg font-bold text-blue-900 mb-4">🏛️ Tax Information</h4>
+                                
+                                <div class="grid grid-cols-2 gap-4 mb-4">
+                                    <div>
+                                        <label for="stateTaxRate" class="block text-xs font-bold text-blue-900 uppercase tracking-wide mb-1">
+                                            State Tax (%):
+                                        </label>
+                                        <input type="number" 
+                                               id="stateTaxRate" 
+                                               step="0.01" 
+                                               placeholder="0.00"
+                                               class="w-full p-2 border-2 border-blue-300 rounded-md text-blue-900 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 focus:outline-none transition-all duration-300" />
+                                    </div>
+                                    
+                                    <div>
+                                        <label for="countyTaxRate" class="block text-xs font-bold text-blue-900 uppercase tracking-wide mb-1">
+                                            County Tax (%):
+                                        </label>
+                                        <input type="number" 
+                                               id="countyTaxRate" 
+                                               step="0.01" 
+                                               placeholder="0.00"
+                                               class="w-full p-2 border-2 border-blue-300 rounded-md text-blue-900 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 focus:outline-none transition-all duration-300" />
+                                    </div>
+                                </div>
+                                
+                                <button type="button" 
+                                        onclick="autoDetectTaxRate()"
+                                        class="w-full px-4 py-2 bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-500 text-white font-bold rounded-lg transition-all duration-300 transform hover:-translate-y-1 shadow-md hover:shadow-lg focus:outline-none focus:ring-4 focus:ring-blue-300">
+                                    🎯 Auto-Detect Tax Rate
+                                </button>
+                            </div>
+                        </section>
                     </div>
-                </section>
 
-                <!-- Calculation Results Section -->
-                <section class="results" id="resultsSection">
-                    <h3>Order Calculation</h3>
-                    <div id="orderResults">
-                        <!-- Populated by Calculator -->
-                    </div>
-                    <div id="tierInfo" class="tier-info">
-                        <!-- Populated by Calculator -->
-                    </div>
-                </section>
+                    <!-- Product & Order Details Section -->
+                    <div class="xl:col-span-2">
+                        <section class="bg-white rounded-2xl shadow-lg border-2 border-kanva-green p-6 mb-6">
+                            
+                            <!-- Product Mode Toggle -->
+                            <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6">
+                                <h3 class="text-2xl font-bold text-kanva-dark mb-4 sm:mb-0">
+                                    📦 Product & Order Details
+                                </h3>
+                                <div class="flex bg-gray-100 rounded-lg p-1">
+                                    <button type="button" 
+                                            id="singleProductBtn" 
+                                            onclick="switchToSingleProduct()"
+                                            class="px-4 py-2 rounded-md font-bold text-sm transition-all duration-300 bg-kanva-green text-kanva-dark shadow-sm">
+                                        Single Product
+                                    </button>
+                                    <button type="button" 
+                                            id="multiProductBtn" 
+                                            onclick="switchToMultiProduct()"
+                                            class="px-4 py-2 rounded-md font-bold text-sm transition-all duration-300 text-gray-600 hover:text-kanva-dark">
+                                        Multiple Products
+                                    </button>
+                                </div>
+                            </div>
+                            
+                            <!-- Single Product Mode -->
+                            <div id="singleProductMode" class="space-y-6">
+                                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                                    <div>
+                                        <label for="primaryProduct" class="block text-sm font-bold text-kanva-dark uppercase tracking-wide mb-2">
+                                            Primary Product:
+                                        </label>
+                                        <select id="primaryProduct" 
+                                                onchange="updateCalculation()"
+                                                class="w-full p-3 border-2 border-kanva-green rounded-lg text-kanva-dark font-medium focus:border-kanva-dark focus:ring-4 focus:ring-kanva-green/30 focus:outline-none transition-all duration-300">
+                                            <!-- Populated by JavaScript -->
+                                        </select>
+                                    </div>
+                                    
+                                    <div>
+                                        <label for="masterCases" class="block text-sm font-bold text-kanva-dark uppercase tracking-wide mb-2">
+                                            Master Cases:
+                                        </label>
+                                        <input type="number" 
+                                               id="masterCases" 
+                                               value="28" 
+                                               min="1" 
+                                               max="500" 
+                                               onchange="updateCalculation()"
+                                               class="w-full p-3 border-2 border-kanva-green rounded-lg text-kanva-dark font-medium focus:border-kanva-dark focus:ring-4 focus:ring-kanva-green/30 focus:outline-none transition-all duration-300" />
+                                    </div>
+                                    
+                                    <div>
+                                        <label for="maxRetail" class="block text-sm font-bold text-kanva-dark uppercase tracking-wide mb-2">
+                                            Max Retail Price:
+                                        </label>
+                                        <div class="relative">
+                                            <span class="absolute left-3 top-3 text-kanva-dark font-bold">$</span>
+                                            <input type="number" 
+                                                   id="maxRetail" 
+                                                   value="5.00" 
+                                                   step="0.01" 
+                                                   min="0"
+                                                   class="w-full p-3 pl-8 border-2 border-kanva-green rounded-lg text-kanva-dark font-medium focus:border-kanva-dark focus:ring-4 focus:ring-kanva-green/30 focus:outline-none transition-all duration-300" />
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- Multiple Product Mode -->
+                            <div id="multiProductMode" class="hidden space-y-6">
+                                <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center p-4 bg-gradient-to-r from-kanva-light to-kanva-accent rounded-lg border-2 border-kanva-green/30">
+                                    <button type="button" 
+                                            onclick="addProductLine()"
+                                            class="mb-4 sm:mb-0 px-6 py-3 bg-gradient-to-r from-kanva-green to-green-400 hover:from-green-400 hover:to-kanva-green text-kanva-dark font-bold rounded-lg transition-all duration-300 transform hover:-translate-y-1 shadow-md hover:shadow-lg focus:outline-none focus:ring-4 focus:ring-kanva-green/50">
+                                        ➕ Add Product Line
+                                    </button>
+                                    
+                                    <label class="flex items-center text-kanva-dark font-medium">
+                                        <input type="checkbox" 
+                                               id="creditCardFee" 
+                                               onchange="calculateMultiProductTotal()"
+                                               class="mr-3 w-5 h-5 text-kanva-green border-2 border-kanva-green rounded focus:ring-kanva-green focus:ring-2" />
+                                        Add 3% Credit Card Fee
+                                    </label>
+                                </div>
+                                
+                                <div id="productLines" class="space-y-4">
+                                    <!-- Product lines populated by MultiProductCalculator -->
+                                </div>
+                                
+                                <div id="multiProductResults" class="bg-gradient-to-r from-kanva-light to-kanva-accent p-6 rounded-lg border-2 border-kanva-green">
+                                    <!-- Results populated by MultiProductCalculator -->
+                                </div>
+                            </div>
+                        </section>
 
-                <!-- Action Buttons Section -->
-                <section class="actions">
-                    <button class="copy-btn" onclick="generateEmail()">📧 Generate Professional Quote Email</button>
-                    ${appState.isCopperActive ? `
-                        <button class="copy-btn" onclick="saveQuoteToCRM()">💾 Save to CRM</button>
-                        <button class="copy-btn" onclick="createOpportunity()">🎯 Create Opportunity</button>
-                    ` : ''}
-                </section>
+                        <!-- Calculation Results Section -->
+                        <section class="bg-white rounded-2xl shadow-lg border-2 border-kanva-green p-6 mb-6" id="resultsSection">
+                            <h3 class="text-2xl font-bold text-kanva-dark mb-6 pb-3 border-b-2 border-kanva-green">
+                                🧮 Order Calculation
+                            </h3>
+                            
+                            <div id="orderResults" class="bg-gradient-to-r from-kanva-light to-kanva-accent p-6 rounded-lg border-2 border-kanva-green/30 mb-4">
+                                <!-- Populated by Calculator -->
+                            </div>
+                            
+                            <div id="tierInfo" class="bg-gradient-to-r from-green-50 to-green-100 p-4 rounded-lg border-2 border-green-300 text-green-900">
+                                <!-- Populated by Calculator -->
+                            </div>
+                        </section>
+
+                        <!-- Action Buttons Section -->
+                        <section class="bg-white rounded-2xl shadow-lg border-2 border-kanva-green p-6">
+                            <div class="flex flex-wrap gap-4 justify-center">
+                                <button onclick="generateEmail()" 
+                                        class="flex-1 min-w-[250px] px-6 py-4 bg-gradient-to-r from-kanva-green to-green-400 hover:from-green-400 hover:to-kanva-green text-kanva-dark font-bold rounded-xl transition-all duration-300 transform hover:-translate-y-1 shadow-lg hover:shadow-xl focus:outline-none focus:ring-4 focus:ring-kanva-green/50">
+                                    📧 Generate Professional Quote Email
+                                </button>
+                                
+                                ${appState.isCopperActive ? `
+                                    <button onclick="saveQuoteToCRM()" 
+                                            class="flex-1 min-w-[200px] px-6 py-4 bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-500 text-white font-bold rounded-xl transition-all duration-300 transform hover:-translate-y-1 shadow-lg hover:shadow-xl focus:outline-none focus:ring-4 focus:ring-blue-300">
+                                        💾 Save to CRM
+                                    </button>
+                                    
+                                    <button onclick="createOpportunity()" 
+                                            class="flex-1 min-w-[200px] px-6 py-4 bg-gradient-to-r from-purple-500 to-purple-600 hover:from-purple-600 hover:to-purple-500 text-white font-bold rounded-xl transition-all duration-300 transform hover:-translate-y-1 shadow-lg hover:shadow-xl focus:outline-none focus:ring-4 focus:ring-purple-300">
+                                        🎯 Create Opportunity
+                                    </button>
+                                ` : ''}
+                            </div>
+                        </section>
+                    </div>
+                </div>
 
                 ${isLeftNav ? this.generateProductReferenceSection() : ''}
             </div>
+        </div>
 
-            <!-- Email Template Display -->
-            <div class="email-template" id="emailTemplate" style="display: none;">
-                <h3>Generated Quote Email</h3>
-                <div class="email-actions">
-                    <button class="copy-btn" onclick="copyEmail()">📋 Copy Email to Clipboard</button>
-                    <button class="copy-btn" onclick="exportEmail('text')">📄 Export as Text</button>
-                    <button class="copy-btn" onclick="exportEmail('html')">🌐 Export as HTML</button>
-                    ${appState.isCopperActive ? '<button class="copy-btn" onclick="sendEmailViaCRM()">📧 Log in CRM</button>' : ''}
-                </div>
-                <div id="emailOutput" class="email-output">
-                    <!-- Generated email content -->
-                </div>
-                
-                <!-- Email Template Options -->
-                <div class="email-templates">
-                    <h4>Quick Templates</h4>
-                    <button class="template-btn" onclick="generateFollowUpEmail()">Follow-up Email</button>
-                    <button class="template-btn" onclick="generateNegotiationEmail()">Negotiation Email</button>
-                    <button class="template-btn" onclick="generateClosingEmail()">Closing Email</button>
+        <!-- Email Template Display -->
+        <div id="emailTemplate" class="hidden max-w-6xl mx-auto mt-8 bg-white rounded-2xl shadow-lg border-2 border-kanva-green p-6">
+            <h3 class="text-2xl font-bold text-kanva-dark mb-6 pb-3 border-b-2 border-kanva-green">
+                📧 Generated Quote Email
+            </h3>
+            
+            <div class="flex flex-wrap gap-3 mb-6">
+                <button onclick="copyEmail()" 
+                        class="px-4 py-2 bg-gradient-to-r from-kanva-green to-green-400 hover:from-green-400 hover:to-kanva-green text-kanva-dark font-bold rounded-lg transition-all duration-300 shadow-md hover:shadow-lg">
+                    📋 Copy Email
+                </button>
+                <button onclick="exportEmail('text')" 
+                        class="px-4 py-2 bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-500 text-white font-bold rounded-lg transition-all duration-300 shadow-md hover:shadow-lg">
+                    📄 Export as Text
+                </button>
+                <button onclick="exportEmail('html')" 
+                        class="px-4 py-2 bg-gradient-to-r from-purple-500 to-purple-600 hover:from-purple-600 hover:to-purple-500 text-white font-bold rounded-lg transition-all duration-300 shadow-md hover:shadow-lg">
+                    🌐 Export as HTML
+                </button>
+                ${appState.isCopperActive ? `
+                    <button onclick="sendEmailViaCRM()" 
+                            class="px-4 py-2 bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-500 text-white font-bold rounded-lg transition-all duration-300 shadow-md hover:shadow-lg">
+                        📧 Log in CRM
+                    </button>
+                ` : ''}
+            </div>
+            
+            <div id="emailOutput" class="bg-gray-50 border-2 border-gray-300 rounded-lg p-6 font-mono text-sm whitespace-pre-wrap max-h-96 overflow-y-auto">
+                <!-- Generated email content -->
+            </div>
+            
+            <!-- Email Template Options -->
+            <div class="mt-6 p-4 bg-gradient-to-r from-gray-50 to-gray-100 rounded-lg border-2 border-gray-300">
+                <h4 class="text-lg font-bold text-gray-800 mb-3">📝 Quick Templates</h4>
+                <div class="flex flex-wrap gap-3">
+                    <button onclick="generateFollowUpEmail()" 
+                            class="px-4 py-2 bg-gray-300 hover:bg-gray-400 text-gray-800 font-medium rounded-lg transition-all duration-300">
+                        Follow-up Email
+                    </button>
+                    <button onclick="generateNegotiationEmail()" 
+                            class="px-4 py-2 bg-gray-300 hover:bg-gray-400 text-gray-800 font-medium rounded-lg transition-all duration-300">
+                        Negotiation Email
+                    </button>
+                    <button onclick="generateClosingEmail()" 
+                            class="px-4 py-2 bg-gray-300 hover:bg-gray-400 text-gray-800 font-medium rounded-lg transition-all duration-300">
+                        Closing Email
+                    </button>
                 </div>
             </div>
+        </div>
 
-            ${isAdmin ? this.generateAdminPanel() : ''}
-        `;
-    },
+        ${isAdmin ? this.generateAdminPanel() : ''}
+    `;
+},
 
     // Generate product reference section for left nav mode
     generateProductReferenceSection: function() {
@@ -462,66 +629,217 @@ const App = {
     },
 
     // Generate admin panel HTML
-    generateAdminPanel: function() {
-        return `
-            <!-- Admin Panel Modal -->
-            <div id="adminPanel" class="admin-panel" style="display: none;">
-                <div class="admin-content">
-                    <div class="admin-header">
-                        <h2>⚙️ Admin Settings</h2>
-                        <button class="close-btn" onclick="hideAdminPanel()">×</button>
-                    </div>
+   generateAdminPanel: function() {
+    return `
+        <!-- Admin Panel Modal - Tailwind Version -->
+        <div id="adminPanel" 
+             class="hidden fixed inset-0 bg-kanva-dark/95 backdrop-blur-sm z-50 overflow-y-auto">
+            
+            <!-- Admin Content Container -->
+            <div class="bg-white mx-4 my-8 lg:mx-auto lg:my-8 p-0 rounded-2xl max-w-6xl border-3 border-kanva-green shadow-2xl transform transition-all duration-300">
+                
+                <!-- Admin Header -->
+                <div class="flex justify-between items-center bg-gradient-to-r from-kanva-light to-kanva-accent p-6 rounded-t-2xl border-b-3 border-kanva-green">
+                    <h2 class="text-3xl font-bold text-kanva-dark flex items-center gap-3">
+                        ⚙️ Admin Settings
+                    </h2>
+                    <button onclick="hideAdminPanel()" 
+                            class="w-12 h-12 bg-gradient-to-br from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white rounded-full font-bold text-xl transition-all duration-300 hover:rotate-90 hover:scale-110 shadow-lg focus:outline-none focus:ring-4 focus:ring-red-300">
+                        ×
+                    </button>
+                </div>
+                
+                <!-- Admin Sections Container -->
+                <div class="max-h-[70vh] overflow-y-auto p-6 space-y-6">
                     
-                    <div class="admin-sections">
-                        <!-- Product Pricing Section -->
-                        <section class="admin-section">
-                            <h3>Product Pricing</h3>
+                    <!-- Product Pricing Section -->
+                    <section class="bg-white border-2 border-kanva-green rounded-xl hover:border-kanva-dark hover:shadow-lg transition-all duration-300 group">
+                        <h3 class="bg-gradient-to-r from-kanva-green to-green-400 text-kanva-dark font-bold text-xl p-4 rounded-t-xl -mb-px">
+                            💰 Product Pricing
+                        </h3>
+                        
+                        <div class="p-6 space-y-6">
                             ${Object.keys(adminConfig.products).map(key => {
                                 const product = adminConfig.products[key];
                                 return `
-                                    <div class="admin-product">
-                                        <h4>${product.name}</h4>
-                                        <label>Wholesale Price: <input type="number" id="admin_${key}_price" step="0.01" /></label>
-                                        <label>MSRP: <input type="number" id="admin_${key}_msrp" step="0.01" /></label>
-                                        <label>Units per Case: <input type="number" id="admin_${key}_units" /></label>
+                                    <div class="bg-white border-2 border-kanva-green rounded-lg p-5 hover:border-kanva-dark hover:shadow-md transition-all duration-300">
+                                        <h4 class="bg-gradient-to-r from-kanva-light to-kanva-accent text-kanva-dark font-bold text-lg p-3 rounded-t-md -mx-5 -mt-5 mb-4 border-b-2 border-kanva-green">
+                                            ${product.name}
+                                        </h4>
+                                        
+                                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                            <div>
+                                                <label class="block text-sm font-bold text-kanva-dark uppercase tracking-wide mb-2">
+                                                    Wholesale Price:
+                                                </label>
+                                                <input type="number" 
+                                                       id="admin_${key}_price" 
+                                                       step="0.01"
+                                                       class="w-full p-3 border-2 border-kanva-green rounded-lg text-kanva-dark font-medium focus:border-kanva-dark focus:ring-4 focus:ring-kanva-green/30 focus:outline-none transition-all duration-300"
+                                                       placeholder="$0.00" />
+                                            </div>
+                                            
+                                            <div>
+                                                <label class="block text-sm font-bold text-kanva-dark uppercase tracking-wide mb-2">
+                                                    MSRP:
+                                                </label>
+                                                <input type="number" 
+                                                       id="admin_${key}_msrp" 
+                                                       step="0.01"
+                                                       class="w-full p-3 border-2 border-kanva-green rounded-lg text-kanva-dark font-medium focus:border-kanva-dark focus:ring-4 focus:ring-kanva-green/30 focus:outline-none transition-all duration-300"
+                                                       placeholder="$0.00" />
+                                            </div>
+                                            
+                                            <div>
+                                                <label class="block text-sm font-bold text-kanva-dark uppercase tracking-wide mb-2">
+                                                    Units per Case:
+                                                </label>
+                                                <input type="number" 
+                                                       id="admin_${key}_units"
+                                                       class="w-full p-3 border-2 border-kanva-green rounded-lg text-kanva-dark font-medium focus:border-kanva-dark focus:ring-4 focus:ring-kanva-green/30 focus:outline-none transition-all duration-300"
+                                                       placeholder="12" />
+                                            </div>
+                                        </div>
                                     </div>
                                 `;
                             }).join('')}
-                        </section>
+                        </div>
+                    </section>
 
-                        <!-- Volume Tiers Section -->
-                        <section class="admin-section">
-                            <h3>Volume Pricing Tiers</h3>
-                            <div class="tier-config">
-                                <h4>Tier 2</h4>
-                                <label>Threshold: <input type="number" id="admin_tier2_threshold" /> cases</label>
-                                <label>Discount: <input type="number" id="admin_tier2_discount" step="0.1" />%</label>
+                    <!-- Volume Pricing Tiers Section -->
+                    <section class="bg-white border-2 border-kanva-green rounded-xl hover:border-kanva-dark hover:shadow-lg transition-all duration-300">
+                        <h3 class="bg-gradient-to-r from-kanva-green to-green-400 text-kanva-dark font-bold text-xl p-4 rounded-t-xl -mb-px">
+                            📊 Volume Pricing Tiers
+                        </h3>
+                        
+                        <div class="p-6 space-y-6">
+                            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                                <!-- Tier 2 -->
+                                <div class="bg-orange-50 border-2 border-orange-300 rounded-lg p-5 hover:border-orange-400 hover:shadow-md transition-all duration-300">
+                                    <h4 class="bg-gradient-to-r from-orange-200 to-orange-300 text-orange-900 font-bold text-lg p-3 rounded-t-md -mx-5 -mt-5 mb-4 border-b-2 border-orange-400">
+                                        🥈 Tier 2 Pricing
+                                    </h4>
+                                    
+                                    <div class="space-y-4">
+                                        <div>
+                                            <label class="block text-sm font-bold text-orange-900 uppercase tracking-wide mb-2">
+                                                Threshold (cases):
+                                            </label>
+                                            <input type="number" 
+                                                   id="admin_tier2_threshold"
+                                                   class="w-full p-3 border-2 border-orange-300 rounded-lg text-orange-900 font-medium focus:border-orange-500 focus:ring-4 focus:ring-orange-200 focus:outline-none transition-all duration-300" />
+                                        </div>
+                                        
+                                        <div>
+                                            <label class="block text-sm font-bold text-orange-900 uppercase tracking-wide mb-2">
+                                                Discount (%):
+                                            </label>
+                                            <input type="number" 
+                                                   id="admin_tier2_discount" 
+                                                   step="0.1"
+                                                   class="w-full p-3 border-2 border-orange-300 rounded-lg text-orange-900 font-medium focus:border-orange-500 focus:ring-4 focus:ring-orange-200 focus:outline-none transition-all duration-300" />
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <!-- Tier 3 -->
+                                <div class="bg-purple-50 border-2 border-purple-300 rounded-lg p-5 hover:border-purple-400 hover:shadow-md transition-all duration-300">
+                                    <h4 class="bg-gradient-to-r from-purple-200 to-purple-300 text-purple-900 font-bold text-lg p-3 rounded-t-md -mx-5 -mt-5 mb-4 border-b-2 border-purple-400">
+                                        🥇 Tier 3 Pricing
+                                    </h4>
+                                    
+                                    <div class="space-y-4">
+                                        <div>
+                                            <label class="block text-sm font-bold text-purple-900 uppercase tracking-wide mb-2">
+                                                Threshold (cases):
+                                            </label>
+                                            <input type="number" 
+                                                   id="admin_tier3_threshold"
+                                                   class="w-full p-3 border-2 border-purple-300 rounded-lg text-purple-900 font-medium focus:border-purple-500 focus:ring-4 focus:ring-purple-200 focus:outline-none transition-all duration-300" />
+                                        </div>
+                                        
+                                        <div>
+                                            <label class="block text-sm font-bold text-purple-900 uppercase tracking-wide mb-2">
+                                                Discount (%):
+                                            </label>
+                                            <input type="number" 
+                                                   id="admin_tier3_discount" 
+                                                   step="0.1"
+                                                   class="w-full p-3 border-2 border-purple-300 rounded-lg text-purple-900 font-medium focus:border-purple-500 focus:ring-4 focus:ring-purple-200 focus:outline-none transition-all duration-300" />
+                                        </div>
+                                    </div>
+                                </div>
                             </div>
-                            <div class="tier-config">
-                                <h4>Tier 3</h4>
-                                <label>Threshold: <input type="number" id="admin_tier3_threshold" /> cases</label>
-                                <label>Discount: <input type="number" id="admin_tier3_discount" step="0.1" />%</label>
+                        </div>
+                    </section>
+
+                    <!-- Shipping & Payment Section -->
+                    <section class="bg-white border-2 border-kanva-green rounded-xl hover:border-kanva-dark hover:shadow-lg transition-all duration-300">
+                        <h3 class="bg-gradient-to-r from-kanva-green to-green-400 text-kanva-dark font-bold text-xl p-4 rounded-t-xl -mb-px">
+                            🚚 Shipping & Payment
+                        </h3>
+                        
+                        <div class="p-6">
+                            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                                <div>
+                                    <label class="block text-sm font-bold text-kanva-dark uppercase tracking-wide mb-2">
+                                        Shipping Rate (%):
+                                    </label>
+                                    <input type="number" 
+                                           id="admin_shipping_rate" 
+                                           step="0.01"
+                                           class="w-full p-3 border-2 border-blue-300 rounded-lg text-blue-900 font-medium focus:border-blue-500 focus:ring-4 focus:ring-blue-200 focus:outline-none transition-all duration-300" />
+                                </div>
+                                
+                                <div>
+                                    <label class="block text-sm font-bold text-kanva-dark uppercase tracking-wide mb-2">
+                                        Free Shipping Threshold:
+                                    </label>
+                                    <div class="relative">
+                                        <span class="absolute left-3 top-3 text-blue-600 font-bold">$</span>
+                                        <input type="number" 
+                                               id="admin_free_shipping"
+                                               class="w-full p-3 pl-8 border-2 border-blue-300 rounded-lg text-blue-900 font-medium focus:border-blue-500 focus:ring-4 focus:ring-blue-200 focus:outline-none transition-all duration-300" />
+                                    </div>
+                                </div>
+                                
+                                <div>
+                                    <label class="block text-sm font-bold text-kanva-dark uppercase tracking-wide mb-2">
+                                        ACH Required Over:
+                                    </label>
+                                    <div class="relative">
+                                        <span class="absolute left-3 top-3 text-blue-600 font-bold">$</span>
+                                        <input type="number" 
+                                               id="admin_ach_threshold"
+                                               class="w-full p-3 pl-8 border-2 border-blue-300 rounded-lg text-blue-900 font-medium focus:border-blue-500 focus:ring-4 focus:ring-blue-200 focus:outline-none transition-all duration-300" />
+                                    </div>
+                                </div>
                             </div>
-                        </section>
+                        </div>
+                    </section>
+                </div>
 
-                        <!-- Shipping & Payment Section -->
-                        <section class="admin-section">
-                            <h3>Shipping & Payment</h3>
-                            <label>Shipping Rate: <input type="number" id="admin_shipping_rate" step="0.01" />%</label>
-                            <label>Free Shipping Threshold: $<input type="number" id="admin_free_shipping" /></label>
-                            <label>ACH Required Over: $<input type="number" id="admin_ach_threshold" /></label>
-                        </section>
-                    </div>
-
-                    <div class="admin-actions">
-                        <button class="admin-save-btn" onclick="saveAdminSettings()">💾 Save Settings</button>
-                        <button class="admin-reset-btn" onclick="resetAdminSettings()">🔄 Reset to Defaults</button>
-                        <button class="admin-export-btn" onclick="exportAdminConfig()">📤 Export Config</button>
-                    </div>
+                <!-- Action Buttons -->
+                <div class="flex flex-wrap gap-4 justify-center p-6 border-t-2 border-gray-200 bg-gray-50 rounded-b-2xl">
+                    <button onclick="saveAdminSettings()" 
+                            class="flex-1 min-w-[200px] px-8 py-4 bg-gradient-to-r from-kanva-green to-green-400 hover:from-green-400 hover:to-kanva-green text-kanva-dark font-bold rounded-xl transform hover:-translate-y-1 transition-all duration-300 shadow-lg hover:shadow-xl focus:outline-none focus:ring-4 focus:ring-kanva-green/50 uppercase tracking-wide">
+                        💾 Save Settings
+                    </button>
+                    
+                    <button onclick="resetAdminSettings()" 
+                            class="flex-1 min-w-[200px] px-8 py-4 bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-500 text-white font-bold rounded-xl transform hover:-translate-y-1 transition-all duration-300 shadow-lg hover:shadow-xl focus:outline-none focus:ring-4 focus:ring-orange-300 uppercase tracking-wide">
+                        🔄 Reset to Defaults
+                    </button>
+                    
+                    <button onclick="exportAdminConfig()" 
+                            class="flex-1 min-w-[200px] px-8 py-4 bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-500 text-white font-bold rounded-xl transform hover:-translate-y-1 transition-all duration-300 shadow-lg hover:shadow-xl focus:outline-none focus:ring-4 focus:ring-blue-300 uppercase tracking-wide">
+                        📤 Export Config
+                    </button>
                 </div>
             </div>
-        `;
-    },
+        </div>
+    `;
+},
 
     // Populate product dropdown menus
     populateProductDropdowns: function() {
