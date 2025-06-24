@@ -1,7 +1,3 @@
-// Main application orchestration for Kanva Botanicals Quote Calculator
-// Coordinates all modules and manages application lifecycle
-
-// CRITICAL FIX: Define appState at the very beginning, before any code uses it
 const appState = {
     // Application status
     isReady: false,
