@@ -100,10 +100,15 @@ const App = {
         
         try {
             // Check environment first
-            CopperIntegration.checkEnvironment();
+            if (typeof CopperIntegration !== 'undefined' && CopperIntegration.checkEnvironment) {
+                CopperIntegration.checkEnvironment();
+            }
             
             // Initialize SDK
-            const copperAvailable = CopperIntegration.initialize();
+            let copperAvailable = false;
+            if (typeof CopperIntegration !== 'undefined') {
+                copperAvailable = CopperIntegration.initialize();
+            }
             
             if (copperAvailable) {
                 console.log('✅ Copper CRM integration active');
@@ -112,16 +117,42 @@ const App = {
                 console.log('⚠️ Running in standalone mode');
                 appState.isCopperActive = false;
                 
-                // Set demo mode for standalone testing
-                appState.isAdmin = true;
-                AuthManager.setUser({
-                    email: 'demo@kanvabotanicals.com',
-                    name: 'Demo User'
-                });
+                // FIXED: Proper admin detection in standalone mode
+                this.setupStandaloneMode();
             }
         } catch (error) {
             console.error('❌ Error initializing Copper:', error);
             appState.isCopperActive = false;
+            this.setupStandaloneMode();
+        }
+    },
+
+    // FIXED: Setup standalone mode with proper admin detection
+    setupStandaloneMode: function() {
+        appState.isCopperActive = false;
+        appState.integrationMode = 'standalone';
+        
+        // FIXED: Use your actual admin email for testing
+        const testUser = {
+            email: 'ben@kanvabotanicals.com',  // Your email from adminEmails
+            name: 'Ben (Admin)'
+        };
+        
+        // Set user and check admin status
+        AuthManager.setUser(testUser);
+        appState.isAdmin = AuthManager.isAdmin(testUser.email);
+        
+        console.log('🔧 Running in standalone demo mode');
+        console.log(`👤 User: ${testUser.email}`);
+        console.log(`🛡️ Admin access: ${appState.isAdmin ? 'GRANTED' : 'DENIED'}`);
+        
+        // Enable customer search in left nav mode
+        if (appState.isLeftNav) {
+            setTimeout(() => {
+                if (typeof CopperIntegration !== 'undefined' && CopperIntegration.enableCustomerSearch) {
+                    CopperIntegration.enableCustomerSearch();
+                }
+            }, 1000);
         }
     },
 
@@ -402,8 +433,6 @@ const App = {
         `;
     },
 
-    // REMOVED: generateCustomerSearchSection function - Let copper-integration.js handle this
-
     // Generate product reference section for left nav mode
     generateProductReferenceSection: function() {
         return `
@@ -420,7 +449,6 @@ const App = {
                     <div class="product-card">
                         <h4>Energy & Extract Shots</h4>
                         <p><strong>Kanva Zoom:</strong> $3.10 → $6.99 MSRP <span class="pricing-tier tier1">Energy Boost</span></p>
-                        <p><strong>Mango Extract:</strong> $4.25 → $9.99 MSRP <span class="pricing-tier tier2">Premium Extract</span></p>
                     </div>
                     <div class="product-card">
                         <h4>High-Margin Products</h4>
@@ -508,7 +536,7 @@ const App = {
                 Object.entries(products).forEach(([key, product]) => {
                     const option = document.createElement('option');
                     option.value = key;
-                    option.textContent = `${product.name} (${product.price})`;
+                    option.textContent = `${product.name} ($${product.price})`;
                     dropdown.appendChild(option);
                 });
                 
@@ -542,7 +570,9 @@ const App = {
         // Auto-populate customer info from Copper if available
         if (appState.isCopperActive && appState.isActivityPanel) {
             setTimeout(() => {
-                CopperIntegration.populateCustomerInfo();
+                if (typeof CopperIntegration !== 'undefined' && CopperIntegration.populateCustomerInfo) {
+                    CopperIntegration.populateCustomerInfo();
+                }
             }, 500);
         }
     },
@@ -624,7 +654,7 @@ const App = {
             productReference.style.display = 'block';
         }
         
-        // REMOVED: Direct call to enableCustomerSearch - let copper-integration handle it
+        // Let copper-integration handle customer search
         // The copper-integration.js will automatically add search interface when needed
     },
 
@@ -966,11 +996,11 @@ const App = {
                     </div>
                     <div class="quick-item">
                         <span class="quick-label">Unit Price:</span>
-                        <span class="quick-value">${unitPrice.toFixed(2)} (${tierInfo.name})</span>
+                        <span class="quick-value">$${unitPrice.toFixed(2)} (${tierInfo.name})</span>
                     </div>
                     <div class="quick-item total">
                         <span class="quick-label">Total:</span>
-                        <span class="quick-value">${total.toLocaleString()}</span>
+                        <span class="quick-value">$${total.toLocaleString()}</span>
                     </div>
                 </div>
             `;
@@ -1019,6 +1049,27 @@ const App = {
         }, 100);
     },
 
+    // ADDED: Force admin UI to show
+    forceAdminUI: function() {
+        // Force admin button to show if user is admin
+        setTimeout(() => {
+            if (appState.isAdmin) {
+                const header = document.querySelector('.header');
+                if (header) {
+                    const existingAdminBtn = header.querySelector('.admin-btn');
+                    if (!existingAdminBtn) {
+                        const adminBtn = document.createElement('button');
+                        adminBtn.className = 'admin-btn';
+                        adminBtn.onclick = () => showAdminPanel();
+                        adminBtn.innerHTML = '⚙️ Admin Settings';
+                        header.appendChild(adminBtn);
+                        console.log('✅ Admin button forcefully added to header');
+                    }
+                }
+            }
+        }, 500);
+    },
+
     // Finalize initialization
     finalizeInitialization: function() {
         appState.isReady = true;
@@ -1030,6 +1081,9 @@ const App = {
         console.log(`🔗 Copper CRM: ${appState.isCopperActive ? 'Active' : 'Standalone'}`);
         console.log(`👤 User: ${appState.currentUser?.email || 'Anonymous'}`);
         console.log(`🛡️ Admin: ${appState.isAdmin ? 'Yes' : 'No'}`);
+        
+        // ADDED: Force admin UI if needed
+        this.forceAdminUI();
         
         this.fireReadyEvent();
     },
@@ -1142,36 +1196,81 @@ function switchToMultiProduct() {
     }
 }
 
+// FIXED: Modal opening function for all modes
 function openFullCalculatorModal() {
+    console.log('🔄 Opening full calculator modal...');
+    
     if (appState.sdk && appState.sdk.showModal) {
         try {
-            // Configure modal for full calculator
+            // Configure modal for full calculator in Copper
             appState.sdk.setAppUI({
                 width: 1000,
                 height: 700,
                 showActionBar: false
             });
             appState.sdk.showModal();
-            console.log('🔄 Opened full calculator modal');
+            console.log('✅ Copper modal opened');
         } catch (error) {
-            console.error('❌ Error opening modal:', error);
-            NotificationManager.showError('Failed to open full calculator. Please try again.');
+            console.error('❌ Error opening Copper modal:', error);
+            if (typeof NotificationManager !== 'undefined') {
+                NotificationManager.showError('Failed to open modal. Please try again.');
+            }
         }
     } else {
-        NotificationManager.showWarning('Modal functionality requires Copper CRM integration.');
+        // FIXED: Fallback for standalone mode - open in new window
+        console.log('🔄 Opening calculator in new window (standalone mode)');
+        const currentUrl = new URL(window.location.href);
+        currentUrl.searchParams.set('mode', 'modal');
+        
+        const newWindow = window.open(
+            currentUrl.toString(), 
+            'KanvaCalculator', 
+            'width=1000,height=700,scrollbars=yes,resizable=yes,location=yes'
+        );
+        
+        if (!newWindow) {
+            if (typeof NotificationManager !== 'undefined') {
+                NotificationManager.showWarning('Please allow popups to open the full calculator');
+            } else {
+                alert('Please allow popups to open the full calculator');
+            }
+        } else {
+            console.log('✅ New window opened for full calculator');
+        }
     }
 }
 
 function generateQuickEmail() {
-    App.updateQuickCalculation();
-    if (typeof generateEmail === 'function') {
+    console.log('📧 Generating quick email from activity panel...');
+    
+    // Update the quick calculation first
+    if (typeof App !== 'undefined' && App.updateQuickCalculation) {
+        App.updateQuickCalculation();
+    }
+    
+    // Then generate the email
+    if (typeof EmailGenerator !== 'undefined') {
+        EmailGenerator.generateEmail();
+    } else if (typeof generateEmail === 'function') {
         generateEmail();
+    } else {
+        if (typeof NotificationManager !== 'undefined') {
+            NotificationManager.showError('Email generator not available');
+        }
     }
 }
 
 function saveQuickQuote() {
+    console.log('💾 Saving quick quote to CRM...');
+    
     if (typeof saveQuoteToCRM === 'function') {
         saveQuoteToCRM();
+    } else if (typeof CopperIntegration !== 'undefined') {
+        CopperIntegration.saveQuoteToCRM();
+    } else {
+        if (typeof NotificationManager !== 'undefined') {
+            NotificationManager.showInfo('CRM integration not available - quote ready to copy');
+        }
     }
 }
 
