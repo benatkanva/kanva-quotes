@@ -1,124 +1,140 @@
-// Email generation functionality for Kanva Botanicals Quote Calculator
-// Handles creating professional quote emails and managing email templates
+// Email generation module for Kanva Botanicals Quote Calculator
+// Handles email template generation, formatting, and export functionality
 
 const EmailGenerator = {
-    // Generate professional quote email
-    generateEmail: function() {
-        try {
-            console.log('📧 Generating professional quote email...');
-            
-            // Get calculation data
-            const calc = Calculator.calculateOrder();
-            if (!calc.product) {
-                this.showError('Please calculate a quote first before generating an email');
-                return;
-            }
-
-            // Get customer information from form
-            const customerInfo = this.getCustomerInfo();
-            
-            // Generate the email content
-            const emailContent = this.buildEmailContent(calc, customerInfo);
-            
-            // Display the generated email
-            this.displayGeneratedEmail(emailContent);
-            
-            // Auto-populate customer info from Copper if available
-            if (typeof CopperIntegration !== 'undefined') {
-                CopperIntegration.populateCustomerInfo();
-            }
-            
-            console.log('✅ Email generated successfully');
-            
-        } catch (error) {
-            console.error('❌ Error generating email:', error);
-            this.showError('Failed to generate email: ' + error.message);
-        }
+    // Initialize email generator
+    initialize: function() {
+        console.log('📧 Initializing email generator...');
+        
+        // Set up event listeners
+        this.setupEventListeners();
+        
+        console.log('✅ Email generator initialized');
     },
 
-    // Get customer information from form inputs
-    getCustomerInfo: function() {
+    // Set up event listeners
+    setupEventListeners: function() {
+        // Listen for product changes to update quote names
+        document.addEventListener('change', (event) => {
+            if (event.target.id === 'primaryProduct') {
+                this.updateQuoteNameFromProduct();
+            }
+        });
+    },
+
+    // Generate professional quote email
+    generateEmail: function() {
+        console.log('📧 Generating professional quote email...');
+        
+        const calc = Calculator.calculateOrder();
+        if (!calc.product) {
+            NotificationManager.showError('Please calculate a quote first');
+            return;
+        }
+
+        // Get form data with new field names
+        const formData = this.getFormData();
+        
+        // Generate email content
+        const emailContent = this.formatEmailContent(calc, formData);
+        
+        // Display email
+        this.displayEmail(emailContent);
+        
+        console.log('✅ Email generated successfully');
+    },
+
+    // Get form data with updated field names
+    getFormData: function() {
         return {
-            prospectName: this.getInputValue('prospectName') || '[PROSPECT NAME]',
-            companyName: this.getInputValue('companyName') || '[COMPANY NAME]',
-            customerBase: this.getInputValue('customerBase') || '[CUSTOMER BASE]',
-            maxRetail: this.getInputValue('maxRetail') || '5.00',
-            prospectEmail: this.getInputValue('prospectEmail') || '',
-            // Additional fields that might be available
-            phone: this.getInputValue('prospectPhone') || '',
-            address: this.getInputValue('prospectAddress') || ''
+            quoteName: document.getElementById('quoteName')?.value || 'Product Quote',
+            companyName: document.getElementById('companyName')?.value || '[COMPANY NAME]',
+            segment: document.getElementById('segment')?.value || '[CUSTOMER SEGMENT]',
+            emailDomain: document.getElementById('emailDomain')?.value || 'company.com',
+            phone: document.getElementById('phone')?.value || '[PHONE NUMBER]',
+            maxRetail: document.getElementById('maxRetail')?.value || '5.00'
         };
     },
 
-    // Helper function to safely get input values
-    getInputValue: function(elementId) {
-        const element = document.getElementById(elementId);
-        return element ? element.value.trim() : '';
-    },
-
-    // Build the complete email content
-    buildEmailContent: function(calc, customerInfo) {
+    // Format email content with multiple products support
+    formatEmailContent: function(calc, formData) {
         const timestamp = new Date().toLocaleString();
         const userEmail = appState.currentUser?.email || '[YOUR EMAIL]';
         const userName = appState.currentUser?.name || '[YOUR NAME]';
         
-        // Generate subject line
-        const subject = this.generateSubject(calc, customerInfo);
+        // Handle multiple products or single product
+        const isMultipleProducts = Array.isArray(calc);
+        const calculations = isMultipleProducts ? calc : [calc];
         
-        // Generate email body
-        const body = this.generateEmailBody(calc, customerInfo, timestamp, userName, userEmail);
-        
-        return {
-            subject: subject,
-            body: body,
-            calc: calc,
-            customerInfo: customerInfo,
-            timestamp: timestamp
-        };
-    },
+        let productDetails = '';
+        let grandTotal = 0;
+        let totalUnits = 0;
+        let totalDisplayBoxes = 0;
 
-    // Generate email subject line
-    generateSubject: function(calc, customerInfo) {
-        const companyPart = customerInfo.companyName !== '[COMPANY NAME]' ? 
-            ` | ${customerInfo.companyName}` : '';
-        
-        return `Partnership Proposal - ${calc.masterCases} Master Cases${companyPart}`;
-    },
+        if (isMultipleProducts) {
+            // Multiple products
+            calculations.forEach((item, index) => {
+                productDetails += `
+**Product ${index + 1}: ${item.product.name}**
+- Quantity: ${item.masterCases} Master Cases
+- Display Boxes: ${item.displayBoxes}
+- Individual Units: ${this.formatNumber(item.totalUnits)}
+- Unit Price: ${item.unitPrice} (${item.tierInfo.name})
+- Line Total: ${item.total}
 
-    // Generate the main email body
-    generateEmailBody: function(calc, customerInfo, timestamp, userName, userEmail) {
-        const paymentSection = this.generatePaymentSection(calc);
-        const tierNote = this.generateTierNote(calc);
-        const nextStepsSection = this.generateNextStepsSection(calc);
-        
-        return `Hi ${customerInfo.prospectName},
+`;
+                grandTotal += item.raw.total;
+                totalUnits += item.totalUnits;
+                totalDisplayBoxes += item.displayBoxes;
+            });
+        } else {
+            // Single product
+            const item = calculations[0];
+            productDetails = `
+**${item.product.name}**
+- Quantity: ${item.masterCases} Master Cases
+- Display Boxes: ${item.displayBoxes}
+- Individual Units: ${this.formatNumber(item.totalUnits)}
+- Unit Price: ${item.unitPrice} (${item.tierInfo.name})
+- Case Price: ${item.casePrice}
+- Subtotal: ${item.subtotal}
+- Shipping: ${item.freeShipping ? 'FREE' : item.shipping}
+- **Total: ${item.total}**
+`;
+            grandTotal = item.raw.total;
+            totalUnits = item.totalUnits;
+            totalDisplayBoxes = item.displayBoxes;
+        }
 
-Thank you for your interest in partnering with Kanva Botanicals! We're excited about the opportunity to work with you.
+        // Calculate payment info
+        const requiresACH = grandTotal >= adminConfig.payment.achThreshold;
+        const paymentInfo = this.getPaymentInfo(grandTotal, requiresACH);
+
+        return `Subject: ${formData.quoteName} - Partnership Proposal
+
+Hi there,
+
+Thank you for your interest in partnering with Kanva Botanicals! We're excited about the opportunity to work with ${formData.companyName}.
 
 ## Partnership Overview
 
-We'd like to move forward with an initial ${calc.masterCases} Master Case order of ${calc.product.name}. Given your strong customer base in ${customerInfo.customerBase}, we believe this will be an excellent fit for both our businesses.
+We'd like to move forward with the following quote for your ${formData.segment} customer base:
+
+${productDetails}
+
+${isMultipleProducts ? `
+**Order Summary:**
+- Total Display Boxes: ${this.formatNumber(totalDisplayBoxes)}
+- Total Individual Units: ${this.formatNumber(totalUnits)}
+- **Grand Total: ${this.formatCurrency(grandTotal)}**
+` : ''}
 
 ### Pricing Guidelines
-To maintain market stability and ensure fair margins for all partners in your area, we ask that your retail price to customers not exceed **$${customerInfo.maxRetail}** per unit.
+To maintain market stability and ensure fair margins for all partners in your area, we ask that your retail price to customers not exceed **$${formData.maxRetail}** per unit.
 
-## Order Breakdown
+## Payment Information
 
-**${calc.masterCases} Master Cases Contains:**
-- ${calc.masterCases} Master Cases
-- ${calc.displayBoxes} Display Boxes  
-- ${Calculator.formatNumber(calc.totalUnits)} Individual Units
-
-### ${calc.tierInfo.name} Wholesale Pricing:
-- **Per Unit:** ${calc.unitPrice}
-- **Per Master Case:** ${calc.casePrice}
-- **Subtotal:** ${calc.subtotal}
-- **Shipping & Handling:** ${calc.freeShipping ? 'FREE' : calc.shipping}
-- **TOTAL:** ${calc.total}
-
-${tierNote}
-
-${paymentSection}
+${paymentInfo}
 
 ## Additional Product Opportunities
 
@@ -130,448 +146,351 @@ Our complete product line includes high-margin kratom capsules and powders (49-5
 ✅ **Marketing Assets** - Digital materials, window clings, branded displays  
 ✅ **Exclusive Offers** - Introductory pricing and promotional bundles  
 
-${nextStepsSection}
-
-We're excited about building a successful partnership with you and supporting your business growth.
-
-Please let me know if you have any questions or need any clarification on these terms.
-
----
-Generated on ${timestamp} using Kanva Quote Calculator v${adminConfig.metadata.version}`;
-    },
-
-    // Generate payment section based on order total
-    generatePaymentSection: function(calc) {
-        const isLargeOrder = calc.raw.total >= adminConfig.payment.achThreshold;
-        
-        if (isLargeOrder) {
-            return `## Payment Information
-
-Since this order exceeds $${Calculator.formatNumber(adminConfig.payment.achThreshold)}, payment will need to be processed via **ACH transfer**. I'll send over a DocuSign agreement that includes the ACH transfer details. Please provide a voided blank check for account verification.`;
-        } else {
-            return `## Payment Information
-
-Payment options: ACH transfer, wire transfer, or company check.`;
-        }
-    },
-
-    // Generate tier upgrade note
-    generateTierNote: function(calc) {
-        if (calc.tierInfo.name === "Tier 3") {
-            return '*You\'re already receiving our best volume pricing!*';
-        }
-        
-        const nextThreshold = calc.tierInfo.name === "Tier 1" ? 
-            adminConfig.tiers.tier2.threshold : 
-            adminConfig.tiers.tier3.threshold;
-            
-        return `*Note: Future orders of ${nextThreshold}+ Master Cases will qualify for improved pricing.*`;
-    },
-
-    // Generate next steps section
-    generateNextStepsSection: function(calc) {
-        const isLargeOrder = calc.raw.total >= adminConfig.payment.achThreshold;
-        
-        return `## Next Steps
+## Next Steps
 
 1. Review this proposal
-2. ${isLargeOrder ? 'Complete DocuSign agreement and ACH setup' : 'Set up payment method'}
-3. Schedule delivery once payment is processed`;
+2. Complete payment setup ${requiresACH ? '(DocuSign/ACH)' : ''}
+3. Schedule delivery once payment is processed
+
+We're excited about building a successful partnership with you and supporting your business growth in the functional beverage market.
+
+Please contact us at ${formData.emailDomain} or ${formData.phone} if you have any questions.
+
+Best regards,
+
+${userName}  
+Kanva Botanicals  
+${userEmail}  
+${formData.phone}
+
+---
+Generated on: ${timestamp}
+Quote ID: ${this.generateQuoteId()}`;
     },
 
-    // Display the generated email in the UI
-    displayGeneratedEmail: function(emailContent) {
-        // Update the email output display
-        const emailOutput = document.getElementById('emailOutput');
-        if (emailOutput) {
-            emailOutput.textContent = `Subject: ${emailContent.subject}\n\n${emailContent.body}`;
+    // Get payment information based on total
+    getPaymentInfo: function(total, requiresACH) {
+        if (requiresACH) {
+            return `Since this order exceeds $${this.formatNumber(adminConfig.payment.achThreshold)}, payment will need to be processed via **ACH transfer**. I'll send over a DocuSign agreement that includes the ACH transfer details. Please provide a voided blank check for account verification.`;
+        } else {
+            return `Payment options: ACH transfer, wire transfer, or company check.`;
         }
+    },
 
-        // Show the email template section
+    // Display email in the interface
+    displayEmail: function(content) {
         const emailTemplate = document.getElementById('emailTemplate');
-        if (emailTemplate) {
+        const emailOutput = document.getElementById('emailOutput');
+        
+        if (emailTemplate && emailOutput) {
+            emailOutput.textContent = content;
             emailTemplate.style.display = 'block';
-            
-            // Smooth scroll to the email template
-            emailTemplate.scrollIntoView({ 
-                behavior: 'smooth',
-                block: 'start'
-            });
-        }
-
-        // Update any additional displays (like modal or sidebar)
-        this.updateAdditionalDisplays(emailContent);
-    },
-
-    // Update additional email displays (modal, sidebar, etc.)
-    updateAdditionalDisplays: function(emailContent) {
-        // Update modal email display if it exists
-        const modalEmailOutput = document.getElementById('modalEmailOutput');
-        if (modalEmailOutput) {
-            modalEmailOutput.textContent = `Subject: ${emailContent.subject}\n\n${emailContent.body}`;
-        }
-
-        // Update sidebar email preview if it exists
-        const sidebarEmailPreview = document.getElementById('sidebarEmailPreview');
-        if (sidebarEmailPreview) {
-            const preview = emailContent.body.substring(0, 200) + '...';
-            sidebarEmailPreview.innerHTML = `
-                <div class="email-preview">
-                    <strong>Subject:</strong> ${emailContent.subject}<br>
-                    <strong>Preview:</strong> ${preview}
-                </div>
-            `;
+            emailTemplate.scrollIntoView({ behavior: 'smooth' });
+        } else {
+            // Fallback: show in new window
+            const newWindow = window.open('', '_blank', 'width=800,height=600');
+            newWindow.document.write(`
+                <html>
+                    <head><title>Kanva Quote Email</title></head>
+                    <body style="font-family: Arial, sans-serif; padding: 20px; white-space: pre-wrap;">
+                        ${content.replace(/\n/g, '<br>')}
+                    </body>
+                </html>
+            `);
         }
     },
 
     // Copy email to clipboard
-    copyEmailToClipboard: function() {
-        try {
-            const emailOutput = document.getElementById('emailOutput');
-            if (!emailOutput || !emailOutput.textContent) {
-                this.showError('No email content to copy');
-                return;
-            }
-
-            // Use the Clipboard API if available
-            if (navigator.clipboard && window.isSecureContext) {
-                navigator.clipboard.writeText(emailOutput.textContent).then(() => {
-                    this.showCopySuccess();
-                }).catch(error => {
-                    console.error('Clipboard API failed:', error);
-                    this.fallbackCopyToClipboard(emailOutput.textContent);
-                });
-            } else {
-                // Fallback for older browsers or non-secure contexts
-                this.fallbackCopyToClipboard(emailOutput.textContent);
-            }
-        } catch (error) {
-            console.error('❌ Error copying email:', error);
-            this.showError('Failed to copy email to clipboard');
-        }
-    },
-
-    // Fallback copy method for older browsers
-    fallbackCopyToClipboard: function(text) {
-        try {
-            const textArea = document.createElement('textarea');
-            textArea.value = text;
-            textArea.style.position = 'fixed';
-            textArea.style.left = '-999999px';
-            textArea.style.top = '-999999px';
-            document.body.appendChild(textArea);
-            textArea.focus();
-            textArea.select();
-            
-            const successful = document.execCommand('copy');
-            document.body.removeChild(textArea);
-            
-            if (successful) {
-                this.showCopySuccess();
-            } else {
-                this.showError('Failed to copy email to clipboard');
-            }
-        } catch (error) {
-            console.error('Fallback copy failed:', error);
-            this.showError('Copy to clipboard not supported in this browser');
-        }
-    },
-
-    // Show copy success feedback
-    showCopySuccess: function() {
-        // Update copy button text temporarily
-        const copyButtons = document.querySelectorAll('.copy-btn');
-        copyButtons.forEach(btn => {
-            if (btn.textContent.includes('Copy')) {
-                const originalText = btn.textContent;
-                btn.textContent = '✅ Copied!';
-                btn.style.background = '#4caf50';
-                
-                setTimeout(() => {
-                    btn.textContent = originalText;
-                    btn.style.background = '';
-                }, 2000);
-            }
-        });
-
-        // Show success message if admin panel is available
-        if (typeof AdminPanel !== 'undefined' && AdminPanel.showSuccess) {
-            AdminPanel.showSuccess('Email copied to clipboard!');
-        }
-
-        console.log('✅ Email copied to clipboard successfully');
-    },
-
-    // Generate email templates for different scenarios
-    generateEmailTemplate: function(templateType = 'standard') {
-        const calc = Calculator.calculateOrder();
-        if (!calc.product) {
-            this.showError('Please calculate a quote first');
+    copyEmail: function() {
+        const emailOutput = document.getElementById('emailOutput');
+        if (!emailOutput) {
+            NotificationManager.showError('No email content found');
             return;
         }
 
-        const customerInfo = this.getCustomerInfo();
+        const emailText = emailOutput.textContent;
         
-        switch (templateType) {
-            case 'follow-up':
-                return this.generateFollowUpTemplate(calc, customerInfo);
-            case 'negotiation':
-                return this.generateNegotiationTemplate(calc, customerInfo);
-            case 'closing':
-                return this.generateClosingTemplate(calc, customerInfo);
-            default:
-                return this.buildEmailContent(calc, customerInfo);
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+            navigator.clipboard.writeText(emailText).then(() => {
+                this.showCopySuccess();
+                NotificationManager.showSuccess('Email copied to clipboard!');
+            }).catch(err => {
+                console.error('Failed to copy email:', err);
+                this.fallbackCopyEmail(emailText);
+            });
+        } else {
+            this.fallbackCopyEmail(emailText);
         }
     },
 
-    // Generate follow-up email template
-    generateFollowUpTemplate: function(calc, customerInfo) {
-        const subject = `Follow-up: ${calc.product.name} Partnership - ${customerInfo.companyName}`;
+    // Fallback copy method
+    fallbackCopyEmail: function(text) {
+        const textArea = document.createElement('textarea');
+        textArea.value = text;
+        textArea.style.position = 'fixed';
+        textArea.style.opacity = '0';
+        document.body.appendChild(textArea);
+        textArea.focus();
+        textArea.select();
         
-        const body = `Hi ${customerInfo.prospectName},
-
-I wanted to follow up on the partnership proposal we discussed for ${calc.masterCases} Master Cases of ${calc.product.name}.
-
-Just to recap our offer:
-- Product: ${calc.product.name}
-- Quantity: ${calc.masterCases} Master Cases (${calc.displayBoxes} Display Boxes)
-- Total Investment: ${calc.total}
-- Pricing Tier: ${calc.tierInfo.name}
-
-I'm here to answer any questions you might have about:
-- Product specifications and benefits
-- Pricing structure and volume discounts
-- Marketing support and retail materials
-- Implementation timeline
-
-Would you like to schedule a brief call this week to discuss next steps?
-
-        return { subject, body };
-    },
-
-    // Generate negotiation email template
-    generateNegotiationTemplate: function(calc, customerInfo) {
-        const subject = `Flexible Options: ${calc.product.name} Partnership - ${customerInfo.companyName}`;
-        
-        const body = `Hi ${customerInfo.prospectName},
-
-Thank you for your continued interest in partnering with Kanva Botanicals. I understand you'd like to explore some options for the ${calc.product.name} order.
-
-Current Proposal:
-- ${calc.masterCases} Master Cases at ${calc.unitPrice} per unit
-- Total: ${calc.total}
-
-I'm open to discussing:
-- Alternative quantities that might better fit your budget
-- Flexible payment terms
-- Starter packages with smaller initial orders
-- Mixed product bundles
-
-What would work best for your business? I'm confident we can find a solution that works for both of us.
-
-Looking forward to hearing from you.
-
-        return { subject, body };
-    },
-
-    // Generate closing email template
-    generateClosingTemplate: function(calc, customerInfo) {
-        const subject = `Ready to Move Forward: ${calc.product.name} Partnership - ${customerInfo.companyName}`;
-        
-        const body = `Hi ${customerInfo.prospectName},
-
-I'm excited to finalize our partnership for ${calc.masterCases} Master Cases of ${calc.product.name}!
-
-Final Details:
-- Product: ${calc.product.name}
-- Quantity: ${calc.masterCases} Master Cases
-- Total Investment: ${calc.total}
-- Expected Delivery: [DELIVERY DATE]
-
-To complete the order, I'll need:
-1. Signed agreement (I'll send via DocuSign)
-2. Payment setup confirmation
-3. Delivery address verification
-
-Once we have these items, we can schedule your delivery within [TIMEFRAME].
-
-Thank you for choosing Kanva Botanicals as your partner. I'm confident this will be a very successful relationship!
-
-Best regards,
-[YOUR NAME]
-Kanva Botanicals`;
-
-        return { subject, body };
-    },
-
-    // Validate email content before sending
-    validateEmailContent: function(emailContent) {
-        const errors = [];
-
-        if (!emailContent.subject || emailContent.subject.trim() === '') {
-            errors.push('Email subject is required');
-        }
-
-        if (!emailContent.body || emailContent.body.trim() === '') {
-            errors.push('Email body is required');
-        }
-
-        // Check for placeholder values that should be replaced
-        const placeholders = ['[PROSPECT NAME]', '[COMPANY NAME]', '[YOUR NAME]', '[PHONE NUMBER]'];
-        placeholders.forEach(placeholder => {
-            if (emailContent.body.includes(placeholder)) {
-                errors.push(`Please replace placeholder: ${placeholder}`);
-            }
-        });
-
-        return {
-            isValid: errors.length === 0,
-            errors: errors
-        };
-    },
-
-    // Export email content for external use
-    exportEmail: function(format = 'text') {
         try {
-            const emailOutput = document.getElementById('emailOutput');
-            if (!emailOutput || !emailOutput.textContent) {
-                this.showError('No email content to export');
-                return;
+            const successful = document.execCommand('copy');
+            if (successful) {
+                this.showCopySuccess();
+                NotificationManager.showSuccess('Email copied to clipboard!');
+            } else {
+                NotificationManager.showError('Failed to copy email');
             }
+        } catch (err) {
+            console.error('Fallback copy failed:', err);
+            NotificationManager.showError('Copy failed - please select and copy manually');
+        }
+        
+        document.body.removeChild(textArea);
+    },
 
-            const content = emailOutput.textContent;
-            const timestamp = new Date().toISOString().split('T')[0];
+    // Show copy success visual feedback
+    showCopySuccess: function() {
+        const copyBtn = document.querySelector('button[onclick="copyEmail()"]');
+        if (copyBtn) {
+            const originalText = copyBtn.textContent;
+            copyBtn.textContent = '✅ Copied!';
+            copyBtn.style.background = '#4caf50';
             
-            switch (format) {
-                case 'text':
-                    this.downloadAsText(content, `kanva-quote-${timestamp}.txt`);
-                    break;
-                case 'html':
-                    this.downloadAsHtml(content, `kanva-quote-${timestamp}.html`);
-                    break;
-                default:
-                    this.downloadAsText(content, `kanva-quote-${timestamp}.txt`);
-            }
-            
-            console.log(`✅ Email exported as ${format}`);
-        } catch (error) {
-            console.error('❌ Error exporting email:', error);
-            this.showError('Failed to export email');
+            setTimeout(() => {
+                copyBtn.textContent = originalText;
+                copyBtn.style.background = '';
+            }, 2000);
         }
     },
 
-    // Download content as text file
-    downloadAsText: function(content, filename) {
-        const blob = new Blob([content], { type: 'text/plain' });
-        const url = URL.createObjectURL(blob);
-        const link = document.createElement('a');
-        link.href = url;
-        link.download = filename;
-        link.click();
-        URL.revokeObjectURL(url);
-    },
+    // Export email as file
+    exportEmail: function(format = 'text') {
+        const emailOutput = document.getElementById('emailOutput');
+        if (!emailOutput) {
+            NotificationManager.showError('No email content found');
+            return;
+        }
 
-    // Download content as HTML file
-    downloadAsHtml: function(content, filename) {
-        const htmlContent = `
+        const content = emailOutput.textContent;
+        const quoteName = document.getElementById('quoteName')?.value || 'quote';
+        const timestamp = new Date().toISOString().split('T')[0];
+        
+        let filename, mimeType, fileContent;
+        
+        if (format === 'html') {
+            filename = `${quoteName}-${timestamp}.html`;
+            mimeType = 'text/html';
+            fileContent = `
 <!DOCTYPE html>
 <html>
 <head>
-    <meta charset="UTF-8">
     <title>Kanva Botanicals Quote</title>
     <style>
-        body { font-family: Arial, sans-serif; line-height: 1.6; margin: 20px; }
-        pre { white-space: pre-wrap; }
+        body { font-family: Arial, sans-serif; line-height: 1.6; max-width: 800px; margin: 0 auto; padding: 20px; }
+        h1, h2 { color: #17351A; }
+        .quote-header { background: #f8f9fa; padding: 15px; border-radius: 8px; margin-bottom: 20px; }
     </style>
 </head>
 <body>
-    <pre>${content}</pre>
+    <div class="quote-header">
+        <h1>Kanva Botanicals Quote</h1>
+        <p>Generated: ${new Date().toLocaleString()}</p>
+    </div>
+    <div style="white-space: pre-wrap;">${content.replace(/\n/g, '<br>')}</div>
 </body>
 </html>`;
-        
-        const blob = new Blob([htmlContent], { type: 'text/html' });
-        const url = URL.createObjectURL(blob);
-        const link = document.createElement('a');
-        link.href = url;
-        link.download = filename;
-        link.click();
-        URL.revokeObjectURL(url);
-    },
-
-    // Send email via CRM if integrated
-    sendViaCRM: function() {
-        try {
-            if (typeof CopperIntegration !== 'undefined' && CopperIntegration.isCrmAvailable()) {
-                const emailContent = document.getElementById('emailOutput')?.textContent;
-                if (!emailContent) {
-                    this.showError('No email content to send');
-                    return;
-                }
-
-                // Save email as activity in CRM
-                CopperIntegration.saveQuoteToCRM();
-                
-                // Log the email generation activity
-                console.log('📧 Email sent via CRM integration');
-                
-                if (typeof AdminPanel !== 'undefined' && AdminPanel.showSuccess) {
-                    AdminPanel.showSuccess('Email logged in CRM. Please send manually via your email client.');
-                }
-            } else {
-                this.showError('CRM integration not available. Please copy and send manually.');
-            }
-        } catch (error) {
-            console.error('❌ Error sending via CRM:', error);
-            this.showError('Failed to send via CRM: ' + error.message);
-        }
-    },
-
-    // Show error message
-    showError: function(message) {
-        console.error('EmailGenerator Error:', message);
-        
-        // Try to use admin panel messaging if available
-        if (typeof AdminPanel !== 'undefined' && AdminPanel.showError) {
-            AdminPanel.showError(message);
         } else {
-            // Fallback to alert
-            alert('Error: ' + message);
+            filename = `${quoteName}-${timestamp}.txt`;
+            mimeType = 'text/plain';
+            fileContent = content;
+        }
+
+        try {
+            const blob = new Blob([fileContent], { type: mimeType });
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = filename;
+            link.click();
+            URL.revokeObjectURL(url);
+            
+            NotificationManager.showSuccess(`Email exported as ${filename}`);
+        } catch (error) {
+            console.error('Export failed:', error);
+            NotificationManager.showError('Failed to export email');
         }
     },
 
-    // Initialize email generator
-    initialize: function() {
-        console.log('📧 Initializing email generator...');
-        
-        // Set up event listeners
-        this.setupEventListeners();
-        
-        console.log('✅ Email generator initialized');
+    // Generate follow-up email
+    generateFollowUpEmail: function() {
+        const formData = this.getFormData();
+        const followUpContent = `Subject: Following up on ${formData.quoteName}
+
+Hi there,
+
+I wanted to follow up on the quote I sent for ${formData.companyName}. 
+
+Have you had a chance to review the proposal? I'm here to answer any questions you might have about:
+
+- Product specifications and benefits
+- Pricing and payment terms
+- Implementation timeline
+- Marketing support and materials
+
+I'd love to schedule a brief call to discuss how Kanva Botanicals can support your business goals in the functional beverage market.
+
+Please let me know what works best for your schedule.
+
+Best regards,
+
+${appState.currentUser?.name || '[YOUR NAME]'}
+Kanva Botanicals
+${appState.currentUser?.email || '[YOUR EMAIL]'}`;
+
+        this.displayEmail(followUpContent);
     },
 
-    // Setup event listeners
-    setupEventListeners: function() {
-        // Auto-populate max retail when product changes
-        const productSelects = ['primaryProduct', 'sidebarProduct'];
-        productSelects.forEach(selectId => {
-            const select = document.getElementById(selectId);
-            if (select) {
-                select.addEventListener('change', () => {
-                    this.updateMaxRetailPrice();
-                });
+    // Generate negotiation email
+    generateNegotiationEmail: function() {
+        const calc = Calculator.calculateOrder();
+        if (!calc.product) {
+            NotificationManager.showError('Please calculate a quote first');
+            return;
+        }
+
+        const formData = this.getFormData();
+        const negotiationContent = `Subject: Flexible Options for ${formData.quoteName}
+
+Hi there,
+
+Thank you for your interest in our ${calc.product.name} products for ${formData.companyName}.
+
+I understand that every business has unique needs and budget considerations. I'd love to work with you to find a solution that makes sense for your operation.
+
+Here are some flexible options we can explore:
+
+📦 **Volume Adjustments**: Different case quantities to meet your budget
+💰 **Payment Terms**: Extended payment options for qualified partners
+📈 **Growth Partnership**: Scaled pricing as your business grows
+🎯 **Product Mix**: Alternative product combinations for different margins
+
+Our goal is to build a long-term partnership that drives success for both of our businesses.
+
+Would you be open to a brief conversation to discuss what would work best for ${formData.companyName}?
+
+Best regards,
+
+${appState.currentUser?.name || '[YOUR NAME]'}
+Kanva Botanicals`;
+
+        this.displayEmail(negotiationContent);
+    },
+
+    // Generate closing email
+    generateClosingEmail: function() {
+        const formData = this.getFormData();
+        const closingContent = `Subject: Ready to Move Forward - ${formData.quoteName}
+
+Hi there,
+
+I hope this email finds you well! I wanted to reach out regarding the quote for ${formData.companyName}.
+
+Based on our previous conversations, it seems like Kanva Botanicals would be a great fit for your ${formData.segment} customer base.
+
+To move forward, I just need:
+
+✅ Final confirmation on the order quantities
+✅ Preferred delivery timeline  
+✅ Payment method setup (ACH details if applicable)
+
+Once we have these details, I can:
+- Process your order immediately
+- Schedule delivery within 5-7 business days
+- Send you all the marketing materials and displays
+- Set up your account for future orders
+
+Is there anything else you need from me to move forward with this partnership?
+
+Looking forward to working together!
+
+Best regards,
+
+${appState.currentUser?.name || '[YOUR NAME]'}
+Kanva Botanicals
+${appState.currentUser?.email || '[YOUR EMAIL]'}`;
+
+        this.displayEmail(closingContent);
+    },
+
+    // Update quote name based on product selection
+    updateQuoteNameFromProduct: function() {
+        const productSelect = document.getElementById('primaryProduct');
+        const companyNameInput = document.getElementById('companyName');
+        const quoteNameInput = document.getElementById('quoteName');
+        
+        if (productSelect && companyNameInput && quoteNameInput && !quoteNameInput.value) {
+            const productText = productSelect.selectedOptions[0]?.text || '';
+            const productName = productText.split(' (')[0] || 'Product';
+            const companyName = companyNameInput.value.trim();
+            
+            if (companyName) {
+                quoteNameInput.value = `${productName} Quote for ${companyName}`;
             }
-        });
+        }
     },
 
-    // Update max retail price based on selected product
-    updateMaxRetailPrice: function() {
-        const productKey = this.getInputValue('primaryProduct') || this.getInputValue('sidebarProduct');
-        const maxRetailInput = document.getElementById('maxRetail');
-        
-        if (productKey && maxRetailInput && adminConfig.maxRetailPrices) {
-            const maxPrice = adminConfig.maxRetailPrices[productKey] || adminConfig.maxRetailPrices.default;
-            maxRetailInput.value = maxPrice.toFixed(2);
+    // Send email via CRM
+    sendEmailViaCRM: function() {
+        const emailOutput = document.getElementById('emailOutput');
+        if (!emailOutput) {
+            NotificationManager.showError('No email content found');
+            return;
         }
+
+        const emailContent = emailOutput.textContent;
+        
+        if (appState.sdk && appState.sdk.logActivity) {
+            try {
+                const activityData = {
+                    type: 1, // Email activity type
+                    details: `KANVA QUOTE EMAIL SENT\n\n${emailContent}`,
+                    subject: document.getElementById('quoteName')?.value || 'Kanva Quote'
+                };
+                
+                appState.sdk.logActivity(activityData.type, activityData.details);
+                NotificationManager.showSuccess('Email logged in CRM!');
+                
+                if (CopperIntegration.refreshCopperUI) {
+                    CopperIntegration.refreshCopperUI();
+                }
+            } catch (error) {
+                console.error('❌ Error logging email to CRM:', error);
+                NotificationManager.showError('Failed to log email in CRM');
+            }
+        } else {
+            NotificationManager.showInfo('CRM integration not available - email content ready to copy');
+        }
+    },
+
+    // Utility functions
+    formatNumber: function(number) {
+        return new Intl.NumberFormat('en-US').format(number);
+    },
+
+    formatCurrency: function(amount) {
+        return new Intl.NumberFormat('en-US', {
+            style: 'currency',
+            currency: 'USD',
+            minimumFractionDigits: 2,
+            maximumFractionDigits: 2
+        }).format(amount);
+    },
+
+    generateQuoteId: function() {
+        const timestamp = Date.now().toString(36);
+        const random = Math.random().toString(36).substr(2, 5);
+        return `KB-${timestamp}-${random}`.toUpperCase();
     }
 };
 
@@ -581,30 +500,27 @@ function generateEmail() {
 }
 
 function copyEmail() {
-    EmailGenerator.copyEmailToClipboard();
+    EmailGenerator.copyEmail();
 }
 
-function exportEmail(format = 'text') {
+function exportEmail(format) {
     EmailGenerator.exportEmail(format);
 }
 
-function sendEmailViaCRM() {
-    EmailGenerator.sendViaCRM();
-}
-
 function generateFollowUpEmail() {
-    const template = EmailGenerator.generateEmailTemplate('follow-up');
-    EmailGenerator.displayGeneratedEmail(template);
+    EmailGenerator.generateFollowUpEmail();
 }
 
 function generateNegotiationEmail() {
-    const template = EmailGenerator.generateEmailTemplate('negotiation');
-    EmailGenerator.displayGeneratedEmail(template);
+    EmailGenerator.generateNegotiationEmail();
 }
 
 function generateClosingEmail() {
-    const template = EmailGenerator.generateEmailTemplate('closing');
-    EmailGenerator.displayGeneratedEmail(template);
+    EmailGenerator.generateClosingEmail();
+}
+
+function sendEmailViaCRM() {
+    EmailGenerator.sendEmailViaCRM();
 }
 
 console.log('✅ Email generator module loaded successfully');
