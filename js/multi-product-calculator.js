@@ -94,9 +94,11 @@ const MultiProductCalculator = {
         const masterCases = parseInt(lineItem.masterCases) || 0;
         const tierInfo = TierManager.getTier(masterCases);
         
-        // Use custom price if set, otherwise use calculated price
-        const unitPrice = lineItem.customPrice || (product.price * (1 - tierInfo.discount));
-        const casePrice = unitPrice * product.unitsPerCase;
+        // Calculate pricing based on correct unit structure
+        // product.price = distributor cost per individual unit
+        const unitPrice = product.price * (1 - tierInfo.discount);
+        const displayBoxPrice = unitPrice * product.unitsPerDisplayBox; // 12 units per display box
+        const casePrice = unitPrice * product.unitsPerCase; // 144 units per master case
         const totalUnits = masterCases * product.unitsPerCase;
         const displayBoxes = masterCases * product.displayBoxesPerCase;
         const lineTotal = masterCases * casePrice;
@@ -107,6 +109,7 @@ const MultiProductCalculator = {
             tierInfo,
             masterCases,
             unitPrice,
+            displayBoxPrice,
             casePrice,
             totalUnits,
             displayBoxes,
@@ -115,6 +118,7 @@ const MultiProductCalculator = {
             // Raw values for calculations
             raw: {
                 unitPrice,
+                displayBoxPrice,
                 casePrice,
                 lineTotal
             }
@@ -141,25 +145,27 @@ const MultiProductCalculator = {
             }
         });
 
-        // Calculate shipping (based on whether it's palletized)
-        const isPalletized = totalMasterCases >= (this.settings.palletThreshold * 100); // Assuming 100 cases per pallet
-        const shippingRate = isPalletized ? this.settings.shippingRateMax : this.settings.shippingRateMin;
-        const shipping = subtotal * shippingRate;
+        // Calculate shipping based on LTL percentage and selected zone
+        let shipping = 0;
+        const selectedState = document.getElementById('customerState')?.value;
+        if (selectedState && subtotal > 0) {
+            const shippingZone = this.getShippingZone(selectedState);
+            if (shippingZone) {
+                shipping = subtotal * (shippingZone.ltlPercentage / 100);
+            }
+        }
+        
+        // Check for manual shipping override
+        const manualShipping = parseFloat(document.getElementById('manualShipping')?.value || 0);
+        if (manualShipping > 0) {
+            shipping = manualShipping;
+        }
 
-        // Calculate taxes
-        const stateTax = subtotal * this.settings.stateTaxRate;
-        const countyTax = subtotal * this.settings.countyTaxRate;
-        const totalTax = stateTax + countyTax;
-
-        // Subtotal including shipping and taxes
-        const subtotalWithExtras = subtotal + shipping + totalTax;
-
-        // Calculate credit card fee if enabled
-        const creditCardEnabled = document.getElementById('creditCardFee')?.checked || false;
-        const creditCardFee = creditCardEnabled ? subtotalWithExtras * this.settings.creditCardFeeRate : 0;
+        // Calculate credit card fee (3% of subtotal + shipping) - always included
+        const creditCardFee = (subtotal + shipping) * 0.03;
 
         // Final total
-        const grandTotal = subtotalWithExtras + creditCardFee;
+        const grandTotal = subtotal + shipping + creditCardFee;
 
         const result = {
             lineItems: calculations,
@@ -169,13 +175,8 @@ const MultiProductCalculator = {
                 totalUnits,
                 subtotal,
                 shipping,
-                shippingRate,
-                isPalletized,
-                stateTax,
-                countyTax,
-                totalTax,
+                shippingZone: selectedState ? this.getShippingZone(selectedState) : null,
                 creditCardFee,
-                creditCardEnabled,
                 grandTotal
             }
         };
@@ -255,23 +256,32 @@ const MultiProductCalculator = {
             if (summaryEl) {
                 summaryEl.innerHTML = `
                     <div class="line-summary">
-                        📦 ${this.formatNumber(lineItem.displayBoxes)} Display Boxes | 
-                        ${this.formatNumber(lineItem.totalUnits)} Units | 
-                        ${lineItem.tierInfo.name} | 
-                        <strong>${this.formatCurrency(lineItem.lineTotal)}</strong>
+                        <div class="line-pricing">
+                            💰 Unit: <strong>${this.formatCurrency(lineItem.unitPrice)}</strong> | 
+                            Display Box: <strong>${this.formatCurrency(lineItem.displayBoxPrice)}</strong> | 
+                            Case: <strong>${this.formatCurrency(lineItem.casePrice)}</strong>
+                        </div>
+                        <div class="line-quantities">
+                            📦 ${this.formatNumber(lineItem.displayBoxes)} Display Boxes | 
+                            ${this.formatNumber(lineItem.totalUnits)} Units | 
+                            ${lineItem.tierInfo.name}
+                        </div>
+                        <div class="line-total">
+                            Line Total: <strong>${this.formatCurrency(lineItem.lineTotal)}</strong>
+                        </div>
                     </div>
                 `;
             }
         });
 
         // Update main results
-        const resultsContainer = document.getElementById('multiProductResults');
+        const resultsContainer = document.getElementById('calculationResults');
         if (resultsContainer) {
             const summary = result.summary;
             
             resultsContainer.innerHTML = `
                 <div class="calculation-summary">
-                    <h3>Order Summary</h3>
+                    <h3>Multi-Product Order Summary</h3>
                     <div class="summary-grid">
                         <div class="summary-item">
                             <span class="summary-label">Total Master Cases:</span>
@@ -294,25 +304,16 @@ const MultiProductCalculator = {
                         </div>
                         
                         <div class="breakdown-item">
-                            <span class="breakdown-label">Shipping (${(summary.shippingRate * 100).toFixed(1)}%${summary.isPalletized ? ' - Palletized' : ''}):</span>
+                            <span class="breakdown-label">Shipping:</span>
                             <span class="breakdown-value">${this.formatCurrency(summary.shipping)}</span>
                         </div>
                         
-                        ${summary.totalTax > 0 ? `
-                            <div class="breakdown-item">
-                                <span class="breakdown-label">Taxes:</span>
-                                <span class="breakdown-value">${this.formatCurrency(summary.totalTax)}</span>
-                            </div>
-                        ` : ''}
+                        <div class="breakdown-item">
+                            <span class="breakdown-label">Credit Card Fee (3%):</span>
+                            <span class="breakdown-value">${this.formatCurrency(summary.creditCardFee)}</span>
+                        </div>
                         
-                        ${summary.creditCardFee > 0 ? `
-                            <div class="breakdown-item">
-                                <span class="breakdown-label">Credit Card Fee (3%):</span>
-                                <span class="breakdown-value">${this.formatCurrency(summary.creditCardFee)}</span>
-                            </div>
-                        ` : ''}
-                        
-                        <div class="breakdown-total">
+                        <div class="breakdown-item total-row">
                             <span class="breakdown-label"><strong>Grand Total:</strong></span>
                             <span class="breakdown-value"><strong>${this.formatCurrency(summary.grandTotal)}</strong></span>
                         </div>
@@ -383,7 +384,33 @@ const MultiProductCalculator = {
 
     // Generate line item ID
     generateLineItemId: function() {
-        return `line-${Date.now()}-${Math.random().toString(36).substr(2, 5)}`;
+        return 'line_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+    },
+    
+    // Get shipping zone for a given state
+    getShippingZone: function(state) {
+        // Load shipping data from JSON
+        if (!this.shippingData) {
+            const zones = {
+                west: { states: ["CA", "NV", "OR", "WA", "ID", "AZ", "UT"], ltlPercentage: 1.0, name: "West" },
+                mountain: { states: ["MT", "WY", "CO", "NM"], ltlPercentage: 1.0, name: "Mountain" },
+                southwest: { states: ["TX", "OK", "KS", "NE", "AR", "LA", "MS"], ltlPercentage: 1.5, name: "Southwest" },
+                midwest: { states: ["ND", "SD", "MN", "IA", "MO", "WI", "IL", "IN", "MI", "OH"], ltlPercentage: 1.5, name: "Midwest" },
+                southeast: { states: ["AL", "TN", "KY", "WV", "VA", "NC", "SC", "GA", "FL"], ltlPercentage: 2.0, name: "Southeast" },
+                northeast: { states: ["ME", "NH", "VT", "MA", "RI", "CT", "NY", "NJ", "PA", "DE", "MD", "DC"], ltlPercentage: 2.0, name: "Northeast" },
+                remote: { states: ["AK", "HI"], ltlPercentage: 2.0, name: "Remote" }
+            };
+            this.shippingData = zones;
+        }
+        
+        // Find zone for the given state
+        for (const [zoneKey, zone] of Object.entries(this.shippingData)) {
+            if (zone.states.includes(state)) {
+                return zone;
+            }
+        }
+        
+        return null;
     },
 
     // Get calculation for email generation
@@ -398,18 +425,22 @@ const MultiProductCalculator = {
                 tierInfo: lineItem.tierInfo,
                 masterCases: lineItem.masterCases,
                 unitPrice: this.formatCurrency(lineItem.unitPrice),
+                displayBoxPrice: this.formatCurrency(lineItem.displayBoxPrice),
                 casePrice: this.formatCurrency(lineItem.casePrice),
                 totalUnits: lineItem.totalUnits,
                 displayBoxes: lineItem.displayBoxes,
                 subtotal: this.formatCurrency(result.summary.subtotal),
                 shipping: this.formatCurrency(result.summary.shipping),
+                creditCardFee: this.formatCurrency(result.summary.creditCardFee),
                 total: this.formatCurrency(result.summary.grandTotal),
-                freeShipping: result.summary.shipping === 0,
+                freeShipping: false,
                 raw: {
                     unitPrice: lineItem.unitPrice,
+                    displayBoxPrice: lineItem.displayBoxPrice,
                     casePrice: lineItem.casePrice,
                     subtotal: result.summary.subtotal,
                     shipping: result.summary.shipping,
+                    creditCardFee: result.summary.creditCardFee,
                     total: result.summary.grandTotal
                 }
             };

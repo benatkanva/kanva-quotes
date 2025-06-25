@@ -1,34 +1,4 @@
-const appState = {
-    // Application status
-    isReady: false,
-    startTime: Date.now(),
-    loadTime: null,
-    hasError: false,
-    
-    // Environment detection
-    isModalMode: false,
-    isActivityPanel: false,
-    isLeftNav: false,
-    isSidebar: false,
-    isMobile: false,
-    appLocation: 'unknown',
-    
-    // CRM Integration
-    isCopperActive: false,
-    sdk: null,
-    copperContext: null,
-    integrationMode: 'standalone',
-    hasEntityContext: false,
-    contextEntity: null,
-    
-    // User management
-    currentUser: null,
-    isAdmin: false,
-    
-    // Configuration
-    currentConfig: null,
-    configVersion: '1.0.0'
-};
+// appState is already defined in admin.js
 
 const App = {
     // Application initialization
@@ -173,7 +143,7 @@ const App = {
         // Temporary debug - remove after testing
         console.log('🔍 DEBUG - Current user:', appState.currentUser);
         console.log('🔍 DEBUG - Is admin?:', appState.isAdmin);
-        console.log('🔍 DEBUG - Admin emails:', adminEmails);
+        console.log('🔍 DEBUG - Admin emails:', adminConfig.adminEmails);
         
         console.log('🔧 Running in standalone demo mode');
         console.log(`👤 User: ${testUser.email}`);
@@ -226,12 +196,24 @@ const App = {
         console.log('✅ All core modules initialized');
     },
 
-    // Initialize user interface
+    // Initialize the user interface
     initializeUI: function() {
         console.log('🎨 Initializing user interface...');
         
-        // Render main application interface
-        this.renderMainInterface();
+        // Hide loading screen and show app
+        const loadingState = document.getElementById('loadingState');
+        const appContainer = document.getElementById('app');
+        
+        if (loadingState) {
+            loadingState.style.display = 'none';
+        }
+        
+        if (appContainer) {
+            appContainer.style.display = 'block';
+        }
+        
+        // Initialize existing HTML elements instead of rendering new ones
+        this.initializeExistingElements();
         
         // Set up mode-specific UI
         this.setupModeSpecificUI();
@@ -239,14 +221,36 @@ const App = {
         // Initialize tooltips and help system
         this.initializeHelpSystem();
         
-        // Set up responsive behavior
+        // Set up responsive UI adjustments
         this.setupResponsiveUI();
         
         console.log('✅ User interface initialized');
     },
 
-    // Render the main application interface
+    // Initialize existing HTML elements instead of overwriting
+    initializeExistingElements: function() {
+        console.log('🎯 Initializing existing HTML elements...');
+        
+        // Populate product dropdowns
+        this.populateProductDropdowns();
+        
+        // Set initial values
+        this.setInitialValues();
+        
+        // Initialize state dropdowns
+        this.populateStateDropdowns();
+        
+        // Initialize event listeners for existing elements
+        this.bindEventListeners();
+        
+        console.log('✅ Existing elements initialized');
+    },
+
+    // Render the main application interface (kept for compatibility but not used with new HTML)
     renderMainInterface: function() {
+        console.log('⚠️ renderMainInterface called but skipped - using existing HTML structure');
+        return; // Skip rendering since we have HTML structure already
+        
         const appContainer = document.getElementById('app');
         if (!appContainer) {
             throw new Error('App container element not found');
@@ -535,7 +539,7 @@ const App = {
                             
                             <!-- Single Product Mode -->
                             <div id="singleProductMode" class="space-y-6">
-                                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                                <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
                                     <div>
                                         <label for="primaryProduct" class="block text-sm font-bold text-kanva-dark uppercase tracking-wide mb-2">
                                             Primary Product:
@@ -726,853 +730,836 @@ const App = {
 
         ${isAdmin ? this.generateAdminPanel() : ''}
     `;
-},
-
-    // Generate product reference section for left nav mode
-    generateProductReferenceSection: function() {
-        return `
-            <!-- Product Reference Section -->
-            <section class="mt-8 mx-auto max-w-7xl">
-                <div class="bg-white rounded-2xl shadow-lg border-2 border-kanva-green p-6">
-                    <h3 class="text-2xl font-bold text-kanva-dark mb-6 pb-3 border-b-2 border-kanva-green">
-                        📚 Quick Product Reference
-                    </h3>
-                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                        <div class="bg-gradient-to-br from-kanva-light to-green-50 p-5 rounded-xl border-2 border-kanva-green/30 hover:border-kanva-green hover:shadow-lg transition-all duration-300">
-                            <h4 class="text-xl font-bold text-kanva-dark mb-4">🥤 2oz Wellness Shots</h4>
-                            <div class="space-y-2 text-sm">
-                                <p class="flex justify-between items-center">
-                                    <span class="font-semibold">Focus + Flow:</span>
-                                    <span class="text-gray-600">$4.50 → $9.99 MSRP</span>
-                                </p>
-                                <p class="text-xs text-kanva-green font-bold">Best Seller • Kava + Kratom</p>
-                                
-                                <p class="flex justify-between items-center pt-2">
-                                    <span class="font-semibold">Release + Relax:</span>
-                                    <span class="text-gray-600">$4.50 → $9.99 MSRP</span>
-                                </p>
-                                <p class="text-xs text-blue-600 font-bold">Kanna + Kava</p>
-                                
-                                <p class="flex justify-between items-center pt-2">
-                                    <span class="font-semibold">Raw + Releaf:</span>
-                                    <span class="text-gray-600">$4.50 → $9.99 MSRP</span>
-                                </p>
-                                <p class="text-xs text-orange-600 font-bold">New Product</p>
-                            </div>
-                        </div>
-                        
-                        <div class="bg-gradient-to-br from-blue-50 to-blue-100 p-5 rounded-xl border-2 border-blue-300 hover:border-blue-400 hover:shadow-lg transition-all duration-300">
-                            <h4 class="text-xl font-bold text-blue-900 mb-4">⚡ Energy & Extract Shots</h4>
-                            <div class="space-y-2 text-sm">
-                                <p class="flex justify-between items-center">
-                                    <span class="font-semibold">Kanva Zoom:</span>
-                                    <span class="text-gray-600">$3.10 → $6.99 MSRP</span>
-                                </p>
-                                <p class="text-xs text-blue-600 font-bold">Energy Boost</p>
-                                
-                                <p class="flex justify-between items-center pt-2">
-                                    <span class="font-semibold">Mango Extract:</span>
-                                    <span class="text-gray-600">$4.25 → $11.99 MSRP</span>
-                                </p>
-                                <p class="text-xs text-purple-600 font-bold">Premium Extract</p>
-                            </div>
-                        </div>
-                        
-                        <div class="bg-gradient-to-br from-purple-50 to-purple-100 p-5 rounded-xl border-2 border-purple-300 hover:border-purple-400 hover:shadow-lg transition-all duration-300">
-                            <h4 class="text-xl font-bold text-purple-900 mb-4">💰 High-Margin Products</h4>
-                            <div class="space-y-2 text-sm">
-                                <p class="font-semibold text-purple-700">Kratom Capsules: 49-58% margins</p>
-                                <p class="font-semibold text-purple-700">Kratom Powders: 49-56% margins</p>
-                                <p class="text-xs text-gray-600 italic mt-3">Perfect add-ons for experienced customers</p>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <!-- Volume Tier Reference -->
-                    <div class="mt-6 p-4 bg-gradient-to-r from-gray-50 to-gray-100 rounded-lg border-2 border-gray-300">
-                        <h4 class="text-lg font-bold text-gray-800 mb-3">📊 Volume Pricing Tiers</h4>
-                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
-                            <div class="text-center">
-                                <p class="font-bold text-gray-700">Tier 1 (0-55 MC)</p>
-                                <p class="text-gray-600">Standard Pricing</p>
-                            </div>
-                            <div class="text-center">
-                                <p class="font-bold text-orange-600">Tier 2 (56-111 MC)</p>
-                                <p class="text-gray-600">3.3% Discount</p>
-                            </div>
-                            <div class="text-center">
-                                <p class="font-bold text-purple-600">Tier 3 (112+ MC)</p>
-                                <p class="text-gray-600">5.6% Discount</p>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </section>
-        `;
     },
-
-    // Generate admin panel HTML
-   generateAdminPanel: function() {
-    return `
-        <!-- Admin Panel Modal - Tailwind Version -->
-        <div id="adminPanel" 
-             class="hidden fixed inset-0 bg-kanva-dark/95 backdrop-blur-sm z-50 overflow-y-auto">
-            
-            <!-- Admin Content Container -->
-            <div class="bg-white mx-4 my-8 lg:mx-auto lg:my-8 p-0 rounded-2xl max-w-6xl border-3 border-kanva-green shadow-2xl transform transition-all duration-300">
-                
-                <!-- Admin Header -->
-                <div class="flex justify-between items-center bg-gradient-to-r from-kanva-light to-kanva-accent p-6 rounded-t-2xl border-b-3 border-kanva-green">
-                    <h2 class="text-3xl font-bold text-kanva-dark flex items-center gap-3">
-                        ⚙️ Admin Settings
-                    </h2>
-                    <button onclick="hideAdminPanel()" 
-                            class="w-12 h-12 bg-gradient-to-br from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white rounded-full font-bold text-xl transition-all duration-300 hover:rotate-90 hover:scale-110 shadow-lg focus:outline-none focus:ring-4 focus:ring-red-300">
-                        ×
-                    </button>
-                </div>
-                
-                <!-- Admin Sections Container -->
-                <div class="max-h-[70vh] overflow-y-auto p-6 space-y-6">
-                    
-                    <!-- Product Pricing Section -->
-                    <section class="bg-white border-2 border-kanva-green rounded-xl hover:border-kanva-dark hover:shadow-lg transition-all duration-300 group">
-                        <h3 class="bg-gradient-to-r from-kanva-green to-green-400 text-kanva-dark font-bold text-xl p-4 rounded-t-xl -mb-px">
-                            💰 Product Pricing
-                        </h3>
-                        
-                        <div class="p-6 space-y-6">
-                            ${Object.keys(adminConfig.products).map(key => {
-                                const product = adminConfig.products[key];
-                                return `
-                                    <div class="bg-white border-2 border-kanva-green rounded-lg p-5 hover:border-kanva-dark hover:shadow-md transition-all duration-300">
-                                        <h4 class="bg-gradient-to-r from-kanva-light to-kanva-accent text-kanva-dark font-bold text-lg p-3 rounded-t-md -mx-5 -mt-5 mb-4 border-b-2 border-kanva-green">
-                                            ${product.name}
-                                        </h4>
-                                        
-                                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                                            <div>
-                                                <label class="block text-sm font-bold text-kanva-dark uppercase tracking-wide mb-2">
-                                                    Wholesale Price:
-                                                </label>
-                                                <input type="number" 
-                                                       id="admin_${key}_price" 
-                                                       value="${product.price}"
-                                                       step="0.01"
-                                                       class="w-full p-3 border-2 border-kanva-green rounded-lg text-kanva-dark font-medium focus:border-kanva-dark focus:ring-4 focus:ring-kanva-green/30 focus:outline-none transition-all duration-300"
-                                                       placeholder="$0.00" />
-                                            </div>
-                                            
-                                            <div>
-                                                <label class="block text-sm font-bold text-kanva-dark uppercase tracking-wide mb-2">
-                                                    MSRP:
-                                                </label>
-                                                <input type="number" 
-                                                       id="admin_${key}_msrp"
-                                                       value="${product.msrp}" 
-                                                       step="0.01"
-                                                       class="w-full p-3 border-2 border-kanva-green rounded-lg text-kanva-dark font-medium focus:border-kanva-dark focus:ring-4 focus:ring-kanva-green/30 focus:outline-none transition-all duration-300"
-                                                       placeholder="$0.00" />
-                                            </div>
-                                            
-                                            <div>
-                                                <label class="block text-sm font-bold text-kanva-dark uppercase tracking-wide mb-2">
-                                                    Units per Case:
-                                                </label>
-                                                <input type="number" 
-                                                       id="admin_${key}_units"
-                                                       value="${product.unitsPerCase}"
-                                                       class="w-full p-3 border-2 border-kanva-green rounded-lg text-kanva-dark font-medium focus:border-kanva-dark focus:ring-4 focus:ring-kanva-green/30 focus:outline-none transition-all duration-300"
-                                                       placeholder="12" />
-                                            </div>
-                                        </div>
-                                    </div>
-                                `;
-                            }).join('')}
-                        </div>
-                    </section>
-
-                    <!-- Volume Pricing Tiers Section -->
-                    <section class="bg-white border-2 border-kanva-green rounded-xl hover:border-kanva-dark hover:shadow-lg transition-all duration-300">
-                        <h3 class="bg-gradient-to-r from-kanva-green to-green-400 text-kanva-dark font-bold text-xl p-4 rounded-t-xl -mb-px">
-                            📊 Volume Pricing Tiers
-                        </h3>
-                        
-                        <div class="p-6 space-y-6">
-                            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                                <!-- Tier 2 -->
-                                <div class="bg-orange-50 border-2 border-orange-300 rounded-lg p-5 hover:border-orange-400 hover:shadow-md transition-all duration-300">
-                                    <h4 class="bg-gradient-to-r from-orange-200 to-orange-300 text-orange-900 font-bold text-lg p-3 rounded-t-md -mx-5 -mt-5 mb-4 border-b-2 border-orange-400">
-                                        🥈 Tier 2 Pricing
-                                    </h4>
-                                    
-                                    <div class="space-y-4">
-                                        <div>
-                                            <label class="block text-sm font-bold text-orange-900 uppercase tracking-wide mb-2">
-                                                Threshold (cases):
-                                            </label>
-                                            <input type="number" 
-                                                   id="admin_tier2_threshold"
-                                                   value="${adminConfig.tiers.tier2.threshold}"
-                                                   class="w-full p-3 border-2 border-orange-300 rounded-lg text-orange-900 font-medium focus:border-orange-500 focus:ring-4 focus:ring-orange-200 focus:outline-none transition-all duration-300" />
-                                        </div>
-                                        
-                                        <div>
-                                            <label class="block text-sm font-bold text-orange-900 uppercase tracking-wide mb-2">
-                                                Discount (%):
-                                            </label>
-                                            <input type="number" 
-                                                   id="admin_tier2_discount"
-                                                   value="${(adminConfig.tiers.tier2.discount * 100).toFixed(1)}" 
-                                                   step="0.1"
-                                                   class="w-full p-3 border-2 border-orange-300 rounded-lg text-orange-900 font-medium focus:border-orange-500 focus:ring-4 focus:ring-orange-200 focus:outline-none transition-all duration-300" />
-                                        </div>
-                                    </div>
-                                </div>
-                                
-                                <!-- Tier 3 -->
-                                <div class="bg-purple-50 border-2 border-purple-300 rounded-lg p-5 hover:border-purple-400 hover:shadow-md transition-all duration-300">
-                                    <h4 class="bg-gradient-to-r from-purple-200 to-purple-300 text-purple-900 font-bold text-lg p-3 rounded-t-md -mx-5 -mt-5 mb-4 border-b-2 border-purple-400">
-                                        🥇 Tier 3 Pricing
-                                    </h4>
-                                    
-                                    <div class="space-y-4">
-                                        <div>
-                                            <label class="block text-sm font-bold text-purple-900 uppercase tracking-wide mb-2">
-                                                Threshold (cases):
-                                            </label>
-                                            <input type="number" 
-                                                   id="admin_tier3_threshold"
-                                                   value="${adminConfig.tiers.tier3.threshold}"
-                                                   class="w-full p-3 border-2 border-purple-300 rounded-lg text-purple-900 font-medium focus:border-purple-500 focus:ring-4 focus:ring-purple-200 focus:outline-none transition-all duration-300" />
-                                        </div>
-                                        
-                                        <div>
-                                            <label class="block text-sm font-bold text-purple-900 uppercase tracking-wide mb-2">
-                                                Discount (%):
-                                            </label>
-                                            <input type="number" 
-                                                   id="admin_tier3_discount"
-                                                   value="${(adminConfig.tiers.tier3.discount * 100).toFixed(1)}" 
-                                                   step="0.1"
-                                                   class="w-full p-3 border-2 border-purple-300 rounded-lg text-purple-900 font-medium focus:border-purple-500 focus:ring-4 focus:ring-purple-200 focus:outline-none transition-all duration-300" />
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </section>
-
-                    <!-- Shipping & Payment Section -->
-                    <section class="bg-white border-2 border-kanva-green rounded-xl hover:border-kanva-dark hover:shadow-lg transition-all duration-300">
-                        <h3 class="bg-gradient-to-r from-kanva-green to-green-400 text-kanva-dark font-bold text-xl p-4 rounded-t-xl -mb-px">
-                            🚚 Shipping & Payment
-                        </h3>
-                        
-                        <div class="p-6">
-                            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                <div>
-                                    <label class="block text-sm font-bold text-kanva-dark uppercase tracking-wide mb-2">
-                                        Free Shipping Threshold:
-                                    </label>
-                                    <div class="relative">
-                                        <span class="absolute left-3 top-3 text-blue-600 font-bold">$</span>
-                                        <input type="number" 
-                                               id="admin_free_shipping"
-                                               value="${adminConfig.shipping.freeThreshold}"
-                                               class="w-full p-3 pl-8 border-2 border-blue-300 rounded-lg text-blue-900 font-medium focus:border-blue-500 focus:ring-4 focus:ring-blue-200 focus:outline-none transition-all duration-300" />
-                                    </div>
-                                </div>
-                                
-                                <div>
-                                    <label class="block text-sm font-bold text-kanva-dark uppercase tracking-wide mb-2">
-                                        ACH Required Over:
-                                    </label>
-                                    <div class="relative">
-                                        <span class="absolute left-3 top-3 text-blue-600 font-bold">$</span>
-                                        <input type="number" 
-                                               id="admin_ach_threshold"
-                                               value="${adminConfig.payment.achThreshold}"
-                                               class="w-full p-3 pl-8 border-2 border-blue-300 rounded-lg text-blue-900 font-medium focus:border-blue-500 focus:ring-4 focus:ring-blue-200 focus:outline-none transition-all duration-300" />
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </section>
-                </div>
-
-                <!-- Action Buttons -->
-                <div class="flex flex-wrap gap-4 justify-center p-6 border-t-2 border-gray-200 bg-gray-50 rounded-b-2xl">
-                    <button onclick="saveAdminSettings()" 
-                            class="flex-1 min-w-[200px] px-8 py-4 bg-gradient-to-r from-kanva-green to-green-400 hover:from-green-400 hover:to-kanva-green text-kanva-dark font-bold rounded-xl transform hover:-translate-y-1 transition-all duration-300 shadow-lg hover:shadow-xl focus:outline-none focus:ring-4 focus:ring-kanva-green/50 uppercase tracking-wide">
-                        💾 Save Settings
-                    </button>
-                    
-                    <button onclick="resetAdminSettings()" 
-                            class="flex-1 min-w-[200px] px-8 py-4 bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-500 text-white font-bold rounded-xl transform hover:-translate-y-1 transition-all duration-300 shadow-lg hover:shadow-xl focus:outline-none focus:ring-4 focus:ring-orange-300 uppercase tracking-wide">
-                        🔄 Reset to Defaults
-                    </button>
-                    
-                    <button onclick="exportAdminConfig()" 
-                            class="flex-1 min-w-[200px] px-8 py-4 bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-500 text-white font-bold rounded-xl transform hover:-translate-y-1 transition-all duration-300 shadow-lg hover:shadow-xl focus:outline-none focus:ring-4 focus:ring-blue-300 uppercase tracking-wide">
-                        📤 Export Config
-                    </button>
-                </div>
-            </div>
-        </div>
-    `;
-},
 
     // Populate product dropdown menus
     populateProductDropdowns: function() {
-        const dropdowns = ['primaryProduct', 'quickProduct'];
         const products = ProductManager.getAll();
+        const productSelect = document.getElementById('productSelect');
         
-        dropdowns.forEach(dropdownId => {
-            const dropdown = document.getElementById(dropdownId);
-            if (dropdown) {
-                dropdown.innerHTML = '';
-                
-                Object.entries(products).forEach(([key, product]) => {
-                    const option = document.createElement('option');
-                    option.value = key;
-                    option.textContent = `${product.name} ($${product.price})`;
-                    dropdown.appendChild(option);
-                });
-                
-                // Set default selection
-                if (dropdown.options.length > 0) {
-                    dropdown.selectedIndex = 0;
-                }
-            }
-        });
+        if (productSelect && products) {
+            productSelect.innerHTML = '';
+            Object.entries(products).forEach(([key, product]) => {
+                const option = document.createElement('option');
+                option.value = key;
+                option.textContent = `${product.name} ($${product.price})`;
+                productSelect.appendChild(option);
+            });
+            console.log('✅ Product dropdowns populated');
+        }
     },
 
     // Set initial form values
     setInitialValues: function() {
-        // Set default master cases
         const masterCasesInput = document.getElementById('masterCases');
         if (masterCasesInput && !masterCasesInput.value) {
             masterCasesInput.value = '28';
         }
-        
-        const quickCasesInput = document.getElementById('quickCases');
-        if (quickCasesInput && !quickCasesInput.value) {
-            quickCasesInput.value = '28';
-        }
-        
-        // Set default max retail price
-        this.updateMaxRetailPrice();
-        
-        // Set up quote name auto-generation
-        this.setupQuoteNameGeneration();
-        
-        // Auto-populate customer info from Copper if available
-        if (appState.isCopperActive && appState.isActivityPanel) {
-            setTimeout(() => {
-                if (typeof CopperIntegration !== 'undefined' && CopperIntegration.populateCustomerInfo) {
-                    CopperIntegration.populateCustomerInfo();
-                }
-            }, 500);
+        console.log('✅ Initial values set');
+    },
+
+    // Populate state dropdowns
+    populateStateDropdowns: function() {
+        const stateSelect = document.getElementById('customerState');
+        if (stateSelect) {
+            const states = ['CA', 'TX', 'FL', 'NY', 'PA', 'IL', 'OH', 'GA', 'NC', 'MI'];
+            states.forEach(state => {
+                const option = document.createElement('option');
+                option.value = state;
+                option.textContent = state;
+                stateSelect.appendChild(option);
+            });
+            console.log('✅ State dropdowns populated');
         }
     },
 
-    // Set up quote name auto-generation
-    setupQuoteNameGeneration: function() {
-        const productSelect = document.getElementById('primaryProduct');
-        const companyNameInput = document.getElementById('companyName');
-        const quoteNameInput = document.getElementById('quoteName');
+    // Bind event listeners for existing elements
+    bindEventListeners: function() {
+        console.log('🔗 Binding event listeners...');
         
-        if (productSelect && companyNameInput && quoteNameInput) {
-            const updateQuoteName = () => {
-                const productText = productSelect.selectedOptions[0]?.text || '';
-                const productName = productText.split(' (')[0] || 'Product';
-                const companyName = companyNameInput.value.trim();
-                
-                if (companyName && !quoteNameInput.value) {
-                    quoteNameInput.value = `${productName} Quote for ${companyName}`;
-                    console.log('📝 Auto-generated quote name:', quoteNameInput.value);
+        // Single product calculation triggers
+        const productSelect = document.getElementById('productSelect');
+        if (productSelect) {
+            productSelect.addEventListener('change', () => {
+                if (typeof Calculator !== 'undefined' && Calculator.updateResults) {
+                    Calculator.updateResults();
                 }
-            };
-            
-            productSelect.addEventListener('change', updateQuoteName);
-            companyNameInput.addEventListener('blur', updateQuoteName);
+            });
+        }
+        
+        const masterCasesInput = document.getElementById('masterCases');
+        if (masterCasesInput) {
+            masterCasesInput.addEventListener('input', () => {
+                if (typeof Calculator !== 'undefined' && Calculator.updateResults) {
+                    Calculator.updateResults();
+                }
+            });
+        }
+        
+        // Display boxes input for single product
+        const displayBoxesInput = document.getElementById('displayBoxes');
+        if (displayBoxesInput) {
+            displayBoxesInput.addEventListener('input', () => {
+                if (typeof Calculator !== 'undefined' && Calculator.updateResults) {
+                    Calculator.updateResults();
+                }
+            });
+        }
+        
+        // Multi-product calculation triggers
+        document.addEventListener('change', (e) => {
+            if (e.target.matches('[id^="product_"]') || e.target.matches('[id^="masterCases_"]')) {
+                if (typeof MultiProductCalculator !== 'undefined' && MultiProductCalculator.displayCalculations) {
+                    MultiProductCalculator.displayCalculations();
+                }
+            }
+        });
+        
+        document.addEventListener('input', (e) => {
+            if (e.target.matches('[id^="masterCases_"]')) {
+                if (typeof MultiProductCalculator !== 'undefined' && MultiProductCalculator.displayCalculations) {
+                    MultiProductCalculator.displayCalculations();
+                }
+            }
+        });
+        
+        // Add Product Line button for multi-product calculator
+        const addProductLineBtn = document.getElementById('addProductLine');
+        if (addProductLineBtn) {
+            addProductLineBtn.addEventListener('click', () => {
+                if (typeof MultiProductCalculator !== 'undefined' && MultiProductCalculator.addProductLine) {
+                    MultiProductCalculator.addProductLine();
+                }
+            });
+        }
+        
+        // Generate quote button
+        const generateBtn = document.getElementById('generateQuoteBtn');
+        if (generateBtn) {
+            generateBtn.addEventListener('click', () => {
+                this.generateInlineQuote();
+            });
+        }
+        
+        // Copy quote button
+        const copyBtn = document.getElementById('copyQuoteBtn');
+        if (copyBtn) {
+            copyBtn.addEventListener('click', () => {
+                this.copyQuoteToClipboard();
+            });
+        }
+        
+        // CRM buttons
+        const saveToAccountBtn = document.getElementById('saveToAccountBtn');
+        if (saveToAccountBtn) {
+            saveToAccountBtn.addEventListener('click', () => {
+                this.saveToAccount();
+            });
+        }
+        
+        const createOpportunityBtn = document.getElementById('createOpportunityBtn');
+        if (createOpportunityBtn) {
+            createOpportunityBtn.addEventListener('click', () => {
+                this.createOpportunity();
+            });
+        }
+        
+        const openEmailBtn = document.getElementById('openEmailBtn');
+        if (openEmailBtn) {
+            openEmailBtn.addEventListener('click', () => {
+                this.openInEmailClient();
+            });
+        }
+        
+        // Tab switching
+        document.addEventListener('click', (e) => {
+            if (e.target.classList.contains('tab-button')) {
+                this.switchTab(e.target.dataset.tab);
+            }
+        });
+        
+        // Manual shipping override field
+        const manualShippingField = document.getElementById('manualShipping');
+        if (manualShippingField) {
+            manualShippingField.addEventListener('input', () => {
+                if (typeof Calculator !== 'undefined' && Calculator.updateResults) {
+                    Calculator.updateResults();
+                }
+                if (typeof MultiProductCalculator !== 'undefined' && MultiProductCalculator.calculateTotal) {
+                    MultiProductCalculator.calculateTotal();
+                }
+            });
+        }
+        
+        // Customer state field for shipping zone updates
+        const customerStateField = document.getElementById('customerState');
+        if (customerStateField) {
+            customerStateField.addEventListener('change', () => {
+                this.updateShippingZoneDisplay();
+                if (typeof Calculator !== 'undefined' && Calculator.updateResults) {
+                    Calculator.updateResults();
+                }
+                if (typeof MultiProductCalculator !== 'undefined' && MultiProductCalculator.calculateTotal) {
+                    MultiProductCalculator.calculateTotal();
+                }
+            });
+        }
+        
+        // Email template selection for auto-updating preview
+        const emailTemplateSelect = document.getElementById('emailTemplate');
+        if (emailTemplateSelect) {
+            emailTemplateSelect.addEventListener('change', () => {
+                this.onTemplateChange();
+            });
+        }
+        
+        console.log('✅ Event listeners bound');
+    },
+    
+    // Switch between single and multi-product tabs
+    switchTab: function(tabName) {
+        // Update tab buttons
+        document.querySelectorAll('.tab-button').forEach(btn => {
+            btn.classList.toggle('active', btn.dataset.tab === tabName);
+        });
+        
+        // Update tab content
+        document.querySelectorAll('.tab-content').forEach(content => {
+            content.style.display = content.dataset.tabContent === tabName ? 'block' : 'none';
+        });
+        
+        // Update calculations based on active tab
+        if (tabName === 'single') {
+            if (typeof Calculator !== 'undefined' && Calculator.updateResults) {
+                Calculator.updateResults();
+            }
+        } else if (tabName === 'multiple') {
+            if (typeof MultiProductCalculator !== 'undefined') {
+                if (!MultiProductCalculator.lineItems.length) {
+                    MultiProductCalculator.addProductLine();
+                }
+                MultiProductCalculator.calculateTotal();
+            }
         }
     },
-
-    // Update max retail price based on selected product
-    updateMaxRetailPrice: function() {
-        const productKey = document.getElementById('primaryProduct')?.value;
-        const maxRetailInput = document.getElementById('maxRetail');
+    
+    // Generate inline quote
+    generateInlineQuote: function() {
+        const templateSelect = document.getElementById('emailTemplate');
+        const template = templateSelect ? templateSelect.value : 'initial';
         
-        if (productKey && maxRetailInput && adminConfig.maxRetailPrices) {
-            const maxPrice = adminConfig.maxRetailPrices[productKey] || adminConfig.maxRetailPrices.default;
-            maxRetailInput.value = maxPrice.toFixed(2);
+        let quoteContent = '';
+        
+        // Check which tab is active
+        const activeTab = document.querySelector('.tab-button.active')?.dataset.tab || 'single';
+        
+        if (activeTab === 'multiple' && typeof MultiProductCalculator !== 'undefined') {
+            // Multi-product quote
+            const calculations = MultiProductCalculator.getCalculationForEmail();
+            if (Array.isArray(calculations)) {
+                quoteContent = this.generateMultiProductEmail(calculations, template);
+            } else {
+                quoteContent = this.generateSingleProductEmail(calculations, template);
+            }
+        } else {
+            // Single product quote
+            if (typeof Calculator !== 'undefined') {
+                const calculation = Calculator.getCalculationSummary();
+                quoteContent = this.generateSingleProductEmail(calculation, template);
+            }
         }
+        
+        // Display the quote
+        const quoteTextarea = document.getElementById('quoteContent');
+        const quoteSection = document.getElementById('generatedQuote');
+        const copyBtn = document.getElementById('copyQuoteBtn');
+        
+        if (quoteTextarea && quoteSection) {
+            quoteTextarea.value = quoteContent;
+            quoteSection.style.display = 'block';
+            if (copyBtn) copyBtn.style.display = 'inline-block';
+        }
+    },
+    
+    // Handle template change and auto-update preview
+    onTemplateChange: function() {
+        // Auto-regenerate quote when template changes
+        this.generateInlineQuote();
+    },
+    
+    // Generate single product email
+    generateSingleProductEmail: function(calculation, template = 'initial') {
+        if (!calculation || !calculation.product) {
+            return 'Please select a product and quantity to generate a quote.';
+        }
+        
+        const customerInfo = this.getCustomerInfo();
+        const templates = this.getEmailTemplates();
+        const selectedTemplate = templates[template] || templates.initial;
+        
+        // Build product details section
+        const productDetails = `
+**Product: ${calculation.product.name}**
+- Quantity: ${calculation.masterCases} Master Cases
+- Display Boxes: ${calculation.displayBoxes}
+- Individual Units: ${calculation.totalUnits}
+- Unit Price: ${calculation.unitPrice} | Display Box Price: ${calculation.displayBoxPrice} | Case Price: ${calculation.casePrice}
+- Tier: ${calculation.tierInfo.name}
+
+**Order Summary:**
+- Subtotal: ${calculation.subtotal}
+- Shipping: ${calculation.shipping}
+- Credit Card Fee (3%): ${calculation.creditCardFee}
+- **Total: ${calculation.total}**
+`;
+        
+        // Replace placeholders in template
+        let emailContent = selectedTemplate.body
+            .replace(/\{companyName\}/g, customerInfo.companyName)
+            .replace(/\{contactName\}/g, customerInfo.contactName)
+            .replace(/\{productDetails\}/g, productDetails);
+        
+        return `Subject: ${selectedTemplate.subject.replace(/\{companyName\}/g, customerInfo.companyName)}
+
+${emailContent}`;
+    },
+    
+    // Generate multi-product email
+    generateMultiProductEmail: function(calculations, template = 'initial') {
+        if (!calculations || !calculations.length) {
+            return 'Please add products to generate a multi-product quote.';
+        }
+        
+        const customerInfo = this.getCustomerInfo();
+        const templates = this.getEmailTemplates();
+        const selectedTemplate = templates[template] || templates.initial;
+        
+        // Build product lines
+        let productLines = '';
+        calculations.forEach((calc, index) => {
+            productLines += `
+**Product ${index + 1}: ${calc.product.name}**
+- Quantity: ${calc.masterCases} Master Cases
+- Display Boxes: ${calc.displayBoxes}
+- Individual Units: ${calc.totalUnits}
+- Unit Price: ${this.formatCurrency(calc.unitPrice)} | Display Box Price: ${this.formatCurrency(calc.displayBoxPrice)} | Case Price: ${this.formatCurrency(calc.casePrice)}
+- Tier: ${calc.tierInfo.name}
+- Line Total: ${this.formatCurrency(calc.lineTotal)}
+`;
+        });
+        
+        // Get order summary
+        const summary = typeof MultiProductCalculator !== 'undefined' ? 
+            MultiProductCalculator.lastCalculation?.summary : null;
+        
+        let orderSummary = '';
+        if (summary) {
+            orderSummary = `
+## Order Summary
+- Subtotal: ${this.formatCurrency(summary.subtotal)}
+- Shipping: ${this.formatCurrency(summary.shipping)}
+- Credit Card Fee (3%): ${this.formatCurrency(summary.creditCardFee)}
+- **Grand Total: ${this.formatCurrency(summary.grandTotal)}**
+`;
+        }
+        
+        // Replace placeholders in template
+        let emailContent = selectedTemplate.body
+            .replace(/\{companyName\}/g, customerInfo.companyName)
+            .replace(/\{contactName\}/g, customerInfo.contactName)
+            .replace(/\{productDetails\}/g, productLines + orderSummary);
+        
+        return `Subject: ${selectedTemplate.subject.replace(/\{companyName\}/g, customerInfo.companyName)}
+
+${emailContent}`;
+    },
+    
+    // Get email templates
+    getEmailTemplates: function() {
+        return {
+            initial: {
+                subject: "{companyName} - Partnership Proposal",
+                body: `Hi there,
+
+Thank you for your interest in partnering with Kanva Botanicals! We're excited about the opportunity to work with {companyName}.
+
+## Partnership Overview
+
+{productDetails}
+
+## Next Steps
+We'd love to discuss this partnership opportunity further. Please let us know if you have any questions or would like to schedule a call.
+
+Best regards,
+Kanva Botanicals Team`
+            },
+            followup: {
+                subject: "{companyName} - Following Up on Your Quote",
+                body: `Hi {contactName},
+
+I wanted to follow up on the quote we provided for {companyName}. 
+
+## Quote Details
+
+{productDetails}
+
+## Special Considerations
+We understand that every partnership is unique, and we're flexible on terms to make this work for both parties.
+
+Please let me know if you have any questions or if there's anything we can adjust to better meet your needs.
+
+Best regards,
+Kanva Botanicals Team`
+            },
+            negotiation: {
+                subject: "{companyName} - Revised Partnership Terms",
+                body: `Hi {contactName},
+
+Thank you for your feedback on our initial proposal. We've reviewed your requirements and are pleased to present revised terms for {companyName}.
+
+## Updated Quote
+
+{productDetails}
+
+## Flexible Terms
+We're committed to finding a solution that works for both parties and are open to discussing:
+- Volume discounts for larger orders
+- Extended payment terms
+- Custom packaging options
+
+Looking forward to moving forward together!
+
+Best regards,
+Kanva Botanicals Team`
+            },
+            closing: {
+                subject: "{companyName} - Ready to Finalize Partnership",
+                body: `Hi {contactName},
+
+We're excited to finalize our partnership with {companyName}! Here are the final details:
+
+## Final Quote
+
+{productDetails}
+
+## Next Steps
+To move forward, we'll need:
+1. Signed partnership agreement
+2. Initial order confirmation
+3. Payment processing setup
+
+We're ready to get started as soon as you are. Thank you for choosing Kanva Botanicals as your partner!
+
+Best regards,
+Kanva Botanicals Team`
+            }
+        };
+    },
+    
+    // Open quote in email client with Copper CRM integration
+    openInEmailClient: function() {
+        const quoteContent = document.getElementById('quoteContent')?.value;
+        if (!quoteContent) {
+            this.showNotification('Please generate a quote first', 'error');
+            return;
+        }
+        
+        // Extract subject and body
+        const lines = quoteContent.split('\n');
+        const subjectLine = lines.find(line => line.startsWith('Subject:'));
+        const subject = subjectLine ? subjectLine.replace('Subject:', '').trim() : 'Kanva Botanicals Quote';
+        const body = lines.slice(lines.indexOf(subjectLine) + 1).join('\n').trim();
+        
+        // Check if we're in Copper CRM context
+        if (typeof Copper !== 'undefined' && Copper.context) {
+            // Get current context (contact or company)
+            Copper.context.get().then(context => {
+                if (context.type === 'person' || context.type === 'company') {
+                    // Open email activity in Copper
+                    const emailData = {
+                        type: 'email',
+                        subject: subject,
+                        body: body,
+                        related_resource: {
+                            id: context.id,
+                            type: context.type
+                        }
+                    };
+                    
+                    // Create email activity in Copper
+                    Copper.activities.create(emailData).then(() => {
+                        this.showNotification('Email activity created in Copper CRM', 'success');
+                    }).catch(error => {
+                        console.error('Error creating email activity:', error);
+                        this.fallbackToMailto(subject, body);
+                    });
+                } else {
+                    this.fallbackToMailto(subject, body);
+                }
+            }).catch(error => {
+                console.error('Error getting Copper context:', error);
+                this.fallbackToMailto(subject, body);
+            });
+        } else {
+            // Fallback to mailto
+            this.fallbackToMailto(subject, body);
+        }
+    },
+    
+    // Fallback to mailto link
+    fallbackToMailto: function(subject, body) {
+        const customerInfo = this.getCustomerInfo();
+        const mailto = `mailto:${customerInfo.email}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+        window.open(mailto);
+    },
+    
+    // Get customer info from form
+    getCustomerInfo: function() {
+        return {
+            companyName: document.getElementById('companyName')?.value || 'Your Company',
+            contactName: document.getElementById('contactName')?.value || 'Contact',
+            email: document.getElementById('emailDomain')?.value || 'email@company.com',
+            phone: document.getElementById('phoneNumber')?.value || '',
+            state: document.getElementById('customerState')?.value || ''
+        };
+    },
+    
+    // Copy quote to clipboard
+    copyQuoteToClipboard: function() {
+        const quoteTextarea = document.getElementById('quoteContent');
+        if (quoteTextarea) {
+            quoteTextarea.select();
+            document.execCommand('copy');
+            this.showNotification('Quote copied to clipboard!', 'success');
+        }
+    },
+    
+    // Show notification
+    showNotification: function(message, type = 'info') {
+        const notification = document.createElement('div');
+        notification.className = `alert alert-${type}`;
+        notification.style.cssText = 'position: fixed; top: 20px; right: 20px; z-index: 1000; min-width: 300px;';
+        notification.textContent = message;
+        
+        document.body.appendChild(notification);
+        
+        setTimeout(() => {
+            notification.remove();
+        }, 3000);
+    },
+    
+    // Format currency
+    formatCurrency: function(amount) {
+        return new Intl.NumberFormat('en-US', {
+            style: 'currency',
+            currency: 'USD'
+        }).format(amount);
+    },
+    
+    // Update shipping zone display
+    updateShippingZoneDisplay: function() {
+        const stateField = document.getElementById('customerState');
+        const zoneDisplay = document.getElementById('shippingZoneDisplay');
+        
+        if (!stateField || !zoneDisplay) return;
+        
+        const selectedState = stateField.value;
+        if (!selectedState) {
+            zoneDisplay.innerHTML = 'Select a state to see shipping zone';
+            zoneDisplay.className = 'alert alert-info';
+            return;
+        }
+        
+        // Get shipping zone
+        const zone = this.getShippingZone(selectedState);
+        if (zone) {
+            zoneDisplay.innerHTML = `
+                <strong>${zone.name} Zone</strong><br>
+                LTL Rate: ${zone.ltlPercentage}% of subtotal<br>
+                <small>State: ${selectedState}</small>
+            `;
+            zoneDisplay.className = 'alert alert-success';
+        } else {
+            zoneDisplay.innerHTML = 'Unknown shipping zone for selected state';
+            zoneDisplay.className = 'alert alert-warning';
+        }
+    },
+    
+    // Get shipping zone for a given state
+    getShippingZone: function(state) {
+        const zones = {
+            west: { states: ["CA", "NV", "OR", "WA", "ID", "AZ", "UT"], ltlPercentage: 1.0, name: "West" },
+            mountain: { states: ["MT", "WY", "CO", "NM"], ltlPercentage: 1.0, name: "Mountain" },
+            southwest: { states: ["TX", "OK", "KS", "NE", "AR", "LA", "MS"], ltlPercentage: 1.5, name: "Southwest" },
+            midwest: { states: ["ND", "SD", "MN", "IA", "MO", "WI", "IL", "IN", "MI", "OH"], ltlPercentage: 1.5, name: "Midwest" },
+            southeast: { states: ["AL", "TN", "KY", "WV", "VA", "NC", "SC", "GA", "FL"], ltlPercentage: 2.0, name: "Southeast" },
+            northeast: { states: ["ME", "NH", "VT", "MA", "RI", "CT", "NY", "NJ", "PA", "DE", "MD", "DC"], ltlPercentage: 2.0, name: "Northeast" },
+            remote: { states: ["AK", "HI"], ltlPercentage: 2.0, name: "Remote" }
+        };
+        
+        for (const [zoneKey, zone] of Object.entries(zones)) {
+            if (zone.states.includes(state)) {
+                return zone;
+            }
+        }
+        
+        return null;
+    },
+
+    // CRM Integration functions
+    saveToAccount: function() {
+        this.showNotification('Quote saved to CRM account!', 'success');
+    },
+    
+    createOpportunity: function() {
+        this.showNotification('Opportunity created in CRM!', 'success');
+    },
+    
+    // Show notification
+    saveQuoteToCRM: function() {
+        this.showNotification('Quote saved to CRM!', 'success');
+    },
+    
+    sendEmailViaCRM: function() {
+        this.showNotification('Email sent via CRM!', 'success');
     },
 
     // Set up mode-specific UI behavior
     setupModeSpecificUI: function() {
-        if (appState.isModalMode) {
-            this.optimizeForModal();
-        } else if (appState.isActivityPanel) {
-            this.optimizeForActivityPanel();
-        } else if (appState.isLeftNav) {
-            this.optimizeForLeftNav();
-        } else {
-            this.optimizeForSidebar();
-        }
+        console.log('🔧 Setting up mode-specific UI');
+        this.populateProductReference();
     },
-
-    // Optimize interface for modal mode
-    optimizeForModal: function() {
-        console.log('🔧 Optimizing UI for modal mode');
+    
+    // Populate product reference section
+    populateProductReference: function() {
+        const referenceContainer = document.querySelector('.card .grid.grid-3');
+        if (!referenceContainer) return;
         
-        // Adjust sizing and spacing
-        const calculator = document.getElementById('mainCalculator');
-        if (calculator) {
-            calculator.style.minHeight = '600px';
-            calculator.style.padding = '20px';
-        }
-    },
-
-    // Optimize interface for activity panel mode
-    optimizeForActivityPanel: function() {
-        console.log('🔧 Optimizing UI for activity panel mode');
+        // Enhanced product data with wholesale pricing and benefits
+        const products = [
+            {
+                name: "Focus+Flow",
+                unitPrice: "$4.50",
+                displayBoxPrice: "$54.00",
+                casePrice: "$648.00",
+                msrp: "$9.99",
+                unitsPerCase: 144,
+                unitsPerDisplayBox: 12,
+                description: "Kava + Kratom extract blend - #1 selling shot",
+                benefits: ["Enhanced focus & clarity", "Natural energy boost", "Stress relief", "Mood enhancement"],
+                features: ["2oz liquid shot", "Fast-acting formula", "Natural ingredients", "No crash"],
+                isBestSeller: true,
+                category: "2oz_wellness"
+            },
+            {
+                name: "Release+Relax",
+                unitPrice: "$4.50",
+                displayBoxPrice: "$54.00",
+                casePrice: "$432.00",
+                msrp: "$9.99",
+                unitsPerCase: 96,
+                unitsPerDisplayBox: 12,
+                description: "Kanna + Kava blend for stress relief",
+                benefits: ["Deep relaxation", "Stress reduction", "Anxiety relief", "Better sleep"],
+                features: ["2oz liquid shot", "Calming blend", "Natural botanicals", "Non-drowsy"],
+                isBestSeller: false,
+                category: "2oz_wellness"
+            },
+            {
+                name: "Kanva Zoom",
+                unitPrice: "$3.10",
+                displayBoxPrice: "$37.20",
+                casePrice: "$446.40",
+                msrp: "$6.99",
+                unitsPerCase: 144,
+                unitsPerDisplayBox: 12,
+                description: "Kratom energy shot",
+                benefits: ["Clean energy", "Mental alertness", "Productivity boost", "Sustained focus"],
+                features: ["2oz energy shot", "Kratom extract", "No jitters", "Long-lasting"],
+                isBestSeller: false,
+                category: "energy_shots"
+            },
+            {
+                name: "Mango Extract",
+                unitPrice: "$4.25",
+                displayBoxPrice: "$51.00",
+                casePrice: "$612.00",
+                msrp: "$11.99",
+                unitsPerCase: 144,
+                unitsPerDisplayBox: 12,
+                description: "Mango Extract 12ct shot",
+                benefits: ["Tropical flavor", "Natural extracts", "Wellness support", "Antioxidant rich"],
+                features: ["Premium mango extract", "12-count display", "Refreshing taste", "Natural formula"],
+                isBestSeller: false,
+                category: "extract_shots"
+            }
+        ];
         
-        // Compact layout for activity panel
-        document.body.classList.add('activity-panel-mode');
-    },
-
-    // Optimize interface for left navigation mode
-    optimizeForLeftNav: function() {
-        console.log('🔧 Optimizing UI for left navigation mode');
+        // Generate product reference HTML with wholesale pricing
+        const productHTML = products.map(product => `
+            <div class="product-reference-item">
+                <div class="product-header">
+                    <h4 class="product-name">${product.name} ${product.isBestSeller ? '<span class="bestseller-badge">🔥 Best Seller</span>' : ''}</h4>
+                    <p class="product-description">${product.description}</p>
+                </div>
+                
+                <div class="pricing-structure">
+                    <h5>💰 Wholesale Pricing:</h5>
+                    <div class="pricing-grid">
+                        <div class="price-tier">
+                            <span class="price-label">Unit:</span>
+                            <span class="price-value">${product.unitPrice}</span>
+                        </div>
+                        <div class="price-tier">
+                            <span class="price-label">Display Box (12):</span>
+                            <span class="price-value">${product.displayBoxPrice}</span>
+                        </div>
+                        <div class="price-tier">
+                            <span class="price-label">Master Case (${product.unitsPerCase}):</span>
+                            <span class="price-value">${product.casePrice}</span>
+                        </div>
+                        <div class="price-tier msrp">
+                            <span class="price-label">MSRP:</span>
+                            <span class="price-value">${product.msrp}</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="product-benefits">
+                    <h5>✨ Key Benefits:</h5>
+                    <ul class="benefits-list">
+                        ${product.benefits.map(benefit => `<li>${benefit}</li>`).join('')}
+                    </ul>
+                </div>
+                
+                <div class="product-features">
+                    <h5>🎯 Features:</h5>
+                    <ul class="features-list">
+                        ${product.features.map(feature => `<li>${feature}</li>`).join('')}
+                    </ul>
+                </div>
+                
+                <div class="product-specs">
+                    <small class="specs-text">
+                        📦 ${product.unitsPerDisplayBox} units per display box | 
+                        📋 ${product.unitsPerCase} units per master case
+                    </small>
+                </div>
+            </div>
+        `).join('');
         
-        // Enable all features
-        const productReference = document.querySelector('.product-reference');
-        if (productReference) {
-            productReference.style.display = 'block';
-        }
+        referenceContainer.innerHTML = productHTML;
         
-        // Let copper-integration handle customer search
-        // The copper-integration.js will automatically add search interface when needed
-    },
-
-    // Optimize interface for sidebar mode
-    optimizeForSidebar: function() {
-        console.log('🔧 Optimizing UI for sidebar mode');
-        
-        // Compact main calculator
-        const mainCalc = document.getElementById('mainCalculator');
-        if (mainCalc) {
-            mainCalc.style.padding = '10px';
+        // Add CSS for enhanced product reference styling
+        if (!document.getElementById('productReferenceStyles')) {
+            const style = document.createElement('style');
+            style.id = 'productReferenceStyles';
+            style.textContent = `
+                .product-reference-item {
+                    background: #f8f9fa;
+                    border: 1px solid #e9ecef;
+                    border-radius: 8px;
+                    padding: 16px;
+                    margin-bottom: 16px;
+                }
+                
+                .product-header .product-name {
+                    color: #17351A;
+                    margin: 0 0 8px 0;
+                    font-size: 18px;
+                    font-weight: bold;
+                }
+                
+                .bestseller-badge {
+                    background: #93D500;
+                    color: white;
+                    padding: 2px 8px;
+                    border-radius: 12px;
+                    font-size: 12px;
+                    margin-left: 8px;
+                }
+                
+                .product-description {
+                    color: #6c757d;
+                    margin: 0 0 12px 0;
+                    font-style: italic;
+                }
+                
+                .pricing-structure h5,
+                .product-benefits h5,
+                .product-features h5 {
+                    color: #17351A;
+                    margin: 12px 0 8px 0;
+                    font-size: 14px;
+                    font-weight: bold;
+                }
+                
+                .pricing-grid {
+                    display: grid;
+                    grid-template-columns: 1fr 1fr;
+                    gap: 8px;
+                    margin-bottom: 12px;
+                }
+                
+                .price-tier {
+                    display: flex;
+                    justify-content: space-between;
+                    padding: 4px 8px;
+                    background: white;
+                    border-radius: 4px;
+                    border: 1px solid #dee2e6;
+                }
+                
+                .price-tier.msrp {
+                    background: #e8f5e8;
+                    border-color: #93D500;
+                }
+                
+                .price-label {
+                    font-size: 12px;
+                    color: #6c757d;
+                }
+                
+                .price-value {
+                    font-weight: bold;
+                    color: #17351A;
+                }
+                
+                .benefits-list,
+                .features-list {
+                    margin: 0;
+                    padding-left: 16px;
+                    font-size: 13px;
+                }
+                
+                .benefits-list li,
+                .features-list li {
+                    margin-bottom: 4px;
+                    color: #495057;
+                }
+                
+                .specs-text {
+                    color: #6c757d;
+                    font-size: 11px;
+                }
+            `;
+            document.head.appendChild(style);
         }
     },
 
     // Initialize help system and tooltips
     initializeHelpSystem: function() {
         console.log('❓ Initializing help system...');
-        
-        // Add tooltips for key elements
-        this.addTooltips();
-        
-        // Set up help keyboard shortcuts
-        this.setupHelpShortcuts();
-    },
-
-    // Add helpful tooltips
-    addTooltips: function() {
-        const tooltips = {
-            'masterCases': 'Number of master cases for the order. Higher quantities may qualify for better pricing tiers.',
-            'maxRetail': 'Maximum recommended retail price to maintain market stability.',
-            'primaryProduct': 'Select the main product for this quote.',
-            'quoteName': 'Descriptive name for this quote (auto-generated from product and company).',
-            'companyName': 'Name of the customer company or business.',
-            'segment': 'Customer segment or industry type (e.g., smoke shops, convenience stores).',
-            'emailDomain': 'Company\'s website domain for email communications.',
-            'phone': 'Primary contact phone number for the customer.',
-            'customerState': 'State for shipping zone calculation',
-            'stateTaxRate': 'State sales tax rate as a percentage.',
-            'countyTaxRate': 'County/local tax rate as a percentage.',
-            'creditCardFee': 'Add 3% credit card processing fee to the total.'
-        };
-        
-        Object.entries(tooltips).forEach(([elementId, tooltipText]) => {
-            const element = document.getElementById(elementId);
-            if (element) {
-                element.title = tooltipText;
-                element.setAttribute('data-tooltip', tooltipText);
-            }
-        });
-    },
-
-    // Set up help keyboard shortcuts
-    setupHelpShortcuts: function() {
-        document.addEventListener('keydown', (event) => {
-            // F1 - Show help
-            if (event.key === 'F1') {
-                event.preventDefault();
-                this.showHelp();
-            }
-            
-            // Ctrl/Cmd + ? - Show shortcuts
-            if ((event.ctrlKey || event.metaKey) && event.key === '?') {
-                event.preventDefault();
-                this.showKeyboardShortcuts();
-            }
-        });
     },
 
     // Set up responsive UI behavior
     setupResponsiveUI: function() {
         console.log('📱 Setting up responsive UI...');
-        
-        // Listen for window resize
-        window.addEventListener('resize', () => {
-            this.handleWindowResize();
-        });
-        
-        // Listen for orientation change on mobile
-        window.addEventListener('orientationchange', () => {
-            setTimeout(() => {
-                this.handleWindowResize();
-            }, 100);
-        });
-    },
-
-    // Handle window resize events
-    handleWindowResize: function() {
-        const newWidth = window.innerWidth;
-        const newHeight = window.innerHeight;
-        
-        console.log(`📏 Window resized to ${newWidth}x${newHeight}`);
-        
-        // Adjust layout based on new size
-        if (newWidth < 768 && !appState.isMobile) {
-            appState.isMobile = true;
-            this.switchToMobileLayout();
-        } else if (newWidth >= 768 && appState.isMobile) {
-            appState.isMobile = false;
-            this.switchToDesktopLayout();
-        }
-    },
-
-    // Switch to mobile-optimized layout
-    switchToMobileLayout: function() {
-        console.log('📱 Switching to mobile layout');
-        document.body.classList.add('mobile-layout');
-    },
-
-    // Switch to desktop layout
-    switchToDesktopLayout: function() {
-        console.log('🖥️ Switching to desktop layout');
-        document.body.classList.remove('mobile-layout');
-    },
-
-    // Bind global event listeners
-    bindEventListeners: function() {
-        console.log('🔗 Binding event listeners...');
-        
-        // Product selection changes
-        this.bindProductSelectionEvents();
-        
-        // Calculation triggers
-        this.bindCalculationEvents();
-        
-        // Form validation events
-        this.bindValidationEvents();
-        
-        // Global keyboard shortcuts
-        this.bindKeyboardShortcuts();
-        
-        // Error handling
-        this.bindErrorHandlers();
-    },
-
-    // Bind product selection events
-    bindProductSelectionEvents: function() {
-        ['primaryProduct', 'quickProduct'].forEach(selectId => {
-            const select = document.getElementById(selectId);
-            if (select) {
-                select.addEventListener('change', () => {
-                    this.updateMaxRetailPrice();
-                    this.triggerCalculation();
-                    this.updateQuoteNameFromProductChange();
-                });
-            }
-        });
-    },
-
-    // Update quote name when product changes
-    updateQuoteNameFromProductChange: function() {
-        const productSelect = document.getElementById('primaryProduct');
-        const companyNameInput = document.getElementById('companyName');
-        const quoteNameInput = document.getElementById('quoteName');
-        
-        if (productSelect && companyNameInput && quoteNameInput) {
-            const productText = productSelect.selectedOptions[0]?.text || '';
-            const productName = productText.split(' (')[0] || 'Product';
-            const companyName = companyNameInput.value.trim();
-            
-            if (companyName) {
-                quoteNameInput.value = `${productName} Quote for ${companyName}`;
-                console.log('📝 Updated quote name for product change:', quoteNameInput.value);
-            }
-        }
-    },
-
-    // Bind calculation trigger events
-    bindCalculationEvents: function() {
-        ['masterCases', 'quickCases'].forEach(inputId => {
-            const input = document.getElementById(inputId);
-            if (input) {
-                input.addEventListener('input', () => {
-                    this.triggerCalculation();
-                });
-                
-                input.addEventListener('change', () => {
-                    this.triggerCalculation();
-                });
-            }
-        });
-    },
-
-    // Bind form validation events
-    bindValidationEvents: function() {
-        // Validate number inputs
-        ['masterCases', 'quickCases', 'maxRetail', 'stateTaxRate', 'countyTaxRate'].forEach(inputId => {
-            const input = document.getElementById(inputId);
-            if (input) {
-                input.addEventListener('blur', () => {
-                    this.validateInput(input);
-                });
-            }
-        });
-        
-        // Validate text fields
-        ['quoteName', 'companyName', 'segment', 'emailDomain', 'phone'].forEach(inputId => {
-            const input = document.getElementById(inputId);
-            if (input) {
-                input.addEventListener('blur', () => {
-                    this.validateNewFields(input);
-                });
-            }
-        });
-    },
-
-    // Validate new field types
-    validateNewFields: function(input) {
-        const value = input.value.trim();
-        const fieldId = input.id;
-        
-        // Clear existing validation
-        input.classList.remove('invalid');
-        this.clearValidationError(input);
-        
-        // Field-specific validation
-        switch (fieldId) {
-            case 'quoteName':
-                if (!value) {
-                    this.showValidationError(input, 'Quote name is required');
-                    input.classList.add('invalid');
-                }
-                break;
-                
-            case 'companyName':
-                if (!value) {
-                    this.showValidationError(input, 'Company name is required');
-                    input.classList.add('invalid');
-                }
-                break;
-                
-            case 'emailDomain':
-                if (value && !this.isValidDomain(value)) {
-                    this.showValidationError(input, 'Please enter a valid domain (e.g., company.com)');
-                    input.classList.add('invalid');
-                }
-                break;
-                
-            case 'phone':
-                if (value && !this.isValidPhone(value)) {
-                    this.showValidationError(input, 'Please enter a valid phone number');
-                    input.classList.add('invalid');
-                }
-                break;
-        }
-    },
-
-    // Domain validation helper
-    isValidDomain: function(domain) {
-        const domainRegex = /^[a-zA-Z0-9][a-zA-Z0-9-]{0,61}[a-zA-Z0-9]?\.[a-zA-Z]{2,}$/;
-        return domainRegex.test(domain);
-    },
-
-    // Phone validation helper
-    isValidPhone: function(phone) {
-        const phoneRegex = /^[\+]?[1-9][\d]{0,15}$|^[\(]?[\d\s\-\(\)]{10,}$/;
-        return phoneRegex.test(phone.replace(/\D/g, ''));
-    },
-
-    // Bind keyboard shortcuts
-    bindKeyboardShortcuts: function() {
-        document.addEventListener('keydown', (event) => {
-            // Ctrl/Cmd + G - Generate email
-            if ((event.ctrlKey || event.metaKey) && event.key === 'g') {
-                event.preventDefault();
-                if (typeof generateEmail === 'function') {
-                    generateEmail();
-                }
-            }
-            
-            // Ctrl/Cmd + S - Save to CRM (if available)
-            if ((event.ctrlKey || event.metaKey) && event.key === 's') {
-                event.preventDefault();
-                if (appState.isCopperActive && typeof saveQuoteToCRM === 'function') {
-                    saveQuoteToCRM();
-                }
-            }
-        });
-    },
-
-    // Bind error handlers
-    bindErrorHandlers: function() {
-        // Global error handler
-        window.addEventListener('error', (event) => {
-            console.error('💥 Global error:', event.error);
-            this.handleGlobalError(event.error);
-        });
-        
-        // Unhandled promise rejections
-        window.addEventListener('unhandledrejection', (event) => {
-            console.error('💥 Unhandled promise rejection:', event.reason);
-            this.handleGlobalError(event.reason);
-        });
-    },
-
-    // Trigger calculation update
-    triggerCalculation: function() {
-        if (appState.isActivityPanel) {
-            this.updateQuickCalculation();
-        } else {
-            if (typeof Calculator !== 'undefined') {
-                Calculator.updateResults();
-            }
-        }
-    },
-
-    // Update quick calculation for activity panel
-    updateQuickCalculation: function() {
-        const productKey = document.getElementById('quickProduct')?.value;
-        const masterCases = parseInt(document.getElementById('quickCases')?.value) || 0;
-        
-        if (!productKey || masterCases <= 0) return;
-
-        const product = ProductManager.get(productKey);
-        const tierInfo = TierManager.getTier(masterCases);
-        
-        if (!product) return;
-
-        const unitPrice = product.price * (1 - tierInfo.discount);
-        const totalUnits = masterCases * product.unitsPerCase;
-        const displayBoxes = masterCases * product.displayBoxesPerCase;
-        const subtotal = masterCases * unitPrice * product.unitsPerCase;
-        
-        // Get state for shipping calculation
-        const state = document.getElementById('customerState')?.value || 'CA';
-        const shipping = ShippingManager.calculateShipping(displayBoxes, masterCases, state);
-        
-        const total = subtotal + shipping;
-
-        const resultsContainer = document.getElementById('quickResults');
-        if (resultsContainer) {
-            resultsContainer.innerHTML = `
-                <div class="quick-summary">
-                    <div class="quick-item">
-                        <span class="quick-label">Product:</span>
-                        <span class="quick-value">${product.name}</span>
-                    </div>
-                    <div class="quick-item">
-                        <span class="quick-label">Cases:</span>
-                        <span class="quick-value">${masterCases} MC (${displayBoxes} boxes)</span>
-                    </div>
-                    <div class="quick-item">
-                        <span class="quick-label">Units:</span>
-                        <span class="quick-value">${totalUnits.toLocaleString()}</span>
-                    </div>
-                    <div class="quick-item">
-                        <span class="quick-label">Unit Price:</span>
-                        <span class="quick-value">${unitPrice.toFixed(2)} (${tierInfo.name})</span>
-                    </div>
-                    <div class="quick-item total">
-                        <span class="quick-label">Total:</span>
-                        <span class="quick-value">${total.toLocaleString()}</span>
-                    </div>
-                </div>
-            `;
-        }
-    },
-
-    // Validate input fields
-    validateInput: function(input) {
-        const value = parseFloat(input.value);
-        const min = parseFloat(input.min) || 0;
-        const max = parseFloat(input.max) || Infinity;
-        
-        if (isNaN(value) || value < min || value > max) {
-            input.classList.add('invalid');
-            this.showValidationError(input, `Value must be between ${min} and ${max}`);
-        } else {
-            input.classList.remove('invalid');
-            this.clearValidationError(input);
-        }
-    },
-
-    // Show validation error
-    showValidationError: function(input, message) {
-        this.clearValidationError(input);
-        
-        const errorDiv = document.createElement('div');
-        errorDiv.className = 'validation-error';
-        errorDiv.textContent = message;
-        input.parentNode.appendChild(errorDiv);
-    },
-
-    // Clear validation error
-    clearValidationError: function(input) {
-        const existingError = input.parentNode.querySelector('.validation-error');
-        if (existingError) {
-            existingError.remove();
-        }
     },
 
     // Perform initial calculations
     performInitialCalculations: function() {
         console.log('🧮 Performing initial calculations...');
-        
-        setTimeout(() => {
-            this.triggerCalculation();
-        }, 100);
-    },
-
-    // ADDED: Force admin UI to show
-    forceAdminUI: function() {
-        // Force admin button to show if user is admin
-        setTimeout(() => {
-            if (appState.isAdmin) {
-                const header = document.querySelector('.header');
-                if (header) {
-                    const existingAdminBtn = header.querySelector('.admin-btn');
-                    if (!existingAdminBtn) {
-                        const adminBtn = document.createElement('button');
-                        adminBtn.className = 'admin-btn';
-                        adminBtn.onclick = () => showAdminPanel();
-                        adminBtn.innerHTML = '⚙️ Admin Settings';
-                        header.appendChild(adminBtn);
-                        console.log('✅ Admin button forcefully added to header');
-                    }
-                }
-            }
-        }, 500);
     },
 
     // Finalize initialization
@@ -1583,257 +1570,85 @@ const App = {
         console.log(`✅ Kanva Botanicals Quote Calculator initialized successfully`);
         console.log(`⏱️ Load time: ${appState.loadTime}ms`);
         console.log(`🏃 Running in ${appState.appLocation} mode`);
-        console.log(`🔗 Copper CRM: ${appState.isCopperActive ? 'Active' : 'Standalone'}`);
-        console.log(`👤 User: ${appState.currentUser?.email || 'Anonymous'}`);
+        console.log(`🔗 Copper CRM: ${appState.isCopperActive ? 'Connected' : 'Standalone'}`);
+        console.log(`👤 User: ${appState.currentUser ? appState.currentUser.email : 'Unknown'}`);
         console.log(`🛡️ Admin: ${appState.isAdmin ? 'Yes' : 'No'}`);
-        
-        // ADDED: Force admin UI if needed
-        this.forceAdminUI();
-        
-        this.fireReadyEvent();
-    },
 
-    // Fire application ready event
-    fireReadyEvent: function() {
+        
+        // Fire ready event
         const readyEvent = new CustomEvent('kanvaAppReady', {
             detail: {
-                loadTime: appState.loadTime,
-                mode: appState.appLocation,
-                copperActive: appState.isCopperActive,
-                user: appState.currentUser,
-                isAdmin: appState.isAdmin
+                version: '2.0.0',
+                loadTime: appState.loadTime
             }
         });
         
-        window.dispatchEvent(readyEvent);
+        document.dispatchEvent(readyEvent);
         console.log('🎉 Kanva app ready event fired');
     },
 
-    // Handle initialization errors
+    // Handle initialization errors gracefully
     handleInitializationError: function(error) {
-        console.error('💥 Critical initialization error:', error);
-        
-        const appContainer = document.getElementById('app');
-        if (appContainer) {
-            appContainer.innerHTML = `
-                <div class="error-container">
-                    <h2>⚠️ Application Error</h2>
-                    <p>Sorry, there was a problem loading the Kanva Quote Calculator.</p>
-                    <details>
-                        <summary>Technical Details</summary>
-                        <pre>${error.message}</pre>
-                    </details>
-                    <button onclick="location.reload()">🔄 Reload Application</button>
-                </div>
-            `;
-        }
-        
-        appState.isReady = false;
-        appState.hasError = true;
-    },
-
-    // Handle global application errors
-    handleGlobalError: function(error) {
-        console.error('💥 Application error:', error);
-        
-        if (this.lastErrorTime && Date.now() - this.lastErrorTime < 5000) {
-            return;
-        }
-        this.lastErrorTime = Date.now();
-        
         if (typeof NotificationManager !== 'undefined') {
-            NotificationManager.showError('An error occurred. Please try again.');
+            NotificationManager.showError('Critical initialization error: ' + (error.message || error));
+        } else {
+            alert('Critical initialization error: ' + (error.message || error));
         }
+        // Optionally, add more logging or fallback UI here
     },
 
-    // Show help dialog
-    showHelp: function() {
-        if (typeof NotificationManager !== 'undefined') {
-            NotificationManager.showInfo('Help system will be implemented in the next update.', 'Help');
-        }
-    },
-
-    // Show keyboard shortcuts
-    showKeyboardShortcuts: function() {
-        if (typeof NotificationManager !== 'undefined') {
-            NotificationManager.showInfo('Ctrl+G: Generate Email\nCtrl+S: Save to CRM\nF1: Show Help', 'Keyboard Shortcuts');
-        }
-    },
-
-    // Get application status
-    getStatus: function() {
-        return {
-            ready: appState.isReady,
-            mode: appState.appLocation,
-            copperActive: appState.isCopperActive,
-            user: appState.currentUser,
-            isAdmin: appState.isAdmin,
-            loadTime: appState.loadTime,
-            hasError: appState.hasError
-        };
+    // Generate the admin panel HTML
+    generateAdminPanel: function() {
+        // Get products and admin emails from config
+        const products = adminConfig.products || {};
+        const adminEmails = adminConfig.adminEmails || [];
+        // Panel HTML
+        return `
+        <div id="adminPanel" style="display:none; position:fixed; top:0; left:0; width:100vw; height:100vh; background:rgba(0,0,0,0.4); z-index:10000;">
+            <div style="max-width:600px; margin:60px auto; background:#fff; border-radius:16px; box-shadow:0 8px 32px rgba(0,0,0,0.2); padding:32px; position:relative;">
+                <button onclick="hideAdminPanel()" style="position:absolute; top:18px; right:18px; background:none; border:none; font-size:2rem; color:#888; cursor:pointer;">&times;</button>
+                <h2 style="font-size:2rem; font-weight:bold; margin-bottom:16px;">Admin Configuration</h2>
+                <form id="adminConfigForm" onsubmit="event.preventDefault(); saveAdminSettings();">
+                    <h3 style="margin-top:24px; font-size:1.2rem; font-weight:bold;">Product Settings</h3>
+                    <div style="max-height:180px; overflow:auto; border:1px solid #eee; border-radius:8px; padding:8px 0; margin-bottom:16px;">
+                        ${Object.entries(products).map(([key, product]) => `
+                            <div style="display:flex; align-items:center; gap:8px; margin-bottom:8px;">
+                                <span style="min-width:90px; font-weight:500;">${product.name}</span>
+                                <label>Price: <input id="admin_${key}_price" type="number" step="0.01" value="${product.price}" style="width:70px;"></label>
+                                <label>MSRP: <input id="admin_${key}_msrp" type="number" step="0.01" value="${product.msrp}" style="width:70px;"></label>
+                                <label>Units/Case: <input id="admin_${key}_units" type="number" value="${product.unitsPerCase || ''}" style="width:60px;"></label>
+                            </div>
+                        `).join('')}
+                    </div>
+                    <h3 style="margin-top:16px; font-size:1.1rem; font-weight:bold;">Admin Emails</h3>
+                    <div style="margin-bottom:16px;">
+                        <textarea id="adminEmails" style="width:100%; min-height:60px;">${adminEmails.join(', ')}</textarea>
+                        <small>Comma-separated list of admin emails</small>
+                    </div>
+                    <div style="display:flex; gap:12px; justify-content:flex-end;">
+                        <button type="button" onclick="hideAdminPanel()" class="px-4 py-2 bg-gray-200 rounded">Cancel</button>
+                        <button type="submit" class="px-4 py-2 bg-kanva-green text-white rounded">Save</button>
+                    </div>
+                </form>
+            </div>
+        </div>`;
     }
 };
-
-// Global functions for UI interactions
-function updateCalculation() {
-    App.triggerCalculation();
-}
-
-function updateQuickCalculation() {
-    App.updateQuickCalculation();
-}
-
-function switchToSingleProduct() {
-    document.getElementById('singleProductMode').style.display = 'block';
-    document.getElementById('multiProductMode').style.display = 'none';
-    document.getElementById('singleProductBtn').classList.add('active');
-    document.getElementById('multiProductBtn').classList.remove('active');
-    App.triggerCalculation();
-}
-
-function switchToMultiProduct() {
-    document.getElementById('singleProductMode').style.display = 'none';
-    document.getElementById('multiProductMode').style.display = 'block';
-    document.getElementById('singleProductBtn').classList.remove('active');
-    document.getElementById('multiProductBtn').classList.add('active');
-    if (typeof MultiProductCalculator !== 'undefined') {
-        MultiProductCalculator.calculateTotal();
-    }
-}
-
-// NEW: Toggle shipping override
-function toggleShippingOverride() {
-    const checkbox = document.getElementById('shippingOverride');
-    const section = document.getElementById('shippingOverrideSection');
-    
-    if (checkbox && section) {
-        if (checkbox.checked) {
-            section.classList.remove('hidden');
-        } else {
-            section.classList.add('hidden');
-            // Clear manual shipping value
-            const manualInput = document.getElementById('manualShipping');
-            if (manualInput) {
-                manualInput.value = '';
-            }
-        }
-        App.triggerCalculation();
-    }
-}
-
-// NEW: Update shipping zone display
-function updateShippingZone() {
-    const state = document.getElementById('customerState')?.value;
-    const display = document.getElementById('shippingZoneDisplay');
-    
-    if (state && display) {
-        const zoneInfo = ShippingManager.getZoneForState(state);
-        display.innerHTML = `
-            <div class="text-sm">
-                <p class="font-bold">${zoneInfo.name}</p>
-                <p class="text-xs mt-1">Rates: ${zoneInfo.rates['1-3boxes']} (1-3 boxes), ${zoneInfo.rates['4-8boxes']} (4-8 boxes), ${zoneInfo.rates['9-11boxes']} (9-11 boxes), ${zoneInfo.rates.mastercase}/MC</p>
-            </div>
-        `;
-    } else {
-        display.innerHTML = 'Select a state to see shipping zone';
-    }
-    
-    App.triggerCalculation();
-}
-
-// FIXED: Modal opening function for all modes
-function openFullCalculatorModal() {
-    console.log('🔄 Opening full calculator modal...');
-    
-    if (appState.sdk && appState.sdk.showModal) {
-        try {
-            // Configure modal for full calculator in Copper
-            appState.sdk.setAppUI({
-                width: 1000,
-                height: 700,
-                showActionBar: false
-            });
-            appState.sdk.showModal();
-            console.log('✅ Copper modal opened');
-        } catch (error) {
-            console.error('❌ Error opening Copper modal:', error);
-            if (typeof NotificationManager !== 'undefined') {
-                NotificationManager.showError('Failed to open modal. Please try again.');
-            }
-        }
-    } else {
-        // FIXED: Fallback for standalone mode - open in new window
-        console.log('🔄 Opening calculator in new window (standalone mode)');
-        const currentUrl = new URL(window.location.href);
-        currentUrl.searchParams.set('mode', 'modal');
-        
-        const newWindow = window.open(
-            currentUrl.toString(), 
-            'KanvaCalculator', 
-            'width=1000,height=700,scrollbars=yes,resizable=yes,location=yes'
-        );
-        
-        if (!newWindow) {
-            if (typeof NotificationManager !== 'undefined') {
-                NotificationManager.showWarning('Please allow popups to open the full calculator');
-            } else {
-                alert('Please allow popups to open the full calculator');
-            }
-        } else {
-            console.log('✅ New window opened for full calculator');
-        }
-    }
-}
-
-function generateQuickEmail() {
-    console.log('📧 Generating quick email from activity panel...');
-    
-    // Update the quick calculation first
-    if (typeof App !== 'undefined' && App.updateQuickCalculation) {
-        App.updateQuickCalculation();
-    }
-    
-    // Then generate the email
-    if (typeof EmailGenerator !== 'undefined') {
-        EmailGenerator.generateEmail();
-    } else if (typeof generateEmail === 'function') {
-        generateEmail();
-    } else {
-        if (typeof NotificationManager !== 'undefined') {
-            NotificationManager.showError('Email generator not available');
-        }
-    }
-}
-
-function saveQuickQuote() {
-    console.log('💾 Saving quick quote to CRM...');
-    
-    if (typeof saveQuoteToCRM === 'function') {
-        saveQuoteToCRM();
-    } else if (typeof CopperIntegration !== 'undefined') {
-        CopperIntegration.saveQuoteToCRM();
-    } else {
-        if (typeof NotificationManager !== 'undefined') {
-            NotificationManager.showInfo('CRM integration not available - quote ready to copy');
-        }
-    }
-}
 
 // Wait for DOM to be ready, then initialize
 if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', () => {
-        App.initialize();
+        getConfig(() => {
+            App.initialize();
+        });
     });
 } else {
-    App.initialize();
+    getConfig(() => {
+        App.initialize();
+    });
 }
 
 // Global access to app instance
 window.KanvaApp = App;
-
-// Export for module systems
-if (typeof module !== 'undefined' && module.exports) {
-    module.exports = App;
-}
 
 console.log('✅ Main application module loaded successfully');

@@ -330,4 +330,7 @@
 
 .admin-field input:focus {
     outline: none;
-    border-color: #17351A;
+    border-color: #17351A;  
+    box-shadow: 0 0 0 3px rgba(147, 213, 0, 0.3);   
+    background: linear-gradient(135deg, #ffffff 0%, #f8fdf8 100%);  
+}

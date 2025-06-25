@@ -5,147 +5,265 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Kanva Botanicals Quote Calculator</title>
     
-    <!-- Tailwind CSS CDN with custom configuration -->
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script>
-        // Custom Tailwind configuration for Kanva branding
-        tailwind.config = {
-            theme: {
-                extend: {
-                    colors: {
-                        'kanva': {
-                            'green': '#93D500',
-                            'dark': '#17351A',
-                            'light': '#f8fdf8',
-                            'accent': '#e8f5e8'
-                        }
-                    },
-                    borderWidth: {
-                        '3': '3px'
-                    },
-                    backdropBlur: {
-                        'xs': '2px'
-                    }
-                }
-            }
-        }
-    </script>
+    <!-- Local Tailwind CSS for production -->
+    <link rel="stylesheet" href="css/tailwind-production.css">
     
-    <!-- Copper SDK - Load first for CRM integration -->
+    <!-- Modern UI Styles -->
+    <link rel="stylesheet" href="css/modern-styles.css">
+    
+    <!-- Copper CRM SDK -->
     <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/copper-sdk@latest/dist/copper-sdk.min.js"></script>
-    
-    <!-- SIMPLIFIED CSS - Only keep essential custom styles -->
-    <style>
-        /* Only keep styles that Tailwind can't handle */
-        
-        /* Custom animations */
-        @keyframes kanva-pulse {
-            0%, 100% { transform: scale(1); opacity: 1; }
-            50% { transform: scale(1.05); opacity: 0.8; }
-        }
-        
-        @keyframes kanva-spin {
-            from { transform: rotate(0deg); }
-            to { transform: rotate(360deg); }
-        }
-        
-        .kanva-pulse { animation: kanva-pulse 2s infinite; }
-        .kanva-spin { animation: kanva-spin 1s linear infinite; }
-        
-        /* Custom gradients that extend Tailwind */
-        .bg-kanva-gradient {
-            background: linear-gradient(135deg, #93D500 0%, #7ab300 100%);
-        }
-        
-        .bg-kanva-gradient-hover:hover {
-            background: linear-gradient(135deg, #7ab300 0%, #93D500 100%);
-        }
-        
-        /* Loading animation */
-        .loading-dots::after {
-            content: '';
-            animation: kanva-pulse 1.5s infinite;
-        }
-    </style>
 </head>
-<body class="bg-gray-50 font-sans">
-    <!-- Main Application Container with Tailwind classes -->
-    <div id="app" class="min-h-screen">
-        <!-- Loading state with Tailwind -->
-        <div class="flex items-center justify-center min-h-screen bg-gradient-to-br from-kanva-light to-kanva-accent">
-            <div class="text-center p-8">
-                <div class="text-4xl mb-4 kanva-pulse">🌿</div>
-                <div class="text-xl font-bold text-kanva-dark">Loading Kanva Calculator<span class="loading-dots">...</span></div>
-                <div class="mt-4 w-32 h-1 bg-kanva-green rounded-full mx-auto">
-                    <div class="h-full bg-kanva-dark rounded-full kanva-spin origin-left" style="width: 30%;"></div>
+<body>
+    <!-- Loading State -->
+    <div id="loadingState" class="loading-overlay">
+        <div class="loading-spinner">
+            <div class="spinner"></div>
+            <p>Loading Kanva Quote Calculator...</p>
+        </div>
+    </div>
+
+    <!-- Main Calculator Container -->
+    <div id="app" class="calculator-container fade-in" style="display: none;">
+        
+        <!-- Header -->
+        <div class="app-header">
+            <h1 class="app-title">
+                🌿 Kanva Botanicals Quote Calculator
+            </h1>
+            <p class="app-subtitle">Instantly generate professional quotes with accurate pricing</p>
+        </div>
+
+        <!-- Main Content Grid -->
+        <div class="grid grid-2" style="padding: var(--space-xl);">
+            
+            <!-- Left Column -->
+            <div class="left-column">
+                
+                <!-- Admin Settings Card -->
+                <div class="card">
+                    <div class="card-header">
+                        <h3>⚙️ Admin Settings</h3>
+                        <button id="adminSettingsToggle" class="btn btn-sm btn-secondary">Configure</button>
+                    </div>
                 </div>
+
+                <!-- Customer Information Card -->
+                <div class="card">
+                    <div class="card-header">
+                        <h3>👤 Customer Information</h3>
+                    </div>
+                    <div class="card-body">
+                        <div class="grid grid-2">
+                            <div class="form-group">
+                                <label class="form-label">Quote Name</label>
+                                <input type="text" id="quoteName" class="form-control" placeholder="Product Quote for Company Name">
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Company Name</label>
+                                <input type="text" id="companyName" class="form-control" placeholder="ABC Distribution">
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Customer Segment</label>
+                                <select id="customerSegment" class="form-control">
+                                    <option value="">Select segment...</option>
+                                    <option value="smoke_vape">Smoke & Vape Shops</option>
+                                    <option value="convenience">Convenience Stores</option>
+                                    <option value="dispensary">Dispensaries</option>
+                                    <option value="wholesale">Wholesale/Distribution</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">State</label>
+                                <select id="customerState" class="form-control">
+                                    <option value="">Select State...</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Email Domain</label>
+                                <input type="email" id="emailDomain" class="form-control" placeholder="company.com">
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Phone Number</label>
+                                <input type="tel" id="phoneNumber" class="form-control" placeholder="(555) 123-4567">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Shipping Zone Card -->
+                <div class="card">
+                    <div class="card-header">
+                        <h3>📦 Shipping Zone</h3>
+                    </div>
+                    <div class="card-body">
+                        <div id="shippingZoneDisplay" class="alert alert-info">
+                            Select a state to see shipping zone
+                        </div>
+                        
+                        <!-- Manual Shipping Override -->
+                        <div class="form-group mt-3">
+                            <label class="form-label">Manual Shipping Override (Optional)</label>
+                            <div class="input-group">
+                                <span class="input-group-text">$</span>
+                                <input type="number" id="manualShipping" class="form-control" placeholder="0.00" step="0.01" min="0">
+                            </div>
+                            <small class="form-text text-muted">Leave blank to use automatic shipping calculation</small>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+
+            <!-- Right Column -->
+            <div class="right-column">
+                
+                <!-- Product & Order Details Card -->
+                <div class="card">
+                    <div class="card-header">
+                        <h3>📦 Product & Order Details</h3>
+                    </div>
+                    <div class="card-body">
+                        <!-- Product Type Tabs -->
+                        <div class="tabs">
+                            <div class="tab-list">
+                                <button class="tab-button active" data-tab="single">Single Product</button>
+                                <button class="tab-button" data-tab="multiple">Multiple Products</button>
+                            </div>
+                        </div>
+
+                        <!-- Single Product Tab -->
+                        <div id="singleProductTab" class="tab-content" data-tab-content="single">
+                            <div class="grid grid-2">
+                                <div class="form-group">
+                                    <label class="form-label">Select Product</label>
+                                    <select id="productSelect" class="form-control" data-product-prices data-product-weights>
+                                        <option value="">Select a product...</option>
+                                        <!-- Products will be populated by calculator -->
+                                    </select>
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label">Master Cases</label>
+                                    <input type="number" id="masterCases" class="form-control" min="0" value="28">
+                                </div>
+                            </div>
+                            
+                            <div class="grid grid-2">
+                                <div class="form-group">
+                                    <label class="form-label">Display Boxes (for partial case orders)</label>
+                                    <input type="number" id="displayBoxes" class="form-control" min="0" value="0" placeholder="0">
+                                    <small class="form-text text-muted">12 units per display box</small>
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label">Order Type</label>
+                                    <div class="alert alert-info" id="orderTypeDisplay">
+                                        Enter quantities above
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Multiple Products Tab -->
+                        <div id="multipleProductsTab" class="tab-content" data-tab-content="multiple" style="display: none;">
+                            <div class="form-group">
+                                <button id="addProductLine" class="btn btn-secondary btn-sm">➕ Add Product Line</button>
+                            </div>
+                            <div id="productLines">
+                                <!-- Product lines will be added here -->
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Order Calculation Card -->
+                <div class="card">
+                    <div class="card-header">
+                        <h3>🧮 Order Calculation</h3>
+                    </div>
+                    <div class="card-body">
+                        <div id="calculationResults" data-section="calculation">
+                            <p>Select products and quantities to see calculation...</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Quote Generation Card -->
+                <div class="card">
+                    <div class="card-header">
+                        <h3>📧 Generate Professional Quote</h3>
+                    </div>
+                    <div class="card-body">
+                        <!-- Email Template Selection -->
+                        <div class="form-group">
+                            <label class="form-label">Select Email Template</label>
+                            <select id="emailTemplate" class="form-control">
+                                <option value="initial">Initial Proposal</option>
+                                <option value="followup">Follow-up</option>
+                                <option value="negotiation">Negotiation</option>
+                                <option value="closing">Closing</option>
+                            </select>
+                        </div>
+                        
+                        <div class="form-group">
+                            <button id="generateQuoteBtn" class="btn btn-primary" data-action="generate-quote">Generate Quote Email</button>
+                            <button id="copyQuoteBtn" class="btn btn-secondary" style="display: none;">Copy to Clipboard</button>
+                        </div>
+                        
+                        <!-- Generated Quote Display -->
+                        <div id="generatedQuote" style="display: none;">
+                            <div class="form-group">
+                                <label class="form-label">Generated Email Content</label>
+                                <textarea id="quoteContent" class="form-control" rows="15" readonly style="font-family: monospace; font-size: 12px;"></textarea>
+                            </div>
+                            
+                            <!-- CRM Integration Buttons -->
+                            <div class="form-group">
+                                <button id="saveToAccountBtn" class="btn btn-success btn-sm">💾 Save to Account</button>
+                                <button id="createOpportunityBtn" class="btn btn-info btn-sm">🎯 Create Opportunity</button>
+                                <button id="openEmailBtn" class="btn btn-primary btn-sm">📧 Open in Email Client</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+
+        <!-- Product Reference Sidebar -->
+        <div class="card" style="margin: 0 var(--space-xl) var(--space-xl);">
+            <div class="card-header">
+                <h3>📚 Quick Product Reference</h3>
+            </div>
+            <div class="card-body">
+                <div class="grid grid-3">
+                    <!-- Product reference cards will be populated here -->
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- Admin Settings Modal -->
+    <div id="adminModal" class="modal" style="display: none;">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>⚙️ Admin Settings</h3>
+                <button class="modal-close">×</button>
+            </div>
+            <div class="modal-body">
+                <!-- Admin settings content will be populated here -->
             </div>
         </div>
     </div>
 
-    <!-- JavaScript Files - Critical loading order! -->
-    
-    <!-- 1. Core configuration and utilities -->
-    <script src="js/config.js"></script>
-    
-    <!-- 2. Notification system (must load before other modules that use it) -->
-    <script src="js/notification-manager.js"></script>
-    
-    <!-- 3. Missing functions (must load before modules that reference them) -->
-    <script src="js/missing-functions.js"></script>
-    
-    <!-- 4. Core calculation engine -->
-    <script src="js/calculator.js"></script>
-    
-    <!-- 5. Admin panel functionality -->
+    <!-- Scripts in proper loading order -->
     <script src="js/admin.js"></script>
-    
-    <!-- 6. CRM integration -->
-    <script src="js/copper-integration.js"></script>
-    
-    <!-- 7. Email generation -->
+    <script src="js/config.js"></script>
+    <script src="js/calculator.js"></script>
+    <script src="js/multi-product-calculator.js"></script>
     <script src="js/email-generator.js"></script>
-    
-    <!-- 8. Main application orchestrator (must load last) -->
+    <script src="js/missing-functions.js"></script>
     <script src="js/main.js"></script>
-    
-    <!-- Global error handling -->
-    <script>
-        // Global error handler for debugging
-        window.addEventListener('error', function(event) {
-            console.error('💥 Global JavaScript Error:', {
-                message: event.message,
-                filename: event.filename,
-                lineno: event.lineno,
-                colno: event.colno,
-                error: event.error
-            });
-            
-            // Show user-friendly error if NotificationManager is available
-            if (typeof NotificationManager !== 'undefined') {
-                NotificationManager.showError(
-                    'A technical error occurred. Please refresh the page or contact support if the problem persists.',
-                    'Application Error'
-                );
-            }
-        });
-        
-        // Unhandled promise rejection handler
-        window.addEventListener('unhandledrejection', function(event) {
-            console.error('💥 Unhandled Promise Rejection:', event.reason);
-            
-            if (typeof NotificationManager !== 'undefined') {
-                NotificationManager.showError(
-                    'A network or data error occurred. Please try again.',
-                    'Connection Error'
-                );
-            }
-        });
-        
-        // Log when app is fully loaded
-        window.addEventListener('load', function() {
-            console.log('🚀 Kanva Calculator fully loaded and ready');
-        });
-    </script>
+
 </body>
 </html>

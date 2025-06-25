@@ -1,0 +1,5 @@
+{
+  "achThreshold": 10000,
+  "acceptedMethods": ["Credit Card", "ACH", "Wire Transfer", "Company Check"],
+  "description": "Payment thresholds and accepted methods"
+}

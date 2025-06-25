@@ -81,12 +81,24 @@ const EmailGenerator = {
 - Individual Units: ${this.formatNumber(item.totalUnits)}
 - Unit Price: ${item.unitPrice} (${item.tierInfo.name})
 - Line Total: ${item.total}
-
 `;
                 grandTotal += item.raw.total;
                 totalUnits += item.totalUnits;
                 totalDisplayBoxes += item.displayBoxes;
             });
+            
+            // Add order-level totals for multi-product
+            const multiResult = appState.lastMultiProductCalculation;
+            if (multiResult && multiResult.summary) {
+                productDetails += `
+**Order Summary:**
+- Subtotal: ${this.formatCurrency(multiResult.summary.subtotal)}
+- Shipping: ${this.formatCurrency(multiResult.summary.shipping)}
+- Credit Card Fee (3%): ${this.formatCurrency(multiResult.summary.creditCardFee)}
+- **Grand Total: ${this.formatCurrency(multiResult.summary.grandTotal)}**
+`;
+                grandTotal = multiResult.summary.grandTotal;
+            }
         } else {
             // Single product
             const item = calculations[0];
@@ -98,7 +110,8 @@ const EmailGenerator = {
 - Unit Price: ${item.unitPrice} (${item.tierInfo.name})
 - Case Price: ${item.casePrice}
 - Subtotal: ${item.subtotal}
-- Shipping: ${item.freeShipping ? 'FREE' : item.shipping}
+- Shipping: ${item.shipping}
+- Credit Card Fee (3%): ${item.creditCardFee}
 - **Total: ${item.total}**
 `;
             grandTotal = item.raw.total;

@@ -108,6 +108,13 @@ let adminConfig = {
         volumeDiscounts: true
     },
 
+    // Admin email addresses for authentication
+    adminEmails: [
+        'ben@kanvabotanicals.com',
+        'admin@kanvabotanicals.com',
+        'sales@kanvabotanicals.com'
+    ],
+
     // Application metadata
     metadata: {
         version: "2.0.0",
@@ -143,178 +150,15 @@ let appState = {
     startTime: Date.now()
 };
 
-// Utility functions for configuration management
-const ConfigManager = {
-    // Load configuration from localStorage
-    load: function() {
-        try {
-            const saved = localStorage.getItem('kanvaAdminConfig');
-            if (saved) {
-                const savedConfig = JSON.parse(saved);
-                // Merge saved config with defaults to handle new fields
-                adminConfig = this.mergeConfigs(adminConfig, savedConfig);
-                console.log('✅ Admin configuration loaded from localStorage');
-                return true;
-            }
-        } catch (error) {
-            console.error('❌ Error loading admin configuration:', error);
-        }
-        return false;
-    },
+// Authentication helper functions are now in config.js
 
-    // Save configuration to localStorage
-    save: function(config = adminConfig) {
-        try {
-            config.metadata.lastUpdated = new Date().toISOString();
-            config.metadata.configuredBy = appState.currentUser?.email || 'Unknown';
-            localStorage.setItem('kanvaAdminConfig', JSON.stringify(config));
-            console.log('✅ Admin configuration saved to localStorage');
-            return true;
-        } catch (error) {
-            console.error('❌ Error saving admin configuration:', error);
-        }
-        return false;
-    },
+// Product helper functions are now in config.js
 
-    // Merge configurations (saved overwrites defaults)
-    mergeConfigs: function(defaultConfig, savedConfig) {
-        const merged = { ...defaultConfig };
-        
-        // Deep merge for nested objects
-        for (const key in savedConfig) {
-            if (typeof savedConfig[key] === 'object' && !Array.isArray(savedConfig[key])) {
-                merged[key] = { ...defaultConfig[key], ...savedConfig[key] };
-            } else {
-                merged[key] = savedConfig[key];
-            }
-        }
-        
-        return merged;
-    },
-
-    // Reset to default configuration
-    reset: function() {
-        try {
-            localStorage.removeItem('kanvaAdminConfig');
-            console.log('✅ Admin configuration reset to defaults');
-            return true;
-        } catch (error) {
-            console.error('❌ Error resetting admin configuration:', error);
-        }
-        return false;
-    },
-
-    // Validate configuration integrity
-    validate: function(config = adminConfig) {
-        const errors = [];
-
-        // Validate products
-        for (const [key, product] of Object.entries(config.products)) {
-            if (!product.name || product.price <= 0 || product.msrp <= 0) {
-                errors.push(`Invalid product configuration: ${key}`);
-            }
-        }
-
-        // Validate tiers
-        if (config.tiers.tier2.threshold <= config.tiers.tier1.threshold ||
-            config.tiers.tier3.threshold <= config.tiers.tier2.threshold) {
-            errors.push('Invalid tier thresholds');
-        }
-
-        // Validate shipping
-        if (config.shipping.rate < 0 || config.shipping.freeThreshold < 0) {
-            errors.push('Invalid shipping configuration');
-        }
-
-        return {
-            isValid: errors.length === 0,
-            errors: errors
-        };
-    },
-
-    // Get current configuration
-    get: function() {
-        return adminConfig;
-    },
-
-    // Update specific configuration section
-    update: function(section, data) {
-        if (adminConfig[section]) {
-            adminConfig[section] = { ...adminConfig[section], ...data };
-            return this.save();
-        }
-        return false;
-    }
-};
-
-// Authentication helper functions
-const AuthManager = {
-    // Check if user is admin
-    isAdmin: function(email) {
-        return adminEmails.includes(email?.toLowerCase());
-    },
-
-    // Set current user
-    setUser: function(user) {
-        appState.currentUser = user;
-        appState.isAdmin = this.isAdmin(user?.email);
-        console.log(`👤 User set: ${user?.email || 'Unknown'} (Admin: ${appState.isAdmin})`);
-    },
-
-    // Get current user
-    getUser: function() {
-        return appState.currentUser;
-    }
-};
-
-// Product helper functions
-const ProductManager = {
-    // Get all products
-    getAll: function() {
-        return adminConfig.products;
-    },
-
-    // Get specific product
-    get: function(productKey) {
-        return adminConfig.products[productKey];
-    },
-
-    // Get product options for dropdowns
-    getOptions: function() {
-        return Object.entries(adminConfig.products).map(([key, product]) => ({
-            value: key,
-            label: `${product.name} ($${product.price})`,
-            product: product
-        }));
-    }
-};
-
-// Tier calculation helper
-const TierManager = {
-    // Get tier for given quantity
-    getTier: function(masterCases) {
-        const tiers = adminConfig.tiers;
-        if (masterCases < tiers.tier2.threshold) return tiers.tier1;
-        if (masterCases < tiers.tier3.threshold) return tiers.tier2;
-        return tiers.tier3;
-    },
-
-    // Get all tiers
-    getAll: function() {
-        return adminConfig.tiers;
-    }
-};
+// Tier calculation helper is now in config.js
 
 // Initialize configuration on script load
 console.log('🔧 Initializing Kanva Botanicals configuration...');
 
-// Load saved configuration
-ConfigManager.load();
-
-// Validate configuration
-const validation = ConfigManager.validate();
-if (!validation.isValid) {
-    console.warn('⚠️  Configuration validation errors:', validation.errors);
-}
+// Configuration will be loaded by config.js when it loads
 
 console.log('✅ Configuration initialized successfully');

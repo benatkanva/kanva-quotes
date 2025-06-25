@@ -1,205 +1,17 @@
-// UPDATED Configuration with REAL Kanva Botanicals pricing data from 2025 sheet
+// Kanva Botanicals Config Utilities
+// Uses adminConfig already defined in admin.js
 
-// Admin email list - Add/remove admin users here
-const adminEmails = [
-    'ben@kanvabotanicals.com',
-    'shane@kanvabotanicals.com',
-    'rob@cwlbrands.com',
-    'corey@cwlbrands.com'
-];
-
-// FIXED: Real product catalog with actual pricing from sheet
-let adminConfig = {
-    products: {
-        focus: {
-            name: "Focus+Flow",
-            price: 4.50,                    // CONFIRMED: $4.50 from sheet
-            msrp: 9.99,                     
-            unitsPerCase: 144,              // FIXED: 144 units per master case (12x12)
-            displayBoxesPerCase: 12,        // FIXED: 12 display boxes per master case
-            unitsPerDisplayBox: 12,         // NEW: 12 units per display box
-            description: "Kava + Kratom extract blend - #1 selling shot",
-            category: "2oz_wellness",
-            isBestSeller: true,
-            // NEW: Pack dimensions for shipping
-            masterCaseDimensions: { length: 14, width: 10, height: 12, weight: 42 },
-            displayBoxDimensions: { length: 4, width: 5, height: 7, weight: 3.5 }
-        },
-        release: {
-            name: "Release+Relax", 
-            price: 4.50,                    // CONFIRMED: $4.50 from sheet
-            msrp: 9.99,                     
-            unitsPerCase: 96,               // FIXED: 96 units per master case (8x12)  
-            displayBoxesPerCase: 8,         // FIXED: 8 display boxes per master case
-            unitsPerDisplayBox: 12,         
-            description: "Kanna + Kava blend for stress relief",
-            category: "2oz_wellness",
-            isBestSeller: false,
-            // NEW: Pack dimensions
-            masterCaseDimensions: { length: 14, width: 10, height: 8, weight: 28 },
-            displayBoxDimensions: { length: 4, width: 5, height: 7, weight: 3.5 }
-        },
-        zoom: {
-            name: "Kanva Zoom",
-            price: 3.10,                    // FIXED: $3.10 from sheet (was wrong!)
-            msrp: 6.99,                     // FIXED: Lower MSRP for Zoom
-            unitsPerCase: 144,              // 144 units per master case
-            displayBoxesPerCase: 12,        
-            unitsPerDisplayBox: 12,         
-            description: "Kratom energy shot",
-            category: "energy_shots",
-            isBestSeller: false,
-            // NEW: Pack dimensions  
-            masterCaseDimensions: { length: 9, width: 9, height: 9, weight: 18 },
-            displayBoxDimensions: { length: 3, width: 4, height: 5, weight: 2 }
-        },
-        mango: {
-            name: "Mango Extract",
-            price: 4.25,                    // From pricing sheet
-            msrp: 11.99,                    
-            unitsPerCase: 144,              
-            displayBoxesPerCase: 12,        
-            unitsPerDisplayBox: 12,         
-            description: "Mango Extract 12ct shot",
-            category: "extract_shots",
-            isBestSeller: false,
-            // NEW: Pack dimensions
-            masterCaseDimensions: { length: 14, width: 10, height: 12, weight: 42 },
-            displayBoxDimensions: { length: 4, width: 5, height: 7, weight: 3.5 }
-        },
-        raw: {
-            name: "Raw+Releaf",
-            price: 4.50,                    
-            msrp: 9.99,                     
-            unitsPerCase: 144,              
-            displayBoxesPerCase: 12,        
-            unitsPerDisplayBox: 12,         
-            description: "Pure leaf, pure relief - Kratom leaf + Kava extract",
-            category: "2oz_wellness",
-            isNewProduct: true,
-            // NEW: Pack dimensions
-            masterCaseDimensions: { length: 14, width: 10, height: 12, weight: 42 },
-            displayBoxDimensions: { length: 4, width: 5, height: 7, weight: 3.5 }
-        }
-    },
-
-    // FIXED: Volume tier pricing structure from actual sheet
-    tiers: {
-        tier1: {
-            threshold: 0,
-            discount: 0,
-            name: "Tier 1",
-            description: "Standard pricing for 0-55 master cases",
-            margin: "10.00%"
-        },
-        tier2: {
-            threshold: 56,                  // FIXED: Starts at 56 MC (was wrong)
-            discount: 0.033,                // FIXED: 3.3% discount ($4.50 -> $4.35)
-            name: "Tier 2", 
-            description: "Volume discount for 56-111 master cases",
-            margin: "13.00%"
-        },
-        tier3: {
-            threshold: 112,                 // FIXED: Starts at 112 MC  
-            discount: 0.056,                // FIXED: 5.6% discount ($4.50 -> $4.25)
-            name: "Tier 3",
-            description: "Best pricing for 112+ master cases",
-            margin: "15.00%"
-        }
-    },
-
-    // NEW: Zone-based shipping structure from sheet
-    shipping: {
-        zones: {
-            zone1: {
-                name: "Zone 1 (West)",
-                states: ['CA', 'NV', 'OR', 'WA', 'ID'],
-                rates: {
-                    '1-3boxes': 5,
-                    '4-8boxes': 10, 
-                    '9-11boxes': 10,
-                    'mastercase': 20
-                }
-            },
-            zone2: {
-                name: "Zone 2 (Mountain)",
-                states: ['UT', 'MT', 'WY', 'CO', 'AZ', 'NM'],
-                rates: {
-                    '1-3boxes': 10,
-                    '4-8boxes': 10,
-                    '9-11boxes': 15,
-                    'mastercase': 20
-                }
-            },
-            zone3: {
-                name: "Zone 3 (Central)",
-                states: ['ND', 'SD', 'NE', 'KS', 'OK', 'TX', 'MN', 'IA', 'MO', 'AR', 'LA', 'IN', 'WI', 'IL', 'MS', 'AL', 'TN', 'KY'],
-                rates: {
-                    '1-3boxes': 10,
-                    '4-8boxes': 15,
-                    '9-11boxes': 20,
-                    'mastercase': 25
-                }
-            },
-            zone4: {
-                name: "Zone 4 (East)",
-                states: ['MI', 'OH', 'WV', 'VA', 'NC', 'SC', 'GA', 'FL', 'DC', 'PA', 'DE', 'MD', 'RI', 'NY', 'CT', 'MA', 'NH', 'VT', 'NJ', 'ME', 'AK', 'HI'],
-                rates: {
-                    '1-3boxes': 15,
-                    '4-8boxes': 20,
-                    '9-11boxes': 25,
-                    'mastercase': 30
-                }
-            }
-        },
-        freeThreshold: 50000,              // Free shipping over $50k
-        description: "Zone-based shipping rates by master cases and display boxes"
-    },
-
-    // Payment processing rules  
-    payment: {
-        achThreshold: 10000,               // ACH required over $10k
-        acceptedMethods: ['ACH', 'Wire Transfer', 'Company Check'],
-        description: "Payment thresholds and accepted methods"
-    },
-
-    // FIXED: Maximum retail price guidance per product
-    maxRetailPrices: {
-        default: 5.00,
-        focus: 5.00,        
-        release: 5.00,      
-        raw: 5.00,          
-        zoom: 3.50,                        // FIXED: Lower for Zoom
-        mango: 6.00,                       // NEW: Mango pricing
-        description: "Maximum recommended retail prices"
-    },
-
-    // Email template settings
-    emailSettings: {
-        companyName: "Kanva Botanicals",
-        supportEmail: "sales@kanvabotanicals.com",
-        phone: "[PHONE NUMBER]",
-        website: "www.kanvabotanicals.com"
-    },
-
-    // Feature flags
-    features: {
-        adminPanel: true,
-        emailGeneration: true,
-        crmIntegration: true,
-        freeShipping: true,
-        volumeDiscounts: true,
-        zoneShipping: true                 // NEW: Enable zone-based shipping
-    },
-
-    // Application metadata
-    metadata: {
-        version: "2.1.0",                  // Updated version
-        lastUpdated: new Date().toISOString(),
-        configuredBy: null,
-        pricingSheetVersion: "2025-v1"     // NEW: Track pricing sheet version
+// Helper to safely get config (always available since admin.js loads first)
+function getConfig(cb) {
+    if (typeof adminConfig !== 'undefined') {
+        cb(adminConfig);
+    } else {
+        // Fallback - retry after a short delay
+        setTimeout(() => getConfig(cb), 100);
     }
-};
+}
+
+// --- All shipping and payment config is now available via adminConfig ---
 
 // NEW: Shipping zone detection helper
 const ShippingManager = {
@@ -312,7 +124,6 @@ const ConfigManager = {
         }
         return false;
     },
-
     // Save configuration to localStorage
     save: function(config = adminConfig) {
         try {
@@ -397,7 +208,7 @@ const ConfigManager = {
 const AuthManager = {
     // Check if user is admin
     isAdmin: function(email) {
-        return adminEmails.includes(email?.toLowerCase());
+        return adminConfig.adminEmails.includes(email?.toLowerCase());
     },
 
     // Set current user

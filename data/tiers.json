@@ -1,0 +1,23 @@
+{
+  "tier1": {
+    "threshold": 0,
+    "discount": 0,
+    "name": "Tier 1",
+    "description": "Standard pricing for 0-55 master cases",
+    "margin": "10.00%"
+  },
+  "tier2": {
+    "threshold": 56,
+    "discount": 0.033,
+    "name": "Tier 2",
+    "description": "Volume discount for 56-111 master cases",
+    "margin": "13.00%"
+  },
+  "tier3": {
+    "threshold": 112,
+    "discount": 0.06,
+    "name": "Tier 3",
+    "description": "Best pricing for 112+ master cases",
+    "margin": "15.00%"
+  }
+}
