@@ -272,19 +272,67 @@ body {
     font-size: 14px;
 }
 
-.form-control {
+.form-control, 
+input[type="text"], 
+input[type="email"], 
+input[type="tel"], 
+input[type="number"], 
+select, 
+textarea {
     width: 100%;
-    padding: 12px;
-    border: 1px solid var(--border-color);
+    padding: 0.75rem 1rem;
+    font-size: 0.875rem;
+    font-weight: 400;
+    line-height: 1.5;
+    color: var(--gray-700);
+    background-color: var(--white);
+    background-image: none;
+    border: 1px solid var(--gray-300);
     border-radius: var(--border-radius);
-    font-size: 14px;
-    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+    box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+    transition: all 0.15s ease-in-out;
+    font-family: var(--font-primary);
 }
 
-.form-control:focus {
+.form-control:focus, 
+input[type="text"]:focus, 
+input[type="email"]:focus, 
+input[type="tel"]:focus, 
+input[type="number"]:focus, 
+select:focus, 
+textarea:focus {
     outline: none;
-    border-color: var(--primary-color);
-    box-shadow: 0 0 0 3px rgba(34, 197, 94, 0.1);
+    border-color: var(--kanva-green);
+    box-shadow: 0 0 0 3px rgba(147, 213, 0, 0.1), 0 1px 3px 0 rgba(0, 0, 0, 0.1);
+    background-color: var(--white);
+}
+
+.form-control:hover:not(:focus), 
+input[type="text"]:hover:not(:focus), 
+input[type="email"]:hover:not(:focus), 
+input[type="tel"]:hover:not(:focus), 
+input[type="number"]:hover:not(:focus), 
+select:hover:not(:focus), 
+textarea:hover:not(:focus) {
+    border-color: var(--gray-400);
+}
+
+.form-control::placeholder, 
+input::placeholder, 
+textarea::placeholder {
+    color: var(--gray-400);
+    opacity: 1;
+}
+
+.form-control:disabled, 
+input:disabled, 
+select:disabled, 
+textarea:disabled {
+    background-color: var(--gray-50);
+    border-color: var(--gray-200);
+    color: var(--gray-500);
+    cursor: not-allowed;
+    opacity: 0.6;
 }
 
 /* Input Groups */
@@ -1412,7 +1460,7 @@ body {
 
 /* Form Styles */
 .form-group {
-    margin-bottom: 1rem;
+    margin-bottom: 1.5rem;
 }
 
 .form-label {
@@ -1796,4 +1844,202 @@ body.admin-panel-open {
 .btn-outline-danger:hover {
     background: #ef4444;
     color: white;
+}
+
+/* Form Groups */
+.form-group {
+    margin-bottom: 1.5rem;
+}
+
+.form-group label {
+    display: block;
+    margin-bottom: 0.5rem;
+    font-weight: 500;
+    font-size: 0.875rem;
+    color: var(--gray-700);
+    line-height: 1.25;
+}
+
+.form-group .form-text {
+    margin-top: 0.25rem;
+    font-size: 0.75rem;
+    color: var(--gray-500);
+}
+
+/* Select Dropdown Styling */
+select {
+    background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='m6 8 4 4 4-4'/%3e%3c/svg%3e");
+    background-position: right 0.5rem center;
+    background-repeat: no-repeat;
+    background-size: 1.5em 1.5em;
+    padding-right: 2.5rem;
+    appearance: none;
+    cursor: pointer;
+}
+
+select:focus {
+    background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%2393D500' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='m6 8 4 4 4-4'/%3e%3c/svg%3e");
+}
+
+/* Pricing Override Styles */
+.price-overridden {
+    border-color: var(--warning) !important;
+    background-color: #fffbeb !important;
+    box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.1) !important;
+}
+
+.price-overridden:focus {
+    border-color: var(--warning) !important;
+    box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.2) !important;
+}
+
+/* Customer Information Form Styling */
+.customer-info-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 1.5rem;
+    margin-bottom: 2rem;
+}
+
+/* Responsive Form Layout */
+@media (max-width: 768px) {
+    .customer-info-grid {
+        grid-template-columns: 1fr;
+        gap: 1rem;
+    }
+    
+    .form-control, 
+    input, 
+    select, 
+    textarea {
+        font-size: 16px; /* Prevents zoom on iOS */
+    }
+}
+
+/* Shipping Zone Display */
+.shipping-zone-details {
+    padding: 1rem;
+    background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
+    border-radius: var(--border-radius);
+    border: 1px solid var(--gray-200);
+}
+
+.zone-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 0.75rem;
+}
+
+.zone-name {
+    font-weight: 600;
+    font-size: 1.1rem;
+    color: var(--gray-800);
+}
+
+.zone-color {
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    border: 2px solid var(--white);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.zone-info p {
+    margin: 0.25rem 0;
+    font-size: 0.875rem;
+    color: var(--gray-600);
+}
+
+.zone-info strong {
+    color: var(--gray-800);
+}
+
+/* Alert Styling */
+.alert {
+    padding: 1rem;
+    border-radius: var(--border-radius);
+    border: 1px solid transparent;
+    margin: 1rem 0;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.alert-warning {
+    background-color: #fffbeb;
+    border-color: #fed7aa;
+    color: #92400e;
+}
+
+.alert-content {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    width: 100%;
+    gap: 1rem;
+}
+
+.alert-actions {
+    display: flex;
+    gap: 0.5rem;
+    flex-shrink: 0;
+}
+
+.alert-actions .btn {
+    padding: 0.375rem 0.75rem;
+    font-size: 0.875rem;
+    border-radius: 0.375rem;
+}
+
+/* Empty State Styling */
+.empty-state {
+    text-align: center;
+    padding: 3rem 1rem;
+    color: var(--gray-500);
+    background: var(--gray-50);
+    border-radius: var(--border-radius);
+    border: 2px dashed var(--gray-300);
+}
+
+.empty-state p {
+    margin: 0;
+    font-size: 1rem;
+}
+
+/* Calculation Display Improvements */
+.calculation-display {
+    background: var(--white);
+    border-radius: var(--border-radius);
+    padding: 1rem;
+}
+
+.calc-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.5rem 0;
+    border-bottom: 1px solid var(--gray-100);
+}
+
+.calc-row:last-child {
+    border-bottom: none;
+}
+
+.calc-row.total-row {
+    border-top: 2px solid var(--gray-300);
+    margin-top: 0.5rem;
+    padding-top: 1rem;
+    font-size: 1.1rem;
+}
+
+.calc-row span:last-child {
+    font-family: 'SF Mono', 'Monaco', 'Inconsolata', 'Roboto Mono', monospace;
+    color: var(--kanva-green);
+    font-weight: 600;
+}
+
+.calc-row.total-row span:last-child {
+    color: var(--gray-900);
+    font-size: 1.25rem;
 }

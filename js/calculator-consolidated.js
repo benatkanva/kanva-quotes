@@ -252,25 +252,33 @@ class KanvaCalculator {
     /**
      * Update shipping zone display
      */
-    updateShippingZoneDisplay(state) {
-        const currentZone = this.getShippingZone(state);
-        const shippingZoneElement = document.getElementById('shippingZoneInfo');
+    updateShippingZoneDisplay() {
+        const shippingZoneInfo = document.getElementById('shippingZoneInfo');
+        if (!shippingZoneInfo) return;
         
-        if (shippingZoneElement && currentZone) {
-            shippingZoneElement.innerHTML = `
-            <div style="padding: 0.75rem; background: #f0f9ff; border-radius: 6px;">
-                <strong>${currentZone.name}</strong><br>
-                <div style="font-size: 0.875rem; margin-top: 0.5rem;">
-                    <div>1-3 display boxes: $${currentZone.rates['1-3']}</div>
-                    <div>4-8 display boxes: $${currentZone.rates['4-8']}</div>
-                    <div>9-11 display boxes: $${currentZone.rates['9-11']}</div>
-                    <div>Master case: $${currentZone.rates['mastercase']}</div>
-                    <div style="margin-top: 0.5rem; font-weight: 500;">LTL Rate: ${currentZone.ltlPercentage}%</div>
+        if (!this.currentShippingZone) {
+            shippingZoneInfo.innerHTML = '<p class="text-muted">Select a state to see shipping information</p>';
+            return;
+        }
+        
+        const zoneData = this.data.shipping.zones[this.currentShippingZone];
+        if (!zoneData) {
+            shippingZoneInfo.innerHTML = '<p class="text-muted">No shipping information available</p>';
+            return;
+        }
+        
+        shippingZoneInfo.innerHTML = `
+            <div class="shipping-zone-details">
+                <div class="zone-header">
+                    <span class="zone-name">${this.currentShippingZone.toUpperCase()}</span>
+                    <span class="zone-color" style="background-color: ${zoneData.color || '#ccc'}"></span>
+                </div>
+                <div class="zone-info">
+                    <p><strong>LTL Rate:</strong> ${zoneData.ltlPercentage}% of subtotal</p>
+                    <p><strong>States:</strong> ${zoneData.states ? zoneData.states.join(', ') : 'N/A'}</p>
                 </div>
             </div>
         `;
-            shippingZoneElement.style.display = 'block';
-        }
     }
 
     /**
@@ -589,8 +597,19 @@ class KanvaCalculator {
             return;
         }
         
-        // Use LTL percentage for shipping calculation
-        this.quote.shipping = this.quote.subtotal * (this.currentShippingZone.ltlPercentage / 100);
+        // Get the zone data using the zone key
+        const zoneData = this.data.shipping.zones[this.currentShippingZone];
+        if (!zoneData) {
+            console.error(`❌ Zone data not found for: ${this.currentShippingZone}`);
+            this.quote.shipping = 0;
+            return;
+        }
+        
+        // Use LTL percentage for shipping calculation (convert percentage to decimal)
+        const ltlPercentage = zoneData.ltlPercentage / 100;
+        this.quote.shipping = this.quote.subtotal * ltlPercentage;
+        
+        console.log(`🚚 Shipping calculated: ${this.formatCurrency(this.quote.shipping)} (${zoneData.ltlPercentage}% of ${this.formatCurrency(this.quote.subtotal)})`);
     }
 
     /**
@@ -600,7 +619,7 @@ class KanvaCalculator {
         // Update main calculation display
         document.getElementById('subtotalAmount').textContent = this.formatCurrency(this.quote.subtotal);
         document.getElementById('shippingAmount').textContent = this.formatCurrency(this.quote.shipping);
-        document.getElementById('creditCardFeeAmount').textContent = this.formatCurrency(this.quote.creditCardFee);
+        document.getElementById('creditCardFee').textContent = this.formatCurrency(this.quote.creditCardFee);
         document.getElementById('totalAmount').textContent = this.formatCurrency(this.quote.total);
         
         // Update tier info if available
@@ -617,15 +636,18 @@ class KanvaCalculator {
         }
         
         // Update credit card fee label based on order amount
-        const feeLabel = document.querySelector('.calculation-label');
-        if (feeLabel && feeLabel.textContent.includes('Credit Card Fee')) {
+        const feeRow = document.querySelector('.calc-row:nth-child(3) span:first-child');
+        if (feeRow) {
             const subtotalWithShipping = this.quote.subtotal + this.quote.shipping;
             if (subtotalWithShipping >= 10000) {
-                feeLabel.textContent = 'Credit Card Fee (Waived - $10K+):';
+                feeRow.textContent = 'Credit Card Fee (Waived - $10K+):';
             } else {
-                feeLabel.textContent = 'Credit Card Fee (3%):';
+                feeRow.textContent = 'Credit Card Fee (3%):';
             }
         }
+        
+        // Update shipping zone info
+        this.updateShippingZoneDisplay();
         
         console.log('💰 Quote calculated:', this.quote);
     }
@@ -769,12 +791,18 @@ class KanvaCalculator {
      */
     renderProductLines() {
         const container = document.getElementById('productLinesContainer');
+        const emptyState = document.getElementById('emptyState');
+        
         if (!container) return;
 
         if (this.lineItems.length === 0) {
             container.innerHTML = '';
+            if (emptyState) emptyState.style.display = 'block';
             return;
         }
+
+        // Hide empty state when we have products
+        if (emptyState) emptyState.style.display = 'none';
 
         container.innerHTML = this.lineItems.map(lineItem => {
             const product = lineItem.productData;
@@ -870,6 +898,9 @@ class KanvaCalculator {
                 </div>
             </div>
         `}).join('');
+        
+        // Trigger calculation and order details update
+        this.calculateAll();
     }
 
     /**
@@ -899,7 +930,7 @@ class KanvaCalculator {
      * Update empty state visibility
      */
     updateEmptyState() {
-        const emptyState = document.getElementById('emptyProductState');
+        const emptyState = document.getElementById('emptyState');
         const addBtn = document.getElementById('addProductBtn');
         
         if (emptyState) {
