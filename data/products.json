@@ -1,7 +1,7 @@
 {
   "focus": {
     "name": "Focus+Flow",
-    "price": 4.50,
+    "price": 4.5,
     "msrp": 9.99,
     "unitsPerCase": 144,
     "displayBoxesPerCase": 12,
@@ -10,12 +10,22 @@
     "category": "2oz_wellness",
     "isBestSeller": true,
     "image": "assets/product_renders/Kanva_focus+flow_Box_Bottle_Master_4_30.png",
-    "masterCaseDimensions": { "length": 14, "width": 10, "height": 12, "weight": 42 },
-    "displayBoxDimensions": { "length": 4, "width": 5, "height": 7, "weight": 3.5 }
+    "masterCaseDimensions": {
+      "length": 14,
+      "width": 10,
+      "height": 12,
+      "weight": 42
+    },
+    "displayBoxDimensions": {
+      "length": 4,
+      "width": 5,
+      "height": 7,
+      "weight": 3.5
+    }
   },
   "release": {
     "name": "Release+Relax",
-    "price": 4.50,
+    "price": 4.5,
     "msrp": 9.99,
     "unitsPerCase": 96,
     "displayBoxesPerCase": 8,
@@ -24,12 +34,22 @@
     "category": "2oz_wellness",
     "isBestSeller": false,
     "image": "assets/product_renders/Kanva_Release+Relax_Box_Bottle_Master_4_30_v2.png",
-    "masterCaseDimensions": { "length": 14, "width": 10, "height": 8, "weight": 28 },
-    "displayBoxDimensions": { "length": 4, "width": 5, "height": 7, "weight": 3.5 }
+    "masterCaseDimensions": {
+      "length": 14,
+      "width": 10,
+      "height": 8,
+      "weight": 28
+    },
+    "displayBoxDimensions": {
+      "length": 4,
+      "width": 5,
+      "height": 7,
+      "weight": 3.5
+    }
   },
   "zoom": {
     "name": "Kanva Zoom",
-    "price": 3.10,
+    "price": 3.2,
     "msrp": 6.99,
     "unitsPerCase": 144,
     "displayBoxesPerCase": 12,
@@ -38,8 +58,18 @@
     "category": "energy_shots",
     "isBestSeller": false,
     "image": "assets/product_renders/Kanva_ZOOM_Bottle_Box_4_30.png",
-    "masterCaseDimensions": { "length": 9, "width": 9, "height": 9, "weight": 18 },
-    "displayBoxDimensions": { "length": 3, "width": 4, "height": 5, "weight": 2 }
+    "masterCaseDimensions": {
+      "length": 9,
+      "width": 9,
+      "height": 9,
+      "weight": 18
+    },
+    "displayBoxDimensions": {
+      "length": 3,
+      "width": 4,
+      "height": 5,
+      "weight": 2
+    }
   },
   "mango": {
     "name": "Mango Extract",
@@ -52,12 +82,22 @@
     "category": "extract_shots",
     "isBestSeller": false,
     "image": "assets/product_renders/Kanva_Mango_3d_Display_Box_4_30.png",
-    "masterCaseDimensions": { "length": 14, "width": 10, "height": 12, "weight": 42 },
-    "displayBoxDimensions": { "length": 4, "width": 5, "height": 7, "weight": 3.5 }
+    "masterCaseDimensions": {
+      "length": 14,
+      "width": 10,
+      "height": 12,
+      "weight": 42
+    },
+    "displayBoxDimensions": {
+      "length": 4,
+      "width": 5,
+      "height": 7,
+      "weight": 3.5
+    }
   },
   "raw": {
     "name": "Raw+Releaf",
-    "price": 4.50,
+    "price": 4.5,
     "msrp": 9.99,
     "unitsPerCase": 144,
     "displayBoxesPerCase": 12,
@@ -66,7 +106,17 @@
     "category": "2oz_wellness",
     "isNewProduct": true,
     "image": "assets/product_renders/Kanva_RAW+Releaf_DisplayBox.png",
-    "masterCaseDimensions": { "length": 14, "width": 10, "height": 12, "weight": 42 },
-    "displayBoxDimensions": { "length": 4, "width": 5, "height": 7, "weight": 3.5 }
+    "masterCaseDimensions": {
+      "length": 14,
+      "width": 10,
+      "height": 12,
+      "weight": 42
+    },
+    "displayBoxDimensions": {
+      "length": 4,
+      "width": 5,
+      "height": 7,
+      "weight": 3.5
+    }
   }
 }
