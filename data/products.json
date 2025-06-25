@@ -1,12 +1,12 @@
 {
   "focus": {
     "name": "Focus+Flow",
-    "price": 4.3,
+    "price": 4.5,
     "msrp": 9.99,
     "unitsPerCase": 144,
     "displayBoxesPerCase": 12,
     "unitsPerDisplayBox": 12,
-    "description": "Update me",
+    "description": "Kava + Kratom extract blend - #1 selling shot",
     "category": "2oz_wellness",
     "isBestSeller": true,
     "masterCaseDimensions": {
@@ -47,7 +47,7 @@
   },
   "zoom": {
     "name": "Kanva Zoom",
-    "price": 3.1,
+    "price": 3.2,
     "msrp": 6.99,
     "unitsPerCase": 144,
     "displayBoxesPerCase": 12,
