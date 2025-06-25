@@ -16,7 +16,7 @@
 </head>
 <body>
     <!-- Loading State -->
-    <div id="loadingState" class="loading-overlay">
+    <div id="loading" class="loading-overlay">
         <div class="loading-spinner">
             <div class="spinner"></div>
             <p>Loading Kanva Quote Calculator...</p>
@@ -26,218 +26,197 @@
     <!-- Main Calculator Container -->
     <div id="app" class="calculator-container fade-in" style="display: none;">
         
-        <!-- Header -->
-        <div class="app-header">
-            <h1 class="app-title">
-                🌿 Kanva Botanicals Quote Calculator
-            </h1>
-            <p class="app-subtitle">Instantly generate professional quotes with accurate pricing</p>
-        </div>
-
-        <!-- Main Content Grid -->
-        <div class="grid grid-2" style="padding: var(--space-xl);">
-            
-            <!-- Left Column -->
-            <div class="left-column">
-                
-                <!-- Admin Settings Card -->
-                <div class="card">
-                    <div class="card-header">
-                        <h3>⚙️ Admin Settings</h3>
-                        <button id="adminSettingsToggle" class="btn btn-sm btn-secondary">Configure</button>
-                    </div>
+        <!-- Header Section -->
+        <header class="app-header">
+            <div class="header-content">
+                <div class="brand-section">
+                    <img src="assets/logo/kanva-logo.png" alt="Kanva Botanicals" class="brand-logo">
                 </div>
-
-                <!-- Customer Information Card -->
-                <div class="card">
-                    <div class="card-header">
-                        <h3>👤 Customer Information</h3>
-                    </div>
-                    <div class="card-body">
-                        <div class="grid grid-2">
-                            <div class="form-group">
-                                <label class="form-label">Quote Name</label>
-                                <input type="text" id="quoteName" class="form-control" placeholder="Product Quote for Company Name">
-                            </div>
-                            <div class="form-group">
-                                <label class="form-label">Company Name</label>
-                                <input type="text" id="companyName" class="form-control" placeholder="ABC Distribution">
-                            </div>
-                            <div class="form-group">
-                                <label class="form-label">Customer Segment</label>
-                                <select id="customerSegment" class="form-control">
-                                    <option value="">Select segment...</option>
-                                    <option value="smoke_vape">Smoke & Vape Shops</option>
-                                    <option value="convenience">Convenience Stores</option>
-                                    <option value="dispensary">Dispensaries</option>
-                                    <option value="wholesale">Wholesale/Distribution</option>
-                                </select>
-                            </div>
-                            <div class="form-group">
-                                <label class="form-label">State</label>
-                                <select id="customerState" class="form-control">
-                                    <option value="">Select State...</option>
-                                </select>
-                            </div>
-                            <div class="form-group">
-                                <label class="form-label">Email Domain</label>
-                                <input type="email" id="emailDomain" class="form-control" placeholder="company.com">
-                            </div>
-                            <div class="form-group">
-                                <label class="form-label">Phone Number</label>
-                                <input type="tel" id="phoneNumber" class="form-control" placeholder="(555) 123-4567">
-                            </div>
-                        </div>
-                    </div>
+                <div class="header-actions">
+                    <button id="adminToggle" class="btn btn-secondary btn-sm" style="display: none;">
+                        Admin Panel
+                    </button>
                 </div>
-
-                <!-- Shipping Zone Card -->
-                <div class="card">
-                    <div class="card-header">
-                        <h3>📦 Shipping Zone</h3>
-                    </div>
-                    <div class="card-body">
-                        <div id="shippingZoneDisplay" class="alert alert-info">
-                            Select a state to see shipping zone
-                        </div>
-                        
-                        <!-- Manual Shipping Override -->
-                        <div class="form-group mt-3">
-                            <label class="form-label">Manual Shipping Override (Optional)</label>
-                            <div class="input-group">
-                                <span class="input-group-text">$</span>
-                                <input type="number" id="manualShipping" class="form-control" placeholder="0.00" step="0.01" min="0">
-                            </div>
-                            <small class="form-text text-muted">Leave blank to use automatic shipping calculation</small>
-                        </div>
-                    </div>
-                </div>
-
             </div>
-
-            <!-- Right Column -->
-            <div class="right-column">
-                
-                <!-- Product & Order Details Card -->
-                <div class="card">
-                    <div class="card-header">
-                        <h3>📦 Product & Order Details</h3>
-                    </div>
-                    <div class="card-body">
-                        <!-- Product Type Tabs -->
-                        <div class="tabs">
-                            <div class="tab-list">
-                                <button class="tab-button active" data-tab="single">Single Product</button>
-                                <button class="tab-button" data-tab="multiple">Multiple Products</button>
-                            </div>
-                        </div>
-
-                        <!-- Single Product Tab -->
-                        <div id="singleProductTab" class="tab-content" data-tab-content="single">
-                            <div class="grid grid-2">
-                                <div class="form-group">
-                                    <label class="form-label">Select Product</label>
-                                    <select id="productSelect" class="form-control" data-product-prices data-product-weights>
-                                        <option value="">Select a product...</option>
-                                        <!-- Products will be populated by calculator -->
-                                    </select>
-                                </div>
-                                <div class="form-group">
-                                    <label class="form-label">Master Cases</label>
-                                    <input type="number" id="masterCases" class="form-control" min="0" value="28">
-                                </div>
-                            </div>
-                            
-                            <div class="grid grid-2">
-                                <div class="form-group">
-                                    <label class="form-label">Display Boxes (for partial case orders)</label>
-                                    <input type="number" id="displayBoxes" class="form-control" min="0" value="0" placeholder="0">
-                                    <small class="form-text text-muted">12 units per display box</small>
-                                </div>
-                                <div class="form-group">
-                                    <label class="form-label">Order Type</label>
-                                    <div class="alert alert-info" id="orderTypeDisplay">
-                                        Enter quantities above
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Multiple Products Tab -->
-                        <div id="multipleProductsTab" class="tab-content" data-tab-content="multiple" style="display: none;">
-                            <div class="form-group">
-                                <button id="addProductLine" class="btn btn-secondary btn-sm">➕ Add Product Line</button>
-                            </div>
-                            <div id="productLines">
-                                <!-- Product lines will be added here -->
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Order Calculation Card -->
-                <div class="card">
-                    <div class="card-header">
-                        <h3>🧮 Order Calculation</h3>
-                    </div>
-                    <div class="card-body">
-                        <div id="calculationResults" data-section="calculation">
-                            <p>Select products and quantities to see calculation...</p>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Quote Generation Card -->
-                <div class="card">
-                    <div class="card-header">
-                        <h3>📧 Generate Professional Quote</h3>
-                    </div>
-                    <div class="card-body">
-                        <!-- Email Template Selection -->
-                        <div class="form-group">
-                            <label class="form-label">Select Email Template</label>
-                            <select id="emailTemplate" class="form-control">
-                                <option value="initial">Initial Proposal</option>
-                                <option value="followup">Follow-up</option>
-                                <option value="negotiation">Negotiation</option>
-                                <option value="closing">Closing</option>
-                            </select>
-                        </div>
-                        
-                        <div class="form-group">
-                            <button id="generateQuoteBtn" class="btn btn-primary" data-action="generate-quote">Generate Quote Email</button>
-                            <button id="copyQuoteBtn" class="btn btn-secondary" style="display: none;">Copy to Clipboard</button>
-                        </div>
-                        
-                        <!-- Generated Quote Display -->
-                        <div id="generatedQuote" style="display: none;">
-                            <div class="form-group">
-                                <label class="form-label">Generated Email Content</label>
-                                <textarea id="quoteContent" class="form-control" rows="15" readonly style="font-family: monospace; font-size: 12px;"></textarea>
-                            </div>
-                            
-                            <!-- CRM Integration Buttons -->
-                            <div class="form-group">
-                                <button id="saveToAccountBtn" class="btn btn-success btn-sm">💾 Save to Account</button>
-                                <button id="createOpportunityBtn" class="btn btn-info btn-sm">🎯 Create Opportunity</button>
-                                <button id="openEmailBtn" class="btn btn-primary btn-sm">📧 Open in Email Client</button>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-            </div>
-        </div>
-
-        <!-- Product Reference Sidebar -->
-        <div class="card" style="margin: 0 var(--space-xl) var(--space-xl);">
+        </header>
+        
+        <!-- Customer Information Section -->
+        <div class="card">
             <div class="card-header">
-                <h3>📚 Quick Product Reference</h3>
+                <h3>👤 Customer Information</h3>
             </div>
             <div class="card-body">
-                <div class="grid grid-3">
-                    <!-- Product reference cards will be populated here -->
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label for="quoteName">Quote Name</label>
+                        <input type="text" id="quoteName" placeholder="Product Quote for Company Name">
+                    </div>
+                    <div class="form-group">
+                        <label for="companyName">Company Name</label>
+                        <input type="text" id="companyName" placeholder="ABC Distribution">
+                    </div>
+                    <div class="form-group">
+                        <label for="customerSegment">Customer Segment</label>
+                        <select id="customerSegment">
+                            <option value="">Select segment...</option>
+                            <option value="distributor">Distributor</option>
+                            <option value="retailer">Retailer</option>
+                            <option value="direct">Direct Consumer</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="customerState">State</label>
+                        <select id="customerState">
+                            <option value="">Select state...</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="customerEmail">Email</label>
+                        <input type="email" id="customerEmail" placeholder="contact@company.com">
+                    </div>
+                    <div class="form-group">
+                        <label for="customerPhone">Phone Number</label>
+                        <input type="tel" id="customerPhone" placeholder="(555) 123-4567">
+                    </div>
                 </div>
+            </div>
+        </div>
+
+        <!-- Product Catalog Section -->
+        <div class="card">
+            <div class="card-header">
+                <h3>🛍️ Select Products</h3>
+            </div>
+            <div class="card-body">
+                <div id="productCatalog" class="product-catalog">
+                    <!-- Product tiles will be populated here -->
+                </div>
+            </div>
+        </div>
+
+        <!-- Product & Order Details Section -->
+        <div class="card">
+            <div class="card-header">
+                <h3>📦 Product & Order Details</h3>
+                <button id="addProductBtn" class="btn btn-primary">Add Product</button>
+            </div>
+            <div class="card-body">
+                <div id="productLinesContainer">
+                    <!-- Product lines will be populated here -->
+                </div>
+                <div id="emptyState" class="empty-state">
+                    <p>No products added yet. Select products from the catalog above to get started.</p>
+                </div>
+                <div id="upsellAlert" class="alert alert-warning" style="display: none;">
+                    <div class="alert-content">
+                        <span id="upsellMessage"></span>
+                        <div class="alert-actions">
+                            <button id="acceptUpsell" class="btn btn-sm btn-success">Accept</button>
+                            <button id="dismissUpsell" class="btn btn-sm btn-secondary">Dismiss</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Order Details by Line Item Section -->
+        <div class="card full-width-section">
+            <div class="card-header">
+                <h3>📋 Order Details by Line Item</h3>
+            </div>
+            <div class="card-body">
+                <div id="lineItemDetails">
+                    <!-- Line item details will be populated here -->
+                </div>
+            </div>
+        </div>
+
+        <!-- Bottom Row: Shipping Zone and Order Calculation -->
+        <div class="bottom-row">
+            <!-- Shipping Zone Card -->
+            <div class="card">
+                <div class="card-header">
+                    <h3>🚚 Shipping Zone</h3>
+                </div>
+                <div class="card-body">
+                    <div id="shippingZoneInfo" class="shipping-zone-info">
+                        <p class="text-muted">Select a state to see shipping information</p>
+                    </div>
+                    <div class="form-group">
+                        <label for="manualShipping">Manual Shipping Override</label>
+                        <div class="input-group">
+                            <span class="input-group-text">$</span>
+                            <input type="number" id="manualShipping" step="0.01" placeholder="0.00">
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Order Calculation Card -->
+            <div class="card">
+                <div class="card-header">
+                    <h3>💰 Order Calculation</h3>
+                </div>
+                <div class="card-body">
+                    <div class="calculation-display">
+                        <div class="calc-row">
+                            <span>Subtotal:</span>
+                            <span id="subtotalAmount">$0.00</span>
+                        </div>
+                        <div class="calc-row">
+                            <span>Shipping:</span>
+                            <span id="shippingAmount">$0.00</span>
+                        </div>
+                        <div class="calc-row">
+                            <span>Credit Card Fee (3%):</span>
+                            <span id="creditCardFee">$0.00</span>
+                        </div>
+                        <div class="calc-row total-row">
+                            <span><strong>Total:</strong></span>
+                            <span id="totalAmount"><strong>$0.00</strong></span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Generate Quote Section -->
+        <div class="card full-width-section">
+            <div class="card-header">
+                <h3>📄 Generate Quote</h3>
+            </div>
+            <div class="card-body">
+                <div class="quote-generator">
+                    <div class="form-group">
+                        <label for="emailTemplate">Email Template</label>
+                        <select id="emailTemplate">
+                            <option value="initial">Initial Proposal</option>
+                            <option value="followup">Follow-up</option>
+                            <option value="negotiation">Negotiation</option>
+                            <option value="closing">Closing</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="emailPreview">Email Preview</label>
+                        <textarea id="emailPreview" rows="8" placeholder="Email content will appear here..."></textarea>
+                    </div>
+                    <div class="quote-actions">
+                        <button id="generateQuoteBtn" class="btn btn-primary">Generate Quote</button>
+                        <button id="copyQuoteBtn" class="btn btn-secondary">Copy to Clipboard</button>
+                        <button id="emailQuoteBtn" class="btn btn-success">Open in Email Client</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Admin Settings - Bottom Panel -->
+        <div id="adminPanel" class="admin-panel-bottom" style="display: none;">
+            <div class="admin-toggle" onclick="calculator.toggleAdminPanel()">
+                <span class="admin-cog">⚙️</span>
+                <span class="admin-text">Admin Settings</span>
+            </div>
+            <div id="adminContent" class="admin-content" style="display: none;">
+                <!-- Admin content will be populated by JavaScript -->
             </div>
         </div>
 
@@ -256,14 +235,10 @@
         </div>
     </div>
 
-    <!-- Scripts in proper loading order -->
-    <script src="js/admin.js"></script>
-    <script src="js/config.js"></script>
-    <script src="js/calculator.js"></script>
-    <script src="js/multi-product-calculator.js"></script>
-    <script src="js/email-generator.js"></script>
-    <script src="js/missing-functions.js"></script>
-    <script src="js/main.js"></script>
+    <!-- Scripts -->
+    <script src="js/order-details.js"></script>
+    <script src="js/admin-manager.js"></script>
+    <script src="js/calculator-consolidated.js"></script>
 
 </body>
 </html>
