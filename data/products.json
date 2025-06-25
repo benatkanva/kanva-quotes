@@ -1,20 +1,30 @@
 {
   "focus": {
     "name": "Focus+Flow",
-    "price": 4.50,
+    "price": 4.5,
     "msrp": 9.99,
     "unitsPerCase": 144,
     "displayBoxesPerCase": 12,
     "unitsPerDisplayBox": 12,
-    "description": "Kava + Kratom extract blend - #1 selling shot",
+    "description": "Test Change",
     "category": "2oz_wellness",
     "isBestSeller": true,
-    "masterCaseDimensions": { "length": 14, "width": 10, "height": 12, "weight": 42 },
-    "displayBoxDimensions": { "length": 4, "width": 5, "height": 7, "weight": 3.5 }
+    "masterCaseDimensions": {
+      "length": 14,
+      "width": 10,
+      "height": 12,
+      "weight": 42
+    },
+    "displayBoxDimensions": {
+      "length": 4,
+      "width": 5,
+      "height": 7,
+      "weight": 3.5
+    }
   },
   "release": {
     "name": "Release+Relax",
-    "price": 4.50,
+    "price": 4.5,
     "msrp": 9.99,
     "unitsPerCase": 96,
     "displayBoxesPerCase": 8,
@@ -22,12 +32,22 @@
     "description": "Kanna + Kava blend for stress relief",
     "category": "2oz_wellness",
     "isBestSeller": false,
-    "masterCaseDimensions": { "length": 14, "width": 10, "height": 8, "weight": 28 },
-    "displayBoxDimensions": { "length": 4, "width": 5, "height": 7, "weight": 3.5 }
+    "masterCaseDimensions": {
+      "length": 14,
+      "width": 10,
+      "height": 8,
+      "weight": 28
+    },
+    "displayBoxDimensions": {
+      "length": 4,
+      "width": 5,
+      "height": 7,
+      "weight": 3.5
+    }
   },
   "zoom": {
     "name": "Kanva Zoom",
-    "price": 3.10,
+    "price": 3.1,
     "msrp": 6.99,
     "unitsPerCase": 144,
     "displayBoxesPerCase": 12,
@@ -35,8 +55,18 @@
     "description": "Kratom energy shot",
     "category": "energy_shots",
     "isBestSeller": false,
-    "masterCaseDimensions": { "length": 9, "width": 9, "height": 9, "weight": 18 },
-    "displayBoxDimensions": { "length": 3, "width": 4, "height": 5, "weight": 2 }
+    "masterCaseDimensions": {
+      "length": 9,
+      "width": 9,
+      "height": 9,
+      "weight": 18
+    },
+    "displayBoxDimensions": {
+      "length": 3,
+      "width": 4,
+      "height": 5,
+      "weight": 2
+    }
   },
   "mango": {
     "name": "Mango Extract",
@@ -48,12 +78,22 @@
     "description": "Mango Extract 12ct shot",
     "category": "extract_shots",
     "isBestSeller": false,
-    "masterCaseDimensions": { "length": 14, "width": 10, "height": 12, "weight": 42 },
-    "displayBoxDimensions": { "length": 4, "width": 5, "height": 7, "weight": 3.5 }
+    "masterCaseDimensions": {
+      "length": 14,
+      "width": 10,
+      "height": 12,
+      "weight": 42
+    },
+    "displayBoxDimensions": {
+      "length": 4,
+      "width": 5,
+      "height": 7,
+      "weight": 3.5
+    }
   },
   "raw": {
     "name": "Raw+Releaf",
-    "price": 4.50,
+    "price": 4.5,
     "msrp": 9.99,
     "unitsPerCase": 144,
     "displayBoxesPerCase": 12,
@@ -61,7 +101,17 @@
     "description": "Pure leaf, pure relief - Kratom leaf + Kava extract",
     "category": "2oz_wellness",
     "isNewProduct": true,
-    "masterCaseDimensions": { "length": 14, "width": 10, "height": 12, "weight": 42 },
-    "displayBoxDimensions": { "length": 4, "width": 5, "height": 7, "weight": 3.5 }
+    "masterCaseDimensions": {
+      "length": 14,
+      "width": 10,
+      "height": 12,
+      "weight": 42
+    },
+    "displayBoxDimensions": {
+      "length": 4,
+      "width": 5,
+      "height": 7,
+      "weight": 3.5
+    }
   }
 }
