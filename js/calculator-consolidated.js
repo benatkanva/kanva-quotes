@@ -28,12 +28,14 @@ class KanvaCalculator {
         this.lineItems = [];
         this.quote = {
             products: [],
-            lineItems: [], // Add missing lineItems array
+            lineItems: [],
             subtotal: 0,
             shipping: 0,
             creditCardFee: 0,
             total: 0,
-            tierInfo: null
+            tierInfo: null,
+            paymentMethod: null,
+            paymentMethods: []
         };
         
         this.isAdmin = false;
@@ -45,7 +47,8 @@ class KanvaCalculator {
             creditCardFeeRate: 0.03, // 3%
             shippingRateMin: 0.005,  // 0.5%
             shippingRateMax: 0.025,  // 2.5%
-            palletThreshold: 0.5     // Half pallet threshold
+            palletThreshold: 0.5,    // Half pallet threshold
+            paymentMethod: 'wire'    // Default payment method
         };
         
         // Admin password
@@ -414,6 +417,47 @@ class KanvaCalculator {
             });
         }
         
+        // Quote generation buttons
+        const generateQuoteBtn = document.getElementById('generateQuoteBtn');
+        if (generateQuoteBtn) {
+            generateQuoteBtn.addEventListener('click', () => {
+                this.generateQuote();
+            });
+        }
+        
+        // Copy quote button
+        const copyQuoteBtn = document.getElementById('copyQuoteBtn');
+        if (copyQuoteBtn) {
+            copyQuoteBtn.addEventListener('click', () => this.copyQuote());
+        }
+        
+        // Email quote button
+        const emailQuoteBtn = document.getElementById('emailQuoteBtn');
+        if (emailQuoteBtn) {
+            emailQuoteBtn.addEventListener('click', () => this.emailQuote());
+        }
+        
+        // Email template change
+        const emailTemplateSelect = document.getElementById('emailTemplate');
+        if (emailTemplateSelect) {
+            emailTemplateSelect.addEventListener('change', () => {
+                this.generateQuote(); // Regenerate quote with new template
+            });
+        }
+        
+        // Auto-generate quote when customer info changes
+        const customerInfoFields = ['quoteName', 'companyName', 'customerEmail', 'customerState', 'customerSegment'];
+        customerInfoFields.forEach(field => {
+            const element = document.getElementById(field);
+            if (element) {
+                element.addEventListener('change', () => {
+                    if (this.quote.products.length > 0) {
+                        this.generateQuote();
+                    }
+                });
+            }
+        });
+        
         console.log('✅ Event listeners bound');
     }
 
@@ -433,31 +477,159 @@ class KanvaCalculator {
     /**
      * Calculate all - main calculation method
      */
+    /**
+     * Update available payment methods based on order total
+     */
+    updatePaymentMethods() {
+        if (!this.data.payment || !this.data.payment.paymentMethods) return;
+        
+        const total = this.quote.subtotal + this.quote.shipping;
+        const methods = [];
+        
+        // Determine available payment methods based on order total
+        for (const [key, method] of Object.entries(this.data.payment.paymentMethods)) {
+            if ((method.availableAlways === true) || 
+                (method.availableBelow && total < method.availableBelow)) {
+                methods.push({
+                    id: key,
+                    label: method.label,
+                    fee: method.fee,
+                    feeDescription: method.feeDescription
+                });
+            }
+        }
+        
+        this.quote.paymentMethods = methods;
+        
+        // Set default payment method if not set or if current method is no longer available
+        if (!this.quote.paymentMethod || !methods.some(m => m.id === this.quote.paymentMethod)) {
+            this.quote.paymentMethod = methods.length > 0 ? methods[0].id : null;
+        }
+        
+        // Update payment method display
+        this.updatePaymentMethodDisplay();
+    }
+    
+    /**
+     * Update the payment method display in the UI
+     */
+    updatePaymentMethodDisplay() {
+        const container = document.getElementById('payment-methods-container');
+        if (!container) return;
+        
+        const total = this.quote.subtotal + this.quote.shipping;
+        const creditCardThreshold = this.data.payment?.creditCardThreshold || 10000;
+        const isBelowThreshold = total < creditCardThreshold;
+        
+        let html = '';
+        
+        this.quote.paymentMethods.forEach(method => {
+            const isSelected = this.quote.paymentMethod === method.id;
+            const isDisabled = method.id === 'creditCard' && !isBelowThreshold;
+            const feeText = method.fee > 0 ? 
+                `<div class="payment-fee">${method.feeDescription}</div>` : '';
+            const isRecommended = method.id === 'ach' && isBelowThreshold;
+                
+            html += `
+                <div class="payment-option ${isSelected ? 'selected' : ''} ${isDisabled ? 'disabled' : ''}" 
+                     onclick="${!isDisabled ? `calculator.setPaymentMethod('${method.id}')` : ''}">
+                    <input type="radio" 
+                           name="paymentMethod" 
+                           id="payment-${method.id}"
+                           value="${method.id}" 
+                           ${isSelected ? 'checked' : ''}
+                           ${isDisabled ? 'disabled' : ''}
+                           onchange="calculator.setPaymentMethod('${method.id}')">
+                    <div class="payment-details">
+                        <div class="payment-title">
+                            ${method.label}
+                            ${isRecommended ? '<span class="payment-badge">Recommended</span>' : ''}
+                        </div>
+                        ${feeText}
+                    </div>
+                </div>
+            `;
+        });
+        
+        if (!isBelowThreshold) {
+            html += `
+                <div class="payment-info-note">
+                    <span>Orders over $${this.formatNumber(creditCardThreshold)} cannot be paid by credit card.</span>
+                </div>
+            `;
+        }
+        
+        container.innerHTML = html;
+    }
+    
+    /**
+     * Set the payment method and recalculate
+     * @param {string} methodId - The ID of the payment method to set
+     */
+    setPaymentMethod(methodId) {
+        // Only proceed if payment method is changing and is a valid method
+        if (this.quote.paymentMethod === methodId) return;
+        
+        // Verify the method exists in available payment methods
+        const methodExists = this.quote.paymentMethods.some(m => m.id === methodId);
+        if (!methodExists) {
+            console.warn(`Payment method ${methodId} is not available`);
+            return;
+        }
+        
+        // Update payment method
+        this.quote.paymentMethod = methodId;
+        
+        // Recalculate to update fees and totals
+        this.calculateAll();
+        
+        // Log the change to console
+        const methodName = methodId === 'creditCard' ? 'Credit Card' : 
+                          methodId === 'ach' ? 'ACH Transfer' : 
+                          methodId === 'wire' ? 'Wire Transfer' : 'Company Check';
+        console.log(`Payment method updated to: ${methodName}`);
+    }
+    
     calculateAll() {
         try {
-            // Reset current quote
+            // Store current payment method before reset
+            const currentPaymentMethod = this.quote?.paymentMethod || this.settings.paymentMethod;
+            
+            // Reset current quote but preserve payment methods if they exist
             this.quote = {
                 products: [],
-                lineItems: [], // Add missing lineItems array
+                lineItems: [],
                 subtotal: 0,
                 shipping: 0,
                 creditCardFee: 0,
                 total: 0,
-                tierInfo: null
+                tierInfo: null,
+                paymentMethod: currentPaymentMethod,
+                paymentMethods: this.quote?.paymentMethods || []
             };
             
-            // Calculate based on line items
+            // Calculate based on line items and shipping
             this.calculateLineItems();
             this.calculateShipping();
             
-            // Smart credit card fee calculation
-            const subtotalWithShipping = this.quote.subtotal + this.quote.shipping;
-            const includeCreditCardFee = document.getElementById('includeCreditCardFee')?.checked ?? true;
+            // Update available payment methods based on order total
+            this.updatePaymentMethods();
             
-            if (includeCreditCardFee && subtotalWithShipping < 10000) {
-                this.quote.creditCardFee = subtotalWithShipping * 0.03;
+            // Calculate credit card fee if applicable
+            const subtotalWithShipping = this.quote.subtotal + this.quote.shipping;
+            const isCreditCard = this.quote.paymentMethod === 'creditCard';
+            const isBelowThreshold = subtotalWithShipping < (this.data.payment?.creditCardThreshold || 10000);
+            
+            // If current method is credit card but order is above threshold, switch to default
+            if (isCreditCard && !isBelowThreshold) {
+                this.quote.paymentMethod = 'wire'; // Default to wire for large orders
+                this.updatePaymentMethodDisplay(); // Update UI to reflect the change
+            }
+            
+            // Calculate credit card fee if still applicable
+            if (this.quote.paymentMethod === 'creditCard' && isBelowThreshold) {
+                this.quote.creditCardFee = subtotalWithShipping * this.settings.creditCardFeeRate;
             } else {
-                // No fee for orders $10K and above
                 this.quote.creditCardFee = 0;
             }
             
@@ -490,93 +662,138 @@ class KanvaCalculator {
      * Calculate line items
      */
     calculateLineItems() {
-        this.quote.products = [];
+        let subtotalBeforeDiscount = 0;
+        let subtotalAfterDiscount = 0;
         let totalCases = 0;
         
-        // Process each line item
+        // Reset products array
+        this.quote.products = [];
+        this.quote.lineItems = [];
+        
+        // Find applicable tier based on total cases
+        let tier = null;
+        const tiers = Object.values(this.data.tiers || {});
+        
+        // First pass to calculate total cases for tier determination
+        this.lineItems.forEach(lineItem => {
+            if (lineItem.productData && lineItem.masterCases) {
+                totalCases += lineItem.masterCases;
+            }
+        });
+        
+        // If we have line items but no product data yet, skip calculation
+        if (this.lineItems.length > 0 && !this.lineItems.some(item => item.productData)) {
+            console.log('⏳ Skipping calculation - product data not fully loaded');
+            return;
+        }
+        
+        // Sort tiers by threshold in descending order to find the best matching tier
+        const sortedTiers = [...tiers].sort((a, b) => b.threshold - a.threshold);
+        
+        // Find the best tier that matches our total cases
+        for (const t of sortedTiers) {
+            if (totalCases >= t.threshold) {
+                tier = t;
+                break;
+            }
+        }
+        
+        console.log('📊 Tier calculation:', {
+            totalCases,
+            selectedTier: tier ? tier.name : 'No tier',
+            availableTiers: sortedTiers.map(t => ({
+                name: t.name,
+                threshold: t.threshold,
+                margin: t.margin
+            }))
+        });
+        
+        // Process each line item with tier pricing
         this.lineItems.forEach(lineItem => {
             if (!lineItem.productData || !lineItem.masterCases) return;
             
             const product = lineItem.productData;
             const cases = lineItem.masterCases;
+            const productKey = lineItem.productKey;
+            const unitsPerCase = product.unitsPerCase || 1;
+            const displayBoxes = lineItem.displayBoxes || cases * 12;
             
-            // Calculate line total - handle different product data structures
-            let unitPrice = 0;
-            let unitsPerCase = 1;
+            // Get base price from product data
+            const baseUnitPrice = product.price || 0;
             
-            if (product.price !== undefined) {
-                unitPrice = product.price;
-            } else if (product.pricing && product.pricing.unit) {
-                unitPrice = product.pricing.unit;
-            }
-            
-            if (product.unitsPerCase !== undefined) {
-                unitsPerCase = product.unitsPerCase;
-            } else if (product.packaging && product.packaging.unitsPerCase) {
-                unitsPerCase = product.packaging.unitsPerCase;
+            // Apply tier pricing if available, otherwise use base price
+            let unitPrice = baseUnitPrice;
+            if (tier && tier.prices && tier.prices[productKey]) {
+                unitPrice = tier.prices[productKey];
             }
             
             const lineTotal = cases * unitPrice * unitsPerCase;
+            const baseLineTotal = cases * baseUnitPrice * unitsPerCase;
             
+            subtotalBeforeDiscount += baseLineTotal;
+            subtotalAfterDiscount += lineTotal;
+            
+            // Add to products array for display
             this.quote.products.push({
-                key: lineItem.productKey,
+                key: productKey,
                 name: product.name || product.title || 'Unknown Product',
                 sku: product.sku || product.id || '',
                 cases: cases,
-                displayBoxes: lineItem.displayBoxes || cases * 12,
+                displayBoxes: displayBoxes,
                 unitPrice: unitPrice,
+                baseUnitPrice: baseUnitPrice, // Store base price for reference
                 unitsPerCase: unitsPerCase,
-                lineTotal: lineTotal
+                lineTotal: lineTotal,
+                baseLineTotal: baseLineTotal // Store base line total for reference
             });
             
             // Also populate lineItems for order details manager
             this.quote.lineItems.push({
                 id: lineItem.id,
-                productKey: lineItem.productKey,
+                productKey: productKey,
                 productName: product.name || product.title || 'Unknown Product',
                 sku: product.sku || product.id || '',
                 cases: cases,
-                displayBoxes: lineItem.displayBoxes || cases * 12,
+                displayBoxes: displayBoxes,
                 unitPrice: unitPrice,
+                baseUnitPrice: baseUnitPrice,
                 unitsPerCase: unitsPerCase,
                 lineTotal: lineTotal,
+                baseLineTotal: baseLineTotal,
                 productData: product
             });
-            
-            totalCases += cases;
         });
         
-        this.quote.subtotal = this.quote.products.reduce((sum, p) => sum + p.lineTotal, 0);
+        // Calculate total discount amount
+        const totalDiscount = subtotalBeforeDiscount - subtotalAfterDiscount;
+        this.quote.subtotal = subtotalAfterDiscount;
         
-        // Find applicable tier - handle both array and object structures
-        let tier = null;
-        if (Array.isArray(this.data.tiers)) {
-            tier = this.data.tiers.find(t => totalCases >= t.threshold);
-        } else if (this.data.tiers && typeof this.data.tiers === 'object') {
-            // Find the highest tier that applies based on threshold
-            let bestTier = null;
-            for (const [tierKey, tierData] of Object.entries(this.data.tiers)) {
-                if (totalCases >= (tierData.threshold || 0)) {
-                    bestTier = { ...tierData, key: tierKey };
-                }
-            }
-            tier = bestTier;
-        }
-        
-        // Apply tier discount
-        if (tier && tier.discount > 0) {
+        // Set tier info if applicable
+        if (tier && totalCases > 0) {
+            const nextTier = sortedTiers.find(t => t.threshold > tier.threshold);
+            const casesToNextTier = nextTier ? nextTier.threshold - totalCases : 0;
+            const discountPercent = subtotalBeforeDiscount > 0 ? 
+                ((subtotalBeforeDiscount - subtotalAfterDiscount) / subtotalBeforeDiscount * 100) : 0;
+                
             this.quote.tierInfo = {
                 tier: tier.key || tier.name || 'Unknown',
-                discount: tier.discount * 100, // Convert to percentage
-                totalCases: totalCases
+                tierName: tier.name || 'Unknown',
+                threshold: tier.threshold,
+                margin: tier.margin,
+                discount: parseFloat(discountPercent.toFixed(2)),
+                totalCases: totalCases,
+                totalDiscount: totalDiscount,
+                subtotalBeforeDiscount: subtotalBeforeDiscount,
+                nextTier: nextTier ? {
+                    name: nextTier.name,
+                    threshold: nextTier.threshold,
+                    casesNeeded: casesToNextTier
+                } : null
             };
-            this.quote.subtotal *= (1 - tier.discount);
             
-            // Update product line totals with discount
-            this.quote.products.forEach(product => {
-                product.lineTotal *= (1 - tier.discount);
-                product.unitPrice *= (1 - tier.discount);
-            });
+            console.log('🏷️ Applied tier info:', this.quote.tierInfo);
+        } else {
+            this.quote.tierInfo = null;
         }
     }
 
@@ -625,12 +842,48 @@ class KanvaCalculator {
         // Update tier info if available
         const tierInfoElement = document.getElementById('tierInfo');
         if (tierInfoElement && this.quote.tierInfo) {
+            const tier = this.quote.tierInfo;
+            const savings = this.formatCurrency(tier.totalDiscount);
+            const originalSubtotal = this.formatCurrency(tier.subtotalBeforeDiscount);
+            const currentMargin = tier.margin || '0%';
+            
+            let nextTierHtml = '';
+            if (tier.nextTier) {
+                nextTierHtml = `
+                    <div class="tier-progress">
+                        <div class="progress-bar">
+                            <div class="progress" style="width: ${Math.min(100, (tier.totalCases / tier.nextTier.threshold) * 100)}%"></div>
+                        </div>
+                        <div class="tier-progress-text">
+                            <span>Add ${tier.nextTier.casesNeeded} more cases to reach ${tier.nextTier.name}</span>
+                        </div>
+                    </div>`;
+            }
+            
             tierInfoElement.style.display = 'block';
             tierInfoElement.innerHTML = `
-                <strong>Tier Applied:</strong> ${this.quote.tierInfo.tier.toUpperCase()}<br>
-                <strong>Discount:</strong> ${this.quote.tierInfo.discount}%<br>
-                <strong>Volume:</strong> ${this.quote.tierInfo.totalCases} master cases
-            `;
+                <div class="tier-header">
+                    <div class="tier-title">
+                        <strong>Volume Discount Applied</strong>
+                        <span class="tier-badge">${tier.tierName}</span>
+                    </div>
+                    <div class="tier-margin">Margin: ${currentMargin}</div>
+                </div>
+                <div class="tier-details">
+                    <div class="tier-row">
+                        <span>Master Cases:</span>
+                        <strong>${tier.totalCases}</strong>
+                    </div>
+                    <div class="tier-row">
+                        <span>Original Subtotal:</span>
+                        <span>${originalSubtotal}</span>
+                    </div>
+                    <div class="tier-row highlight">
+                        <span>Volume Discount (${tier.discount}%):</span>
+                        <span>-${savings}</span>
+                    </div>
+                    ${nextTierHtml}
+                </div>`;
         } else if (tierInfoElement) {
             tierInfoElement.style.display = 'none';
         }
@@ -1019,6 +1272,46 @@ class KanvaCalculator {
     }
 
     /**
+     * Show a temporary green bar notification
+     */
+    showGreenBarNotification(message) {
+        // Remove any existing notification
+        const existingNotification = document.getElementById('greenBarNotification');
+        if (existingNotification) {
+            existingNotification.remove();
+        }
+
+        // Create notification element
+        const notification = document.createElement('div');
+        notification.id = 'greenBarNotification';
+        notification.textContent = message;
+        
+        // Style the notification
+        notification.style.position = 'fixed';
+        notification.style.bottom = '20px';
+        notification.style.left = '50%';
+        notification.style.transform = 'translateX(-50%)';
+        notification.style.backgroundColor = '#10B981'; // Green-500
+        notification.style.color = 'white';
+        notification.style.padding = '12px 24px';
+        notification.style.borderRadius = '4px';
+        notification.style.boxShadow = '0 4px 6px rgba(0, 0, 0, 0.1)';
+        notification.style.zIndex = '1000';
+        notification.style.transition = 'opacity 0.3s ease-in-out';
+        notification.style.fontWeight = '500';
+        notification.style.fontSize = '14px';
+        
+        // Add to document
+        document.body.appendChild(notification);
+        
+        // Auto-remove after 2 seconds
+        setTimeout(() => {
+            notification.style.opacity = '0';
+            setTimeout(() => notification.remove(), 300);
+        }, 2000);
+    }
+
+    /**
      * Select product from reference tile
      */
     selectProductFromTile(productKey) {
@@ -1031,6 +1324,12 @@ class KanvaCalculator {
         const selectedTile = document.querySelector(`[data-product-key="${productKey}"]`);
         if (selectedTile) {
             selectedTile.classList.add('selected');
+            
+            // Add temporary highlight class
+            selectedTile.classList.add('product-added');
+            setTimeout(() => {
+                selectedTile.classList.remove('product-added');
+            }, 1000);
         }
 
         // If no product lines exist, create one
@@ -1048,7 +1347,12 @@ class KanvaCalculator {
         // Update the line with selected product
         this.updateProductLine(targetLine.id, 'productKey', productKey);
         
-        this.showNotification(`✅ ${this.data.products[productKey].name} added to quote`, 'success');
+        // Show green bar notification
+        const productName = this.data.products[productKey]?.name || 'Product';
+        this.showGreenBarNotification(`✓ ${productName} added to quote`);
+        
+        // Log to console for debugging
+        console.log(`✅ ${productName} added to quote`);
     }
 
     /**
@@ -1107,35 +1411,145 @@ class KanvaCalculator {
      * Generate quote for email
      */
     generateQuote() {
-        if (this.quote.total <= 0) {
+        if (this.quote.products.length === 0) {
             this.showError('Please add products and calculate before generating a quote.');
-            return;
+            return null;
         }
         
-        let quoteText = `KANVA BOTANICALS QUOTE\n`;
-        quoteText += `Generated: ${new Date().toLocaleDateString()}\n\n`;
+        // Get form values
+        const quoteName = document.getElementById('quoteName')?.value || 'Product Quote';
+        const companyName = document.getElementById('companyName')?.value || '[COMPANY NAME]';
+        const customerEmail = document.getElementById('customerEmail')?.value || '';
+        const customerPhone = document.getElementById('customerPhone')?.value || '';
+        const customerState = document.getElementById('customerState')?.value || '';
+        const customerSegment = document.getElementById('customerSegment')?.value || 'distributor';
+        const emailTemplate = document.getElementById('emailTemplate')?.value || 'initial';
         
-        // Product details
-        quoteText += `PRODUCTS:\n`;
-        this.quote.products.forEach(product => {
-            quoteText += `• ${product.name}: ${product.cases} cases @ ${this.formatCurrency(product.unitPrice)}/unit\n`;
-            quoteText += `  Total: ${this.formatCurrency(product.lineTotal)}\n`;
+        // Get current date in a nice format
+        const now = new Date();
+        const formattedDate = now.toLocaleDateString('en-US', { 
+            year: 'numeric', 
+            month: 'long', 
+            day: 'numeric' 
         });
         
-        // Totals
-        quoteText += `\nORDER SUMMARY:\n`;
-        quoteText += `Subtotal: ${this.formatCurrency(this.quote.subtotal)}\n`;
-        quoteText += `Shipping: ${this.formatCurrency(this.quote.shipping)}\n`;
+        // Build email subject based on template
+        let subject = '';
+        switch(emailTemplate) {
+            case 'followup':
+                subject = `Follow-up: ${quoteName} for ${companyName}`;
+                break;
+            case 'negotiation':
+                subject = `Revised Quote: ${quoteName} for ${companyName}`;
+                break;
+            case 'closing':
+                subject = `Ready to Proceed: ${quoteName} for ${companyName}`;
+                break;
+            default: // initial
+                subject = `Quote: ${quoteName} for ${companyName}`;
+        }
+        
+        // Build email body
+        let body = `KANVA BOTANICALS - QUOTE\n`;
+        body += `Generated: ${formattedDate}\n`;
+        body += `Quote For: ${companyName}\n`;
+        if (customerEmail) body += `Email: ${customerEmail}\n`;
+        if (customerPhone) body += `Phone: ${customerPhone}\n`;
+        if (customerState) body += `Location: ${this.getStateName(customerState) || customerState}\n`;
+        body += '\n';
+        
+        // Add products section
+        body += `PRODUCTS\n`;
+        body += `--------\n`;
+        this.quote.products.forEach((product, index) => {
+            body += `${index + 1}. ${product.name}\n`;
+            body += `   - SKU: ${product.sku || 'N/A'}\n`;
+            body += `   - Master Cases: ${product.cases}\n`;
+            body += `   - Display Boxes: ${product.displayBoxes || product.cases * 12}\n`;
+            body += `   - Units/Case: ${product.unitsPerCase || 1}\n`;
+            body += `   - Unit Price: ${this.formatCurrency(product.unitPrice)}\n`;
+            body += `   - Line Total: ${this.formatCurrency(product.lineTotal)}\n\n`;
+        });
+        
+        // Add order summary
+        body += `ORDER SUMMARY\n`;
+        body += `------------\n`;
+        body += `Subtotal: ${this.formatCurrency(this.quote.subtotal)}\n`;
+        body += `Shipping: ${this.formatCurrency(this.quote.shipping)}\n`;
         if (this.quote.creditCardFee > 0) {
-            quoteText += `Credit Card Fee (3%): ${this.formatCurrency(this.quote.creditCardFee)}\n`;
+            body += `Credit Card Fee (3%): ${this.formatCurrency(this.quote.creditCardFee)}\n`;
         }
-        quoteText += `TOTAL: ${this.formatCurrency(this.quote.total)}\n`;
+        body += `TOTAL: ${this.formatCurrency(this.quote.total)}\n\n`;
         
+        // Add detailed tier discount info if applicable
         if (this.quote.tierInfo) {
-            quoteText += `\nTier Discount Applied: ${this.quote.tierInfo.tier} (${this.quote.tierInfo.discount}%)\n`;
+            const tier = this.quote.tierInfo;
+            body += `\nVOLUME DISCOUNT APPLIED\n`;
+            body += `----------------------\n`;
+            body += `• Tier: ${tier.tierName} (${tier.threshold}+ cases)\n`;
+            body += `• Your Volume: ${tier.totalCases} master cases\n`;
+            body += `• Margin: ${tier.margin || 'N/A'}\n`;
+            body += `• Discount: ${tier.discount}%\n`;
+            body += `• You Save: ${this.formatCurrency(tier.totalDiscount)}\n\n`;
+            
+            if (tier.nextTier) {
+                body += `• Next Tier (${tier.nextTier.name}): Add ${tier.nextTier.casesNeeded} more cases for better pricing\n`;
+                const progressPercent = Math.min(100, (tier.totalCases / tier.nextTier.threshold) * 100);
+                body += `  [${'='.repeat(Math.floor(progressPercent/5))}${' '.repeat(20 - Math.floor(progressPercent/5))}] ${Math.round(progressPercent)}%\n\n`;
+            } else {
+                body += `• You've reached the highest volume tier!\n\n`;
+            }
         }
         
-        return quoteText;
+        // Add next steps based on template
+        body += `NEXT STEPS\n`;
+        body += `----------\n`;
+        
+        switch(emailTemplate) {
+            case 'followup':
+                body += `1. Review the quote details above\n`;
+                body += `2. Let us know if you have any questions\n`;
+                body += `3. We're happy to schedule a call to discuss further\n\n`;
+                break;
+            case 'negotiation':
+                body += `1. Review the revised proposal\n`;
+                body += `2. Let us know if this works for your needs\n`;
+                body += `3. We can adjust further if needed\n\n`;
+                break;
+            case 'closing':
+                body += `1. Review the final details below\n`;
+                body += `2. Confirm your acceptance by replying to this email\n`;
+                body += `3. We'll send over the final paperwork\n\n`;
+                break;
+            default: // initial
+                body += `1. Review the quote details above\n`;
+                body += `2. Let us know if you'd like to proceed or have any questions\n`;
+                body += `3. We're here to help with any additional information you need\n\n`;
+        }
+        
+        // Add contact info
+        body += `Best regards,\n`;
+        body += `The Kanva Botanicals Team\n`;
+        body += `contact@kanvabotanicals.com\n`;
+        body += `(555) 123-4567\n\n`;
+        
+        // Add footer
+        body += `---\n`;
+        body += `Kanva Botanicals | Premium Kratom Extracts\n`;
+        body += `This quote is valid for 30 days from the date of issue.`;
+        
+        // Update the email preview
+        const emailPreview = document.getElementById('emailPreview');
+        if (emailPreview) {
+            emailPreview.value = body;
+        }
+        
+        // Return the formatted quote
+        return {
+            subject: subject,
+            body: body,
+            quoteData: this.quote
+        };
     }
 
     /**
@@ -1144,12 +1558,24 @@ class KanvaCalculator {
     copyQuote() {
         const quote = this.generateQuote();
         if (quote) {
-            navigator.clipboard.writeText(quote).then(() => {
-                this.showNotification('Quote copied to clipboard!', 'success');
-            }).catch(() => {
-                this.showError('Failed to copy quote to clipboard.');
-            });
+            navigator.clipboard.writeText(quote.body);
         }
+    }
+    
+    /**
+     * Email quote to customer
+     */
+    emailQuote() {
+        const quote = this.generateQuote();
+        if (!quote) return;
+        
+        // Get customer email or use a default
+        const customerEmail = document.getElementById('customerEmail')?.value || '';
+        const emailBody = encodeURIComponent(quote.body);
+        const emailSubject = encodeURIComponent(quote.subject);
+        
+        // Create mailto link and open default email client
+        window.location.href = `mailto:${customerEmail}?subject=${emailSubject}&body=${emailBody}`;
     }
 
     /**

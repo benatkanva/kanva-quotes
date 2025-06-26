@@ -53,6 +53,15 @@ class OrderDetailsManager {
             const itemNumber = product.sku || product.id || `ITEM-${index + 1}`;
             const description = product.description || 'No description available';
             
+            // Check if we have base prices for comparison (tier pricing)
+            const hasTierPricing = this.calculator.quote.tierInfo && 
+                                this.calculator.quote.tierInfo.discount > 0 && 
+                                item.baseUnitPrice !== undefined &&
+                                item.baseLineTotal !== undefined;
+            
+            const showOriginalPrice = hasTierPricing && 
+                                  Math.abs(item.baseUnitPrice - item.unitPrice) > 0.01;
+            
             html += `
                 <tr class="line-item-row" data-line-id="${item.id}">
                     <td class="col-thumbnail">
@@ -76,10 +85,20 @@ class OrderDetailsManager {
                         </div>
                     </td>
                     <td class="col-unit-price">
-                        $${item.unitPrice.toFixed(2)}
+                        ${showOriginalPrice ? `
+                            <div class="original-price">$${item.baseUnitPrice.toFixed(2)}</div>
+                            <div class="discounted-price">$${item.unitPrice.toFixed(2)}</div>
+                        ` : `
+                            $${item.unitPrice.toFixed(2)}
+                        `}
                     </td>
                     <td class="col-line-total">
-                        <strong>$${item.lineTotal.toFixed(2)}</strong>
+                        ${showOriginalPrice ? `
+                            <div class="original-price">$${item.baseLineTotal.toFixed(2)}</div>
+                            <div class="discounted-price"><strong>$${item.lineTotal.toFixed(2)}</strong></div>
+                        ` : `
+                            <strong>$${item.lineTotal.toFixed(2)}</strong>
+                        `}
                     </td>
                     <td class="col-actions">
                         <button class="btn-delete-line" onclick="calculator.deleteLineItem('${item.id}')" 
@@ -99,14 +118,34 @@ class OrderDetailsManager {
 
         // Add tier information if available
         if (this.calculator.quote.tierInfo) {
+            const tierInfo = this.calculator.quote.tierInfo;
+            const subtotalBeforeDiscount = tierInfo.subtotalBeforeDiscount || this.calculator.quote.subtotal;
+            const totalDiscount = tierInfo.totalDiscount || 0;
+            
+            // Add tier discount row to the table
             html += `
-                <div class="tier-summary">
-                    <div class="tier-badge">
-                        <span class="tier-label">${this.calculator.quote.tierInfo.tier.toUpperCase()}</span>
-                        <span class="tier-discount">${this.calculator.quote.tierInfo.discount}% Discount Applied</span>
-                        <span class="tier-volume">${this.calculator.quote.tierInfo.totalCases} Total Master Cases</span>
-                    </div>
-                </div>
+                <tfoot>
+                    <tr class="subtotal-row">
+                        <td colspan="5" class="text-right"><strong>Subtotal Before Discount:</strong></td>
+                        <td colspan="3" class="text-right"><strong>$${subtotalBeforeDiscount.toFixed(2)}</strong></td>
+                    </tr>
+                    <tr class="discount-row">
+                        <td colspan="5" class="text-right">
+                            <strong>Tier Discount (${tierInfo.discount}%):</strong>
+                            <div class="tier-badge">
+                                <span class="tier-label">${tierInfo.tier.toUpperCase()}</span>
+                                <span class="tier-volume">${tierInfo.totalCases} Master Cases</span>
+                            </div>
+                        </td>
+                        <td colspan="3" class="text-right">
+                            <strong>-$${totalDiscount.toFixed(2)}</strong>
+                        </td>
+                    </tr>
+                    <tr class="subtotal-row">
+                        <td colspan="5" class="text-right"><strong>Subtotal After Discount:</strong></td>
+                        <td colspan="3" class="text-right"><strong>$${this.calculator.quote.subtotal.toFixed(2)}</strong></td>
+                    </tr>
+                </tfoot>
             `;
         }
 
