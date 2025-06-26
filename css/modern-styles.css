@@ -961,6 +961,87 @@ textarea:disabled {
     text-transform: uppercase;
 }
 
+/* Tier Progress Bar */
+.tier-progress {
+    margin-top: 1.5rem;
+    padding: 0.75rem;
+    background: var(--gray-50);
+    border-radius: var(--border-radius);
+    border: 1px solid var(--gray-200);
+}
+
+.progress-labels {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 0.5rem;
+    font-size: 0.875rem;
+    color: var(--gray-600);
+    font-weight: 500;
+}
+
+.progress-bar {
+    height: 1.5rem;
+    background: var(--gray-200);
+    border-radius: 9999px;
+    overflow: hidden;
+    position: relative;
+    box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.progress {
+    height: 100%;
+    background: linear-gradient(90deg, var(--kanva-green), #6ee7b7);
+    border-radius: 9999px;
+    transition: width 0.3s ease-in-out;
+    position: relative;
+    overflow: hidden;
+}
+
+.progress::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: linear-gradient(
+        90deg,
+        rgba(255, 255, 255, 0.1) 0%,
+        rgba(255, 255, 255, 0.3) 50%,
+        rgba(255, 255, 255, 0.1) 100%
+    );
+    animation: shimmer 2s infinite linear;
+}
+
+@keyframes shimmer {
+    0% { transform: translateX(-100%); }
+    100% { transform: translateX(100%); }
+}
+
+.tier-progress-text {
+    margin-top: 0.5rem;
+    text-align: center;
+    font-size: 0.875rem;
+    color: var(--gray-700);
+    font-weight: 500;
+}
+
+.tier-label {
+    background: var(--kanva-dark);
+    color: white;
+    padding: 0.25rem 0.75rem;
+    border-radius: 9999px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    display: inline-flex;
+    align-items: center;
+}
+
+.tier-label:first-child {
+    background: var(--kanva-green);
+    color: var(--kanva-dark);
+}
+
 .tier-unit {
     background: #fee2e2;
     color: #dc2626;

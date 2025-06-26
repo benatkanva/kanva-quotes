@@ -7,7 +7,9 @@
     "prices": {
       "focus": 4.50,
       "release": 4.50,
-      "zoom": 3.20
+      "zoom": 3.20,
+      "mango": 4.25,
+      "raw": 4.50
     }
   },
   "tier2": {
@@ -18,7 +20,9 @@
     "prices": {
       "focus": 4.35,
       "release": 4.35,
-      "zoom": 3.10
+      "zoom": 3.10,
+      "mango": 4.10,
+      "raw": 4.35
     }
   },
   "tier3": {
@@ -29,7 +33,9 @@
     "prices": {
       "focus": 4.25,
       "release": 4.25,
-      "zoom": 3.00
+      "zoom": 3.00,
+      "mango": 3.95,
+      "raw": 4.25
     }
   }
 }

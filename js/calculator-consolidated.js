@@ -849,15 +849,53 @@ class KanvaCalculator {
             
             let nextTierHtml = '';
             if (tier.nextTier) {
+                // Calculate progress within current tier
+                const currentTier = Object.values(this.data.tiers).find(t => t.threshold === tier.threshold);
+                const nextTier = tier.nextTier;
+                const tierRange = nextTier.threshold - tier.threshold;
+                const progressInTier = tier.totalCases - tier.threshold;
+                const progressPercent = Math.min(100, Math.max(0, (progressInTier / tierRange) * 100));
+                const casesToNextTier = nextTier.threshold - tier.totalCases;
+                
                 nextTierHtml = `
                     <div class="tier-progress">
+                        <div class="progress-labels">
+                            <span class="tier-label">${tier.tierName}</span>
+                            <span class="tier-label">${nextTier.name}</span>
+                        </div>
                         <div class="progress-bar">
-                            <div class="progress" style="width: ${Math.min(100, (tier.totalCases / tier.nextTier.threshold) * 100)}%"></div>
+                            <div class="progress" style="width: ${progressPercent}%"></div>
                         </div>
                         <div class="tier-progress-text">
-                            <span>Add ${tier.nextTier.casesNeeded} more cases to reach ${tier.nextTier.name}</span>
+                            <span>${progressPercent.toFixed(0)}% to ${nextTier.name} (${casesToNextTier} cases to go)</span>
                         </div>
                     </div>`;
+            } else {
+                // Show progress within the highest tier
+                const currentTier = Object.values(this.data.tiers).find(t => t.threshold === tier.threshold);
+                const prevTier = Object.values(this.data.tiers)
+                    .sort((a, b) => b.threshold - a.threshold)
+                    .find(t => t.threshold < tier.threshold);
+                
+                if (prevTier) {
+                    const tierRange = tier.threshold - prevTier.threshold;
+                    const progressInTier = tier.totalCases - prevTier.threshold;
+                    const progressPercent = Math.min(100, Math.max(0, (progressInTier / tierRange) * 100));
+                    
+                    nextTierHtml = `
+                        <div class="tier-progress">
+                            <div class="progress-labels">
+                                <span class="tier-label">${prevTier.name}</span>
+                                <span class="tier-label">${tier.tierName}</span>
+                            </div>
+                            <div class="progress-bar">
+                                <div class="progress" style="width: ${progressPercent}%"></div>
+                            </div>
+                            <div class="tier-progress-text">
+                                <span>You've reached our highest volume tier!</span>
+                            </div>
+                        </div>`;
+                }
             }
             
             tierInfoElement.style.display = 'block';
